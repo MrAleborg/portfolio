@@ -6,6 +6,7 @@ from experience.models import (
     Certification,
     Education,
     Methodology,
+    ProfessionalExperience,
     Project,
     Skill,
     Specialization,
@@ -14,6 +15,7 @@ from experience.models import (
 from experience.serializers import (
     CertificationSerializer,
     EducationSerializer,
+    ProfessionalExperienceSerializer,
     ProjectSerializer,
     SpecializationSerializer,
     TagDetailSerializer,
@@ -63,6 +65,18 @@ class CertificationViewSet(viewsets.ReadOnlyModelViewSet):
         if tag_id is not None:
             queryset = queryset.filter(tags=tag_id)
         return queryset
+
+
+class ProfessionalExperienceViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = ProfessionalExperience.objects.filter(
+        is_visible=True
+    ).prefetch_related(
+        Prefetch(
+            "projects",
+            queryset=visible_projects().prefetch_related("missions", "tags"),
+        ),
+    )
+    serializer_class = ProfessionalExperienceSerializer
 
 
 class ProjectViewSet(viewsets.ReadOnlyModelViewSet):

@@ -133,3 +133,32 @@ class TagDetailSerializer(TagSerializer):
 
     class Meta(TagSerializer.Meta):
         fields = [*TagSerializer.Meta.fields, "projects", "certifications"]
+
+
+class ExperienceProjectSerializer(ProjectSerializer):
+    """A project nested in its experience, so without the experience field."""
+
+    experience = None
+
+    class Meta(ProjectSerializer.Meta):
+        fields = [f for f in ProjectSerializer.Meta.fields if f != "experience"]
+
+
+class ProfessionalExperienceSerializer(serializers.ModelSerializer):
+    projects = ExperienceProjectSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = ProfessionalExperience
+        fields = [
+            "id",
+            "company",
+            "position",
+            "employment_type",
+            "company_url",
+            "location",
+            "start_date",
+            "end_date",
+            "is_current",
+            "description",
+            "projects",
+        ]
