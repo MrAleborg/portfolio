@@ -22,7 +22,9 @@ resource:
 
 | File | Covers |
 |---|---|
-| [`conftest.py`](../experience/tests/conftest.py) | Shared fixtures (`api_client`) |
+| [`conftest.py`](../experience/tests/conftest.py) | Shared fixtures (`api_client`, and a fast password hasher applied to every test) |
+| [`test_api_root.py`](../experience/tests/test_api_root.py) | `api/v1/experience/` (the list of collections) |
+| [`test_admin.py`](../experience/tests/test_admin.py) | Django admin pages of every content model |
 | [`test_education.py`](../experience/tests/test_education.py) | `education/` |
 | [`test_professional_experiences.py`](../experience/tests/test_professional_experiences.py) | `professional-experiences/` |
 | [`test_projects.py`](../experience/tests/test_projects.py) | `projects/` (with `?experience=`, `?side_project=` and `?tag=` filters) |

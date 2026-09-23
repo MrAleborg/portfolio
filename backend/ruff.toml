@@ -1,0 +1,6 @@
+[lint]
+ignore = [
+    # Mutable class defaults: Django and DRF declare Meta options
+    # (fields, ordering, constraints) as lists that are only read.
+    "RUF012",
+]
