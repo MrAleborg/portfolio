@@ -22,19 +22,27 @@ from experience.serializers import (
     TagSerializer,
 )
 
+# Largest value of a bigint primary key.
+MAX_ID = 2**63 - 1
+
 
 def parse_id(request, name):
     """Return query parameter `name` as an int, or None when it is absent.
 
-    A value that is not an integer is a client error (400).
+    A value that is not an id (not an integer, or outside 1..MAX_ID) is a
+    client error (400).
     """
     value = request.query_params.get(name)
     if value is None:
         return None
+    error = ValidationError({name: [f"A valid {name} id is required."]})
     try:
-        return int(value)
+        id_ = int(value)
     except ValueError:
-        raise ValidationError({name: [f"A valid {name} id is required."]}) from None
+        raise error from None
+    if not 1 <= id_ <= MAX_ID:
+        raise error
+    return id_
 
 
 def visible_projects():
@@ -61,6 +69,8 @@ class CertificationViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        if self.action != "list":
+            return queryset
         tag_id = parse_id(self.request, "tag")
         if tag_id is not None:
             queryset = queryset.filter(tags=tag_id)
@@ -89,6 +99,8 @@ class ProjectViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        if self.action != "list":
+            return queryset
         experience_id = parse_id(self.request, "experience")
         if experience_id is not None:
             queryset = queryset.filter(experience=experience_id)

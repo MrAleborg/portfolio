@@ -252,6 +252,28 @@ def test_list_filter_with_invalid_value_is_a_bad_request(api_client, name, value
     assert response.status_code == 400
 
 
+@pytest.mark.parametrize("name", ["experience", "tag"])
+@pytest.mark.parametrize("value", ["99999999999999999999", "-1"])
+def test_list_filter_with_out_of_range_id_is_a_bad_request(api_client, name, value):
+    """Ids are positive and fit in the database; others are client errors, not 500."""
+    response = api_client.get(LIST_URL, {name: value})
+
+    assert response.status_code == 400
+
+
+@pytest.mark.parametrize(
+    ("name", "value"),
+    [("experience", "999"), ("tag", "999"), ("tag", "python"), ("side_project", "yes")],
+)
+def test_detail_ignores_list_filters(api_client, name, value):
+    """Filters belong to the list; a detail URL answers the same with or without them."""
+    project = make_project()
+
+    response = api_client.get(detail_url(project.id), {name: value})
+
+    assert response.status_code == 200
+
+
 def test_detail_of_invisible_project_is_not_found(api_client):
     """A hidden project cannot be reached by guessing its id."""
     project = make_project(is_visible=False)

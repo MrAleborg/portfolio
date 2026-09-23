@@ -100,6 +100,24 @@ def test_list_filter_by_invalid_tag_is_a_bad_request(api_client):
     assert response.status_code == 400
 
 
+@pytest.mark.parametrize("value", ["99999999999999999999", "-1"])
+def test_list_filter_with_out_of_range_tag_is_a_bad_request(api_client, value):
+    """Ids are positive and fit in the database; others are client errors, not 500."""
+    response = api_client.get(LIST_URL, {"tag": value})
+
+    assert response.status_code == 400
+
+
+@pytest.mark.parametrize("value", ["999", "python"])
+def test_detail_ignores_list_filters(api_client, value):
+    """Filters belong to the list; a detail URL answers the same with or without them."""
+    certification = make_certification()
+
+    response = api_client.get(detail_url(certification.id), {"tag": value})
+
+    assert response.status_code == 200
+
+
 def test_detail_returns_public_fields(api_client):
     """The detail exposes public fields, tags and visible specializations.
 
