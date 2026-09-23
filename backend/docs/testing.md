@@ -24,6 +24,8 @@ resource:
 |---|---|
 | [`conftest.py`](../experience/tests/conftest.py) | Shared fixtures (`api_client`) |
 | [`test_education.py`](../experience/tests/test_education.py) | `education/` |
+| [`test_professional_experiences.py`](../experience/tests/test_professional_experiences.py) | `professional-experiences/` |
+| [`test_projects.py`](../experience/tests/test_projects.py) | `projects/` (with `?experience=`, `?side_project=` and `?tag=` filters) |
 | [`test_certifications.py`](../experience/tests/test_certifications.py) | `certifications/` (with `?tag=` filter) |
 | [`test_specializations.py`](../experience/tests/test_specializations.py) | `specializations/` |
 | [`test_tags.py`](../experience/tests/test_tags.py) | `skills/`, `tools/`, `methodologies/` |
@@ -52,10 +54,12 @@ The API is public and read-only; content is managed in the Django admin.
 | Rule | Expected |
 |---|---|
 | List of a resource | `200` with a plain JSON list (no pagination) |
-| Hidden entry (`is_visible=False`) | Left out of lists, `404` on its detail route |
+| Hidden entry (`is_visible=False`) | Left out of lists and nested lists, `404` on its detail route |
+| Project of a hidden experience | Hidden like the experience, wherever projects appear |
 | Unknown id | `404` |
 | Filter on an unknown id (e.g. `?tag=999`) | `200` with an empty list |
-| Filter with a non-integer id (e.g. `?tag=python`) | `400` |
+| Filter with an invalid id: not an integer (`?tag=python`) or outside `1..2**63-1` (`?tag=-1`) | `400` |
+| List filters on a detail route (e.g. `projects/5/?tag=999`) | Ignored |
 | `POST` on a list, `PUT`/`PATCH`/`DELETE` on a detail | `405` |
 | Internal fields (`is_visible`, `display_order`, `created_at`, `updated_at`) | Never returned |
 | Ordering | `display_order`, then newest date (`start_date` or `issue_date`) |

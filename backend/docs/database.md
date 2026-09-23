@@ -153,6 +153,11 @@ model gets its own copy of the fields.
 - **A project without a professional experience is a side project** (e.g. this
   portfolio). Side projects use the same fields, tags and missions as work
   projects; query them with `Project.objects.filter(experience__isnull=True)`.
+- **Hiding an experience hides its projects.** The API only exposes a project
+  when it is visible and is either a side project or belongs to a visible
+  experience, wherever projects appear (`projects/`, an experience's detail, a
+  tag's detail). The rule lives in `visible_projects()` in
+  [`experience/views.py`](../experience/views.py).
 - **Missions belong to a single project** (foreign key); deleting a project or
   an experience also deletes the rows under it.
 - **Achievements (valorization elements) are a JSON list of strings** on the

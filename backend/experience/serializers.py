@@ -125,7 +125,9 @@ class SpecializationSerializer(serializers.ModelSerializer):
 class TagDetailSerializer(TagSerializer):
     """A tag with the visible entries tagged with it.
 
-    The view must prefetch projects and certifications filtered on is_visible.
+    The view must prefetch projects from visible_projects() (which also hides
+    projects of invisible experiences) and certifications filtered on
+    is_visible.
     """
 
     projects = ProjectSummarySerializer(many=True, read_only=True)
