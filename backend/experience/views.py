@@ -35,6 +35,13 @@ def parse_id(request, name):
         raise ValidationError({name: [f"A valid {name} id is required."]}) from None
 
 
+def visible_projects():
+    """Visible projects that are side projects or belong to a visible experience."""
+    return Project.objects.filter(is_visible=True).filter(
+        Q(experience__isnull=True) | Q(experience__is_visible=True)
+    )
+
+
 class EducationViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Education.objects.filter(is_visible=True)
     serializer_class = EducationSerializer
@@ -60,8 +67,7 @@ class CertificationViewSet(viewsets.ReadOnlyModelViewSet):
 
 class ProjectViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = (
-        Project.objects.filter(is_visible=True)
-        .filter(Q(experience__isnull=True) | Q(experience__is_visible=True))
+        visible_projects()
         .select_related("experience")
         .prefetch_related("missions", "tags")
     )
@@ -102,7 +108,7 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
         queryset = super().get_queryset()
         if self.action == "retrieve":
             queryset = queryset.prefetch_related(
-                Prefetch("projects", queryset=Project.objects.filter(is_visible=True)),
+                Prefetch("projects", queryset=visible_projects()),
                 Prefetch(
                     "certifications",
                     queryset=Certification.objects.filter(is_visible=True),

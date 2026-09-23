@@ -10,7 +10,14 @@ from datetime import date
 import pytest
 from django.urls import reverse
 
-from experience.models import Certification, Methodology, Project, Skill, Tool
+from experience.models import (
+    Certification,
+    Methodology,
+    ProfessionalExperience,
+    Project,
+    Skill,
+    Tool,
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -112,6 +119,26 @@ def test_detail_returns_visible_projects_and_certifications(api_client, route):
         "projects": [{"id": project.id, "title": "Portfolio"}],
         "certifications": [{"id": certification.id, "name": "PCAP"}],
     }
+
+
+def test_detail_hides_projects_of_invisible_experiences(api_client, route):
+    """Hiding an experience hides its projects here too, as on projects/."""
+    basename, _, model = route
+    tag = model.objects.create(name="Python")
+    hidden_experience = ProfessionalExperience.objects.create(
+        company="Secret Corp",
+        position="Developer",
+        start_date=date(2020, 1, 1),
+        is_visible=False,
+    )
+    hidden_job_project = make_project(title="Hidden job", experience=hidden_experience)
+    side_project = make_project(title="Side")
+    for entry in (hidden_job_project, side_project):
+        entry.tags.add(tag)
+
+    response = api_client.get(detail_url(basename, tag.id))
+
+    assert response.json()["projects"] == [{"id": side_project.id, "title": "Side"}]
 
 
 def test_detail_of_tag_of_another_kind_is_not_found(api_client, route):
