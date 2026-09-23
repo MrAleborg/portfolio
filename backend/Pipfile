@@ -4,11 +4,14 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-django = "*"
+django = "~=6.1"
 djangorestframework = "*"
-djoser = "*"
+django-cors-headers = "*"
+django-environ = "*"
 
 [dev-packages]
+ruff = "*"
+pytest-django = "*"
 
 [requires]
 python_version = "3.12"
