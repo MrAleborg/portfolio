@@ -1,4 +1,4 @@
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from rest_framework import viewsets
 from rest_framework.exceptions import ValidationError
 
@@ -14,10 +14,25 @@ from experience.models import (
 from experience.serializers import (
     CertificationSerializer,
     EducationSerializer,
+    ProjectSerializer,
     SpecializationSerializer,
     TagDetailSerializer,
     TagSerializer,
 )
+
+
+def parse_id(request, name):
+    """Return query parameter `name` as an int, or None when it is absent.
+
+    A value that is not an integer is a client error (400).
+    """
+    value = request.query_params.get(name)
+    if value is None:
+        return None
+    try:
+        return int(value)
+    except ValueError:
+        raise ValidationError({name: [f"A valid {name} id is required."]}) from None
 
 
 class EducationViewSet(viewsets.ReadOnlyModelViewSet):
@@ -37,14 +52,35 @@ class CertificationViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        tag = self.request.query_params.get("tag")
-        if tag is not None:
-            try:
-                tag_id = int(tag)
-            except ValueError:
-                raise ValidationError(
-                    {"tag": ["A valid tag id is required."]}
-                ) from None
+        tag_id = parse_id(self.request, "tag")
+        if tag_id is not None:
+            queryset = queryset.filter(tags=tag_id)
+        return queryset
+
+
+class ProjectViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = (
+        Project.objects.filter(is_visible=True)
+        .filter(Q(experience__isnull=True) | Q(experience__is_visible=True))
+        .select_related("experience")
+        .prefetch_related("missions", "tags")
+    )
+    serializer_class = ProjectSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        experience_id = parse_id(self.request, "experience")
+        if experience_id is not None:
+            queryset = queryset.filter(experience=experience_id)
+        side_project = self.request.query_params.get("side_project")
+        if side_project == "true":
+            queryset = queryset.filter(experience__isnull=True)
+        elif side_project == "false":
+            queryset = queryset.filter(experience__isnull=False)
+        elif side_project is not None:
+            raise ValidationError({"side_project": ["Must be true or false."]})
+        tag_id = parse_id(self.request, "tag")
+        if tag_id is not None:
             queryset = queryset.filter(tags=tag_id)
         return queryset
 

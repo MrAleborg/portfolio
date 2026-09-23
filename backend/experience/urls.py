@@ -9,6 +9,7 @@ router.register("education", views.EducationViewSet, basename="education")
 router.register(
     "certifications", views.CertificationViewSet, basename="certification"
 )
+router.register("projects", views.ProjectViewSet, basename="project")
 router.register(
     "specializations", views.SpecializationViewSet, basename="specialization"
 )

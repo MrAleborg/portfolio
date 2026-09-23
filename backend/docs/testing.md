@@ -24,6 +24,8 @@ resource:
 |---|---|
 | [`conftest.py`](../experience/tests/conftest.py) | Shared fixtures (`api_client`) |
 | [`test_education.py`](../experience/tests/test_education.py) | `education/` |
+| [`test_certifications.py`](../experience/tests/test_certifications.py) | `certifications/` (with `?tag=` filter) |
+| [`test_specializations.py`](../experience/tests/test_specializations.py) | `specializations/` |
 | [`test_tags.py`](../experience/tests/test_tags.py) | `skills/`, `tools/`, `methodologies/` |
 
 Each file starts with a docstring summarizing the behavior it pins down, and
@@ -52,6 +54,8 @@ The API is public and read-only; content is managed in the Django admin.
 | List of a resource | `200` with a plain JSON list (no pagination) |
 | Hidden entry (`is_visible=False`) | Left out of lists, `404` on its detail route |
 | Unknown id | `404` |
+| Filter on an unknown id (e.g. `?tag=999`) | `200` with an empty list |
+| Filter with a non-integer id (e.g. `?tag=python`) | `400` |
 | `POST` on a list, `PUT`/`PATCH`/`DELETE` on a detail | `405` |
 | Internal fields (`is_visible`, `display_order`, `created_at`, `updated_at`) | Never returned |
 | Ordering | `display_order`, then newest date (`start_date` or `issue_date`) |

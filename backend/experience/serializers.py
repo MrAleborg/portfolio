@@ -1,6 +1,13 @@
 from rest_framework import serializers
 
-from experience.models import Certification, Education, Project, Specialization, Tag
+from experience.models import (
+    Certification,
+    Education,
+    ProfessionalExperience,
+    Project,
+    Specialization,
+    Tag,
+)
 
 # Public fields shared by every CredentialEntry (certifications, specializations).
 CREDENTIAL_FIELDS = [
@@ -66,6 +73,37 @@ class ProjectSummarySerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = ["id", "title"]
+
+
+class ExperienceSummarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProfessionalExperience
+        fields = ["id", "company", "position"]
+
+
+class ProjectSerializer(serializers.ModelSerializer):
+    """experience is null for a side project; missions are plain strings."""
+
+    experience = ExperienceSummarySerializer(read_only=True)
+    missions = serializers.SlugRelatedField(
+        many=True, read_only=True, slug_field="description"
+    )
+    tags = TagWithKindSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Project
+        fields = [
+            "id",
+            "title",
+            "start_date",
+            "end_date",
+            "is_current",
+            "description",
+            "achievements",
+            "experience",
+            "missions",
+            "tags",
+        ]
 
 
 class CertificationSummarySerializer(serializers.ModelSerializer):
