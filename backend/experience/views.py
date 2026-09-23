@@ -1,5 +1,6 @@
 from django.db.models import Prefetch
 from rest_framework import viewsets
+from rest_framework.exceptions import ValidationError
 
 from experience.models import (
     Certification,
@@ -7,9 +8,11 @@ from experience.models import (
     Methodology,
     Project,
     Skill,
+    Specialization,
     Tool,
 )
 from experience.serializers import (
+    CertificationSerializer,
     EducationSerializer,
     TagDetailSerializer,
     TagSerializer,
@@ -19,6 +22,30 @@ from experience.serializers import (
 class EducationViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Education.objects.filter(is_visible=True)
     serializer_class = EducationSerializer
+
+
+class CertificationViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Certification.objects.filter(is_visible=True).prefetch_related(
+        "tags",
+        Prefetch(
+            "specializations",
+            queryset=Specialization.objects.filter(is_visible=True),
+        ),
+    )
+    serializer_class = CertificationSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        tag = self.request.query_params.get("tag")
+        if tag is not None:
+            try:
+                tag_id = int(tag)
+            except ValueError:
+                raise ValidationError(
+                    {"tag": ["A valid tag id is required."]}
+                ) from None
+            queryset = queryset.filter(tags=tag_id)
+        return queryset
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):

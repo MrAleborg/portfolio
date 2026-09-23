@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from experience.models import Certification, Education, Project, Tag
+from experience.models import Certification, Education, Project, Specialization, Tag
 
 
 class EducationSerializer(serializers.ModelSerializer):
@@ -24,6 +24,41 @@ class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = ["id", "name"]
+
+
+class TagWithKindSerializer(TagSerializer):
+    """For entries that mix tag kinds, so the frontend can group them."""
+
+    class Meta(TagSerializer.Meta):
+        fields = [*TagSerializer.Meta.fields, "kind"]
+
+
+class SpecializationSummarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Specialization
+        fields = ["id", "name"]
+
+
+class CertificationSerializer(serializers.ModelSerializer):
+    """The view must prefetch specializations filtered on is_visible."""
+
+    tags = TagWithKindSerializer(many=True, read_only=True)
+    specializations = SpecializationSummarySerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Certification
+        fields = [
+            "id",
+            "name",
+            "issuer",
+            "issue_date",
+            "expiration_date",
+            "credential_id",
+            "credential_url",
+            "description",
+            "tags",
+            "specializations",
+        ]
 
 
 class ProjectSummarySerializer(serializers.ModelSerializer):
