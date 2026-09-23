@@ -2,6 +2,18 @@ from rest_framework import serializers
 
 from experience.models import Certification, Education, Project, Specialization, Tag
 
+# Public fields shared by every CredentialEntry (certifications, specializations).
+CREDENTIAL_FIELDS = [
+    "id",
+    "name",
+    "issuer",
+    "issue_date",
+    "expiration_date",
+    "credential_id",
+    "credential_url",
+    "description",
+]
+
 
 class EducationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -47,18 +59,7 @@ class CertificationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Certification
-        fields = [
-            "id",
-            "name",
-            "issuer",
-            "issue_date",
-            "expiration_date",
-            "credential_id",
-            "credential_url",
-            "description",
-            "tags",
-            "specializations",
-        ]
+        fields = [*CREDENTIAL_FIELDS, "tags", "specializations"]
 
 
 class ProjectSummarySerializer(serializers.ModelSerializer):
@@ -71,6 +72,16 @@ class CertificationSummarySerializer(serializers.ModelSerializer):
     class Meta:
         model = Certification
         fields = ["id", "name"]
+
+
+class SpecializationSerializer(serializers.ModelSerializer):
+    """The view must prefetch certifications filtered on is_visible."""
+
+    certifications = CertificationSummarySerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Specialization
+        fields = [*CREDENTIAL_FIELDS, "certifications"]
 
 
 class TagDetailSerializer(TagSerializer):

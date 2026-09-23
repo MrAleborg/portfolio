@@ -14,6 +14,7 @@ from experience.models import (
 from experience.serializers import (
     CertificationSerializer,
     EducationSerializer,
+    SpecializationSerializer,
     TagDetailSerializer,
     TagSerializer,
 )
@@ -46,6 +47,16 @@ class CertificationViewSet(viewsets.ReadOnlyModelViewSet):
                 ) from None
             queryset = queryset.filter(tags=tag_id)
         return queryset
+
+
+class SpecializationViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Specialization.objects.filter(is_visible=True).prefetch_related(
+        Prefetch(
+            "certifications",
+            queryset=Certification.objects.filter(is_visible=True),
+        ),
+    )
+    serializer_class = SpecializationSerializer
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
