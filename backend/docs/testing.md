@@ -15,6 +15,17 @@ pipenv run pytest experience/tests/test_tags.py -k skill   # one file, one kind
 [`pytest.ini`](../pytest.ini) and runs every test against a fresh test
 database, rolled back after each test.
 
+## Demo data for manual testing
+
+To try the API by hand, fill the local database with fictional content:
+
+```bash
+pipenv run python manage.py reset_demo
+```
+
+See [demo_data.md](demo_data.md) for the three commands (`seed_demo`,
+`flush_demo`, `reset_demo`), the data they create and what to check.
+
 ## Layout
 
 Tests live in each app's `tests/` folder, one file per API resource. Shared
@@ -32,6 +43,7 @@ fixtures are in [`conftest.py`](../conftest.py) at the backend root
 | [`test_certifications.py`](../experience/tests/test_certifications.py) | `certifications/` (with `?tag=` filter) |
 | [`test_specializations.py`](../experience/tests/test_specializations.py) | `specializations/` |
 | [`test_tags.py`](../experience/tests/test_tags.py) | `skills/`, `tools/`, `methodologies/` |
+| [`test_demo_commands.py`](../experience/tests/test_demo_commands.py) | The `seed_demo`, `flush_demo` and `reset_demo` management commands |
 
 Each file starts with a docstring summarizing the behavior it pins down, and
 each test has a one-line docstring explaining why it exists.
