@@ -78,9 +78,7 @@ class CertificationViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class ProfessionalExperienceViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = ProfessionalExperience.objects.filter(
-        is_visible=True
-    ).prefetch_related(
+    queryset = ProfessionalExperience.objects.filter(is_visible=True).prefetch_related(
         Prefetch(
             "projects",
             queryset=visible_projects().prefetch_related("missions", "tags"),

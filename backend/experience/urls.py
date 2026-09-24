@@ -6,9 +6,7 @@ app_name = "experience"
 
 router = DefaultRouter()
 router.register("education", views.EducationViewSet, basename="education")
-router.register(
-    "certifications", views.CertificationViewSet, basename="certification"
-)
+router.register("certifications", views.CertificationViewSet, basename="certification")
 router.register(
     "professional-experiences",
     views.ProfessionalExperienceViewSet,
