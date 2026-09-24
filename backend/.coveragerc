@@ -1,0 +1,9 @@
+[run]
+source = .
+omit =
+    */migrations/*
+    */tests/*
+    conftest.py
+    manage.py
+    portfolio/asgi.py
+    portfolio/wsgi.py
