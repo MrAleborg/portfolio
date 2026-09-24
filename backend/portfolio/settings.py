@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+from datetime import timedelta
 from pathlib import Path
 
 import environ
@@ -49,8 +50,12 @@ INSTALLED_APPS = [
     # Third party
     'rest_framework',
     'corsheaders',
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
+    'djoser',
     # Local
     'experience',
+    'accounts',
 ]
 
 MIDDLEWARE = [
@@ -130,6 +135,28 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = 'static/'
+
+
+# REST framework and authentication
+# https://www.django-rest-framework.org/api-guide/settings/
+# https://django-rest-framework-simplejwt.readthedocs.io/en/latest/settings.html
+
+REST_FRAMEWORK = {
+    # The public API stays open (default permission AllowAny); a JWT is only
+    # needed on the admin routes.
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'TOKEN_OBTAIN_SERIALIZER': 'accounts.serializers.StaffTokenObtainPairSerializer',
+}
 
 
 # CORS (origins allowed to call the API, e.g. the React dev server)

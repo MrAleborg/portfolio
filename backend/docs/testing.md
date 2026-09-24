@@ -17,12 +17,13 @@ database, rolled back after each test.
 
 ## Layout
 
-Tests live in [`experience/tests/`](../experience/tests/), one file per API
-resource:
+Tests live in each app's `tests/` folder, one file per API resource. Shared
+fixtures are in [`conftest.py`](../conftest.py) at the backend root
+(`api_client`, and a fast password hasher applied to every test).
 
 | File | Covers |
 |---|---|
-| [`conftest.py`](../experience/tests/conftest.py) | Shared fixtures (`api_client`, and a fast password hasher applied to every test) |
+| [`accounts/tests/test_auth.py`](../accounts/tests/test_auth.py) | `api/v1/auth/`: JWT login, refresh, logout, `users/me/`, `set_password`, and routes that are not exposed |
 | [`test_api_root.py`](../experience/tests/test_api_root.py) | `api/v1/experience/` (the list of collections) |
 | [`test_admin.py`](../experience/tests/test_admin.py) | Django admin pages of every content model |
 | [`test_education.py`](../experience/tests/test_education.py) | `education/` |
