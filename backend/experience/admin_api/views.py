@@ -2,7 +2,13 @@ from rest_framework import viewsets
 from rest_framework.permissions import IsAdminUser
 
 from experience.admin_api import serializers
-from experience.models import Education, ProfessionalExperience
+from experience.models import (
+    Education,
+    Methodology,
+    ProfessionalExperience,
+    Skill,
+    Tool,
+)
 
 
 class AdminViewSet(viewsets.ModelViewSet):
@@ -19,3 +25,18 @@ class EducationViewSet(AdminViewSet):
 class ProfessionalExperienceViewSet(AdminViewSet):
     queryset = ProfessionalExperience.objects.all()
     serializer_class = serializers.ProfessionalExperienceSerializer
+
+
+class SkillViewSet(AdminViewSet):
+    queryset = Skill.objects.all()
+    serializer_class = serializers.SkillSerializer
+
+
+class ToolViewSet(AdminViewSet):
+    queryset = Tool.objects.all()
+    serializer_class = serializers.ToolSerializer
+
+
+class MethodologyViewSet(AdminViewSet):
+    queryset = Methodology.objects.all()
+    serializer_class = serializers.MethodologySerializer

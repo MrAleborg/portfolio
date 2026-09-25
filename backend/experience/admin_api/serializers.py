@@ -2,7 +2,13 @@
 
 from rest_framework import serializers
 
-from experience.models import Education, ProfessionalExperience
+from experience.models import (
+    Education,
+    Methodology,
+    ProfessionalExperience,
+    Skill,
+    Tool,
+)
 
 # Fields of every entry that the public API hides.
 INTERNAL_FIELDS = ["display_order", "is_visible", "created_at", "updated_at"]
@@ -73,3 +79,40 @@ class ProfessionalExperienceSerializer(DateRangeSerializer):
             "description",
             *INTERNAL_FIELDS,
         ]
+
+
+class TagSerializer(serializers.ModelSerializer):
+    """Base for the tag kinds; subclasses set Meta.model to their proxy.
+
+    Saving through the proxy sets the kind. A name is unique within its kind;
+    DRF does not derive that validator from the (name, kind) constraint since
+    kind is not a field here, so it is checked by hand.
+    """
+
+    class Meta:
+        fields = ["id", "name"]
+
+    def validate_name(self, value):
+        others = self.Meta.model.objects.filter(name=value)
+        if self.instance is not None:
+            others = others.exclude(pk=self.instance.pk)
+        if others.exists():
+            raise serializers.ValidationError(
+                f"A {self.Meta.model._meta.verbose_name} with this name already exists."
+            )
+        return value
+
+
+class SkillSerializer(TagSerializer):
+    class Meta(TagSerializer.Meta):
+        model = Skill
+
+
+class ToolSerializer(TagSerializer):
+    class Meta(TagSerializer.Meta):
+        model = Tool
+
+
+class MethodologySerializer(TagSerializer):
+    class Meta(TagSerializer.Meta):
+        model = Methodology
