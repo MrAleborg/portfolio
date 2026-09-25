@@ -4,7 +4,8 @@ The API is public and read-only. It is built with Django REST Framework in the
 `experience` app ([`experience/urls.py`](../experience/urls.py),
 [`experience/views.py`](../experience/views.py),
 [`experience/serializers.py`](../experience/serializers.py)). Content is
-managed in the Django admin (`/admin/`).
+managed through the [admin API](admin_api.md) (`/api/v1/admin/`, for the
+frontend) or the Django admin (`/admin/`).
 
 Every path below is relative to the base URL `/api/v1/experience/`.
 

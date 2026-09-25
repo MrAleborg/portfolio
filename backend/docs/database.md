@@ -162,7 +162,10 @@ model gets its own copy of the fields.
   an experience also deletes the rows under it.
 - **Achievements (valorization elements) are a JSON list of strings** on the
   project instead of a separate table.
-- **Validation lives in the serializers, not the database.** For example,
-  `end_date` must not be before `start_date`.
+- **Date order is enforced by the database.** Check constraints refuse an
+  `end_date` before the `start_date` and an `expiration_date` before the
+  `issue_date`, so the rule holds for every writer. The Django admin reports it
+  as a form error, and the [admin API](admin_api.md) as a `400` on the end
+  field.
 - **`display_order` and `is_visible`** control what the frontend shows and in
   which order without deleting data.

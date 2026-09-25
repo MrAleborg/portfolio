@@ -50,11 +50,35 @@ pipenv run python manage.py reset_demo
 See [demo_data.md](demo_data.md) for the three commands (`seed_demo`,
 `flush_demo`, `reset_demo`), the data they create and what to check.
 
+## Manual testing of the admin API
+
+[`portfolio_admin_api.insomnia.json`](portfolio_admin_api.insomnia.json) is an
+[Insomnia](https://insomnia.rest/) collection that exercises every admin API
+route over real HTTP, one folder per resource. Each request name ends with the
+expected status (e.g. `Create ending before it starts → 400`).
+
+1. Start the server (`pipenv run python manage.py runserver`) with a staff
+   account (`createsuperuser`).
+2. Import the file in Insomnia and set `password` (and `username` or
+   `base_url` if needed) in the Base Environment.
+3. Run the folders in order.
+
+Requests are chained: the access token is read from the Login response (and
+Login is sent again once the token is 14 minutes old), and detail requests
+take their id from the matching Create request. The collection writes to the
+local database; its last folder deletes what it created. After running it,
+send the Create requests again before the others, since the chained ids then
+point to deleted rows.
+
 ## Layout
 
 Tests live in each app's `tests/` folder, one file per API resource. Shared
 fixtures are in [`conftest.py`](../conftest.py) at the backend root
-(`api_client`, and a fast password hasher applied to every test).
+(`api_client`, `staff_api_client` authenticated as the site admin,
+`user_api_client` authenticated as a user who is not staff, and a fast
+password hasher applied to every test). The admin API tests share a few URL
+and timestamp helpers in
+[`admin_api/helpers.py`](../experience/tests/admin_api/helpers.py).
 
 | File | Covers |
 |---|---|
@@ -68,6 +92,10 @@ fixtures are in [`conftest.py`](../conftest.py) at the backend root
 | [`test_specializations.py`](../experience/tests/test_specializations.py) | `specializations/` |
 | [`test_tags.py`](../experience/tests/test_tags.py) | `skills/`, `tools/`, `methodologies/` |
 | [`test_demo_commands.py`](../experience/tests/test_demo_commands.py) | The `seed_demo`, `flush_demo` and `reset_demo` management commands |
+| [`test_date_constraints.py`](../experience/tests/test_date_constraints.py) | The database rules on date order |
+| [`admin_api/test_permissions.py`](../experience/tests/admin_api/test_permissions.py) | `api/v1/admin/`: staff-only access on every route, and the root |
+| [`admin_api/test_dates.py`](../experience/tests/admin_api/test_dates.py) | Date order validation on every admin route with dates |
+| `admin_api/test_<resource>.py` | CRUD on each admin route (same resources as the public API) |
 
 Each file starts with a docstring summarizing the behavior it pins down, and
 each test has a one-line docstring explaining why it exists.
@@ -88,7 +116,8 @@ each test has a one-line docstring explaining why it exists.
 
 ## Rules every endpoint is tested against
 
-The API is public and read-only; content is managed in the Django admin.
+The public API is read-only; content is managed in the admin API or the
+Django admin.
 
 | Rule | Expected |
 |---|---|
@@ -102,3 +131,16 @@ The API is public and read-only; content is managed in the Django admin.
 | `POST` on a list, `PUT`/`PATCH`/`DELETE` on a detail | `405` |
 | Internal fields (`is_visible`, `display_order`, `created_at`, `updated_at`) | Never returned |
 | Ordering | `display_order`, then newest date (`start_date` or `issue_date`) |
+
+The admin API (`api/v1/admin/`, see [admin_api.md](admin_api.md)) is tested
+against these rules instead:
+
+| Rule | Expected |
+|---|---|
+| No token / token of a non-staff user | `401` / `403`, on every route and method |
+| Hidden entries | Listed and reachable, like any other |
+| Internal fields | Returned; `display_order` and `is_visible` writable |
+| Create / update / delete | `201` / `200` / `204` |
+| Missing required field, unknown related id, invalid value | `400` naming the field |
+| End date before start date (or expiration before issue) | `400` on the end field, also on a `PATCH` of one date |
+| Unknown id | `404` |
