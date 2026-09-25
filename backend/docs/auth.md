@@ -4,7 +4,8 @@ The site admin logs in with a JSON Web Token (JWT), using
 [djoser](https://djoser.readthedocs.io/) and
 [Simple JWT](https://django-rest-framework-simplejwt.readthedocs.io/). The
 routes live in the `accounts` app ([`accounts/urls.py`](../accounts/urls.py)).
-There is no signup: the admin account is created on the server.
+There is no signup: the admin account is created on the server. The token
+gives access to the [admin API](admin_api.md), where content is edited.
 
 ```bash
 pipenv run python manage.py createsuperuser
