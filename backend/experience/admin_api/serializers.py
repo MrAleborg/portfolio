@@ -1,11 +1,14 @@
 """Serializers of the admin API: every field, writable except timestamps."""
 
+from django.db import transaction
 from rest_framework import serializers
 
 from experience.models import (
     Education,
     Methodology,
+    Mission,
     ProfessionalExperience,
+    Project,
     Skill,
     Tool,
 )
@@ -79,6 +82,61 @@ class ProfessionalExperienceSerializer(DateRangeSerializer):
             "description",
             *INTERNAL_FIELDS,
         ]
+
+
+class MissionListField(serializers.ListField):
+    """A project's missions as plain strings, in display order."""
+
+    child = serializers.CharField()
+
+    def to_representation(self, missions):
+        return [mission.description for mission in missions.all()]
+
+
+class ProjectSerializer(DateRangeSerializer):
+    """Sending missions replaces them all, in the order sent."""
+
+    achievements = serializers.ListField(child=serializers.CharField(), required=False)
+    missions = MissionListField(required=False)
+
+    class Meta:
+        model = Project
+        fields = [
+            "id",
+            "title",
+            "start_date",
+            "end_date",
+            "is_current",
+            "description",
+            "achievements",
+            "experience",
+            "missions",
+            "tags",
+            *INTERNAL_FIELDS,
+        ]
+
+    @transaction.atomic
+    def create(self, validated_data):
+        missions = validated_data.pop("missions", [])
+        project = super().create(validated_data)
+        self.set_missions(project, missions)
+        return project
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        missions = validated_data.pop("missions", None)
+        project = super().update(instance, validated_data)
+        if missions is not None:
+            project.missions.all().delete()
+            self.set_missions(project, missions)
+        return project
+
+    @staticmethod
+    def set_missions(project, descriptions):
+        Mission.objects.bulk_create(
+            Mission(project=project, description=description, display_order=order)
+            for order, description in enumerate(descriptions)
+        )
 
 
 class TagSerializer(serializers.ModelSerializer):

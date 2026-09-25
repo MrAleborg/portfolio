@@ -17,6 +17,7 @@ ROOT_URL = reverse("experience-admin:api-root")
 BASENAMES = [
     "education",
     "professionalexperience",
+    "project",
     "skill",
     "tool",
     "methodology",
@@ -70,6 +71,7 @@ def test_root_lists_the_collections(staff_api_client):
     assert set(response.json()) == {
         "education",
         "professional-experiences",
+        "projects",
         "skills",
         "tools",
         "methodologies",
