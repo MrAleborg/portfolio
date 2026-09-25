@@ -1,0 +1,7 @@
+# Caddy gets and renews the HTTPS certificate for the domain by itself.
+# The frontend will get its own site block here.
+
+{$API_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy backend:8000
+}
