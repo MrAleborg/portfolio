@@ -314,3 +314,19 @@ def test_detail_is_read_only(api_client, method):
     response = getattr(api_client, method)(detail_url(project.id))
 
     assert response.status_code == 405
+
+
+def test_str_names_the_company_or_flags_a_side_project():
+    """The admin labels a project with its company, or as a side project."""
+    work = make_project(title="Billing", experience=make_experience(company="Acme"))
+    side = make_project(title="Portfolio")
+
+    assert str(work) == "Billing (Acme)"
+    assert str(side) == "Portfolio (side project)"
+
+
+def test_mission_str_is_truncated_description():
+    """A mission is labelled by the first 50 characters of its description."""
+    mission = Mission.objects.create(project=make_project(), description="x" * 60)
+
+    assert str(mission) == "x" * 50
