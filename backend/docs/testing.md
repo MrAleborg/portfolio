@@ -50,6 +50,26 @@ pipenv run python manage.py reset_demo
 See [demo_data.md](demo_data.md) for the three commands (`seed_demo`,
 `flush_demo`, `reset_demo`), the data they create and what to check.
 
+## Manual testing of the admin API
+
+[`portfolio_admin_api.insomnia.json`](portfolio_admin_api.insomnia.json) is an
+[Insomnia](https://insomnia.rest/) collection that exercises every admin API
+route over real HTTP, one folder per resource. Each request name ends with the
+expected status (e.g. `Create ending before it starts → 400`).
+
+1. Start the server (`pipenv run python manage.py runserver`) with a staff
+   account (`createsuperuser`).
+2. Import the file in Insomnia and set `password` (and `username` or
+   `base_url` if needed) in the Base Environment.
+3. Run the folders in order.
+
+Requests are chained: the access token is read from the Login response (and
+Login is sent again once the token is 14 minutes old), and detail requests
+take their id from the matching Create request. The collection writes to the
+local database; its last folder deletes what it created. After running it,
+send the Create requests again before the others, since the chained ids then
+point to deleted rows.
+
 ## Layout
 
 Tests live in each app's `tests/` folder, one file per API resource. Shared

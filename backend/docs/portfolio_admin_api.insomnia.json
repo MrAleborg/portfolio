@@ -1,0 +1,2378 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-09-25T00:00:00.000Z",
+  "__export_source": "insomnia.desktop.app:v10.0.0",
+  "resources": [
+    {
+      "_id": "wrk_portfolio_admin",
+      "_type": "workspace",
+      "parentId": null,
+      "name": "Portfolio admin API",
+      "scope": "collection",
+      "description": "Manual tests of the admin API. Start the server (`pipenv run python manage.py runserver`), set `password` in the environment, then run the folders in order. Each request name ends with the expected status."
+    },
+    {
+      "_id": "env_base",
+      "_type": "environment",
+      "parentId": "wrk_portfolio_admin",
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://localhost:8000",
+        "username": "admin",
+        "password": "",
+        "access": "{% response 'body', 'req_login', 'b64::JC5hY2Nlc3M=::46b', 'when-expired', 840 %}"
+      }
+    },
+    {
+      "_id": "fld_01",
+      "_type": "request_group",
+      "parentId": "wrk_portfolio_admin",
+      "name": "01. Auth",
+      "description": "Login is also sent automatically when the token expires.",
+      "metaSortKey": 1
+    },
+    {
+      "_id": "req_login",
+      "_type": "request",
+      "parentId": "fld_01",
+      "name": "Login → 200",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/auth/jwt/create/",
+      "description": "Returns `access` and `refresh`. The environment reads `access` from here.",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"username\": \"{{ _.username }}\",\n  \"password\": \"{{ _.password }}\"\n}"
+      },
+      "authentication": {},
+      "metaSortKey": 1
+    },
+    {
+      "_id": "req_002",
+      "_type": "request",
+      "parentId": "fld_01",
+      "name": "Login with a wrong password → 401",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/auth/jwt/create/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"username\": \"{{ _.username }}\",\n  \"password\": \"wrong\"\n}"
+      },
+      "authentication": {},
+      "metaSortKey": 2
+    },
+    {
+      "_id": "req_003",
+      "_type": "request",
+      "parentId": "fld_01",
+      "name": "Current user → 200",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/auth/users/me/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 3
+    },
+    {
+      "_id": "fld_02",
+      "_type": "request_group",
+      "parentId": "wrk_portfolio_admin",
+      "name": "02. Access control",
+      "description": "A non-staff user cannot get a token at all, so the 403 case is only covered by the automated tests.",
+      "metaSortKey": 2
+    },
+    {
+      "_id": "req_004",
+      "_type": "request",
+      "parentId": "fld_02",
+      "name": "Admin root → 200",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/admin/",
+      "description": "Lists the 8 collections.",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 4
+    },
+    {
+      "_id": "req_005",
+      "_type": "request",
+      "parentId": "fld_02",
+      "name": "Admin root without token → 401",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/admin/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {},
+      "metaSortKey": 5
+    },
+    {
+      "_id": "req_006",
+      "_type": "request",
+      "parentId": "fld_02",
+      "name": "Admin root with a bad token → 401",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/admin/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "not-a-token"
+      },
+      "metaSortKey": 6
+    },
+    {
+      "_id": "req_007",
+      "_type": "request",
+      "parentId": "fld_02",
+      "name": "Create education without token → 401",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/education/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"institution\": \"X\",\n  \"degree\": \"Y\",\n  \"start_date\": \"2024-01-01\"\n}"
+      },
+      "authentication": {},
+      "metaSortKey": 7
+    },
+    {
+      "_id": "req_008",
+      "_type": "request",
+      "parentId": "fld_02",
+      "name": "Public API still refuses writes → 405",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/experience/education/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"institution\": \"X\"\n}"
+      },
+      "authentication": {},
+      "metaSortKey": 8
+    },
+    {
+      "_id": "fld_03",
+      "_type": "request_group",
+      "parentId": "wrk_portfolio_admin",
+      "name": "03. Education",
+      "description": "",
+      "metaSortKey": 3
+    },
+    {
+      "_id": "req_009",
+      "_type": "request",
+      "parentId": "fld_03",
+      "name": "List (hidden entries included) → 200",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/admin/education/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 9
+    },
+    {
+      "_id": "req_edu_create",
+      "_type": "request",
+      "parentId": "fld_03",
+      "name": "Create → 201",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/education/",
+      "description": "Response has every field, including display_order, is_visible and timestamps.",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"institution\": \"Université de Rennes\",\n  \"degree\": \"Master\",\n  \"field_of_study\": \"Computer Science\",\n  \"grade\": \"Distinction\",\n  \"location\": \"Rennes\",\n  \"start_date\": \"2015-09-01\",\n  \"end_date\": \"2017-06-30\",\n  \"description\": \"Created from Insomnia.\",\n  \"display_order\": 0,\n  \"is_visible\": true\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 10
+    },
+    {
+      "_id": "req_011",
+      "_type": "request",
+      "parentId": "fld_03",
+      "name": "Create with required fields only → 201",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/education/",
+      "description": "end_date null, is_current true, is_visible true, display_order 0.",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"institution\": \"IUT\",\n  \"degree\": \"DUT\",\n  \"start_date\": \"2012-09-01\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 11
+    },
+    {
+      "_id": "req_012",
+      "_type": "request",
+      "parentId": "fld_03",
+      "name": "Create with read-only fields → 201, they are ignored",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/education/",
+      "description": "id is not 999, is_current is false, created_at is now.",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"id\": 999,\n  \"institution\": \"School\",\n  \"degree\": \"BSc\",\n  \"start_date\": \"2012-09-01\",\n  \"end_date\": \"2015-06-30\",\n  \"is_current\": true,\n  \"created_at\": \"2000-01-01T00:00:00Z\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 12
+    },
+    {
+      "_id": "req_013",
+      "_type": "request",
+      "parentId": "fld_03",
+      "name": "Create without required fields → 400",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/education/",
+      "description": "Errors on institution, degree and start_date.",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 13
+    },
+    {
+      "_id": "req_014",
+      "_type": "request",
+      "parentId": "fld_03",
+      "name": "Create ending before it starts → 400",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/education/",
+      "description": "Error on end_date.",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"institution\": \"X\",\n  \"degree\": \"Y\",\n  \"start_date\": \"2024-01-02\",\n  \"end_date\": \"2024-01-01\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 14
+    },
+    {
+      "_id": "req_015",
+      "_type": "request",
+      "parentId": "fld_03",
+      "name": "Retrieve → 200",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/admin/education/{% response 'body', 'req_edu_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 15
+    },
+    {
+      "_id": "req_016",
+      "_type": "request",
+      "parentId": "fld_03",
+      "name": "Update (PUT) → 200",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/api/v1/admin/education/{% response 'body', 'req_edu_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "Omitted optional fields (grade, location...) keep their values.",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"institution\": \"Université de Rennes 1\",\n  \"degree\": \"Master's degree\",\n  \"start_date\": \"2015-09-01\",\n  \"end_date\": \"2017-06-30\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 16
+    },
+    {
+      "_id": "req_017",
+      "_type": "request",
+      "parentId": "fld_03",
+      "name": "PUT without required fields → 400",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/api/v1/admin/education/{% response 'body', 'req_edu_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "Errors on institution and start_date.",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"degree\": \"Master\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 17
+    },
+    {
+      "_id": "req_018",
+      "_type": "request",
+      "parentId": "fld_03",
+      "name": "Hide (PATCH is_visible false) → 200",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/v1/admin/education/{% response 'body', 'req_edu_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"is_visible\": false,\n  \"display_order\": 5\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 18
+    },
+    {
+      "_id": "req_019",
+      "_type": "request",
+      "parentId": "fld_03",
+      "name": "Public detail of the hidden entry → 404",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/experience/education/{% response 'body', 'req_edu_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {},
+      "metaSortKey": 19
+    },
+    {
+      "_id": "req_020",
+      "_type": "request",
+      "parentId": "fld_03",
+      "name": "Admin retrieve of the hidden entry → 200",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/admin/education/{% response 'body', 'req_edu_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "The admin API still reaches it.",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 20
+    },
+    {
+      "_id": "req_021",
+      "_type": "request",
+      "parentId": "fld_03",
+      "name": "Show again → 200",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/v1/admin/education/{% response 'body', 'req_edu_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"is_visible\": true\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 21
+    },
+    {
+      "_id": "req_022",
+      "_type": "request",
+      "parentId": "fld_03",
+      "name": "PATCH only end_date before stored start → 400",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/v1/admin/education/{% response 'body', 'req_edu_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "Checked against the stored start_date (2015-09-01).",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"end_date\": \"2010-01-01\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 22
+    },
+    {
+      "_id": "req_023",
+      "_type": "request",
+      "parentId": "fld_03",
+      "name": "PATCH only start_date after stored end → 400",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/v1/admin/education/{% response 'body', 'req_edu_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "Error reported on end_date.",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"start_date\": \"2020-01-01\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 23
+    },
+    {
+      "_id": "req_024",
+      "_type": "request",
+      "parentId": "fld_03",
+      "name": "PATCH end_date null (ongoing) → 200",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/v1/admin/education/{% response 'body', 'req_edu_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "is_current becomes true.",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"end_date\": null\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 24
+    },
+    {
+      "_id": "req_025",
+      "_type": "request",
+      "parentId": "fld_03",
+      "name": "Retrieve unknown id → 404",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/admin/education/999999/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 25
+    },
+    {
+      "_id": "fld_04",
+      "_type": "request_group",
+      "parentId": "wrk_portfolio_admin",
+      "name": "04. Professional experiences",
+      "description": "",
+      "metaSortKey": 4
+    },
+    {
+      "_id": "req_026",
+      "_type": "request",
+      "parentId": "fld_04",
+      "name": "List → 200",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/admin/professional-experiences/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 26
+    },
+    {
+      "_id": "req_exp_create",
+      "_type": "request",
+      "parentId": "fld_04",
+      "name": "Create → 201",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/professional-experiences/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"company\": \"Insomnia Corp\",\n  \"position\": \"Backend developer\",\n  \"employment_type\": \"contract\",\n  \"company_url\": \"https://insomnia.example\",\n  \"location\": \"Paris\",\n  \"start_date\": \"2021-01-04\",\n  \"description\": \"Created from Insomnia.\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 27
+    },
+    {
+      "_id": "req_028",
+      "_type": "request",
+      "parentId": "fld_04",
+      "name": "Create with required fields only → 201",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/professional-experiences/",
+      "description": "employment_type defaults to full_time.",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"company\": \"Acme\",\n  \"position\": \"Intern\",\n  \"start_date\": \"2016-01-01\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 28
+    },
+    {
+      "_id": "req_029",
+      "_type": "request",
+      "parentId": "fld_04",
+      "name": "Create with an unknown employment_type → 400",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/professional-experiences/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"company\": \"Acme\",\n  \"position\": \"Dev\",\n  \"start_date\": \"2020-01-01\",\n  \"employment_type\": \"volunteer\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 29
+    },
+    {
+      "_id": "req_030",
+      "_type": "request",
+      "parentId": "fld_04",
+      "name": "Create with an invalid company_url → 400",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/professional-experiences/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"company\": \"Acme\",\n  \"position\": \"Dev\",\n  \"start_date\": \"2020-01-01\",\n  \"company_url\": \"not a url\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 30
+    },
+    {
+      "_id": "req_031",
+      "_type": "request",
+      "parentId": "fld_04",
+      "name": "Create ending before it starts → 400",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/professional-experiences/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"company\": \"Acme\",\n  \"position\": \"Dev\",\n  \"start_date\": \"2020-01-02\",\n  \"end_date\": \"2020-01-01\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 31
+    },
+    {
+      "_id": "req_032",
+      "_type": "request",
+      "parentId": "fld_04",
+      "name": "Retrieve (no nested projects) → 200",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/admin/professional-experiences/{% response 'body', 'req_exp_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 32
+    },
+    {
+      "_id": "req_033",
+      "_type": "request",
+      "parentId": "fld_04",
+      "name": "PATCH employment_type and end_date → 200",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/v1/admin/professional-experiences/{% response 'body', 'req_exp_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"employment_type\": \"freelance\",\n  \"end_date\": \"2023-12-31\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 33
+    },
+    {
+      "_id": "req_034",
+      "_type": "request",
+      "parentId": "fld_04",
+      "name": "Update (PUT) → 200",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/api/v1/admin/professional-experiences/{% response 'body', 'req_exp_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"company\": \"Insomnia Corp\",\n  \"position\": \"Lead developer\",\n  \"start_date\": \"2021-01-04\",\n  \"end_date\": null\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 34
+    },
+    {
+      "_id": "fld_05",
+      "_type": "request_group",
+      "parentId": "wrk_portfolio_admin",
+      "name": "05. Tags",
+      "description": "skills/, tools/ and methodologies/ behave the same; the kind comes from the route.",
+      "metaSortKey": 5
+    },
+    {
+      "_id": "req_035",
+      "_type": "request",
+      "parentId": "fld_05",
+      "name": "List skills → 200",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/admin/skills/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 35
+    },
+    {
+      "_id": "req_036",
+      "_type": "request",
+      "parentId": "fld_05",
+      "name": "List tools → 200",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/admin/tools/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 36
+    },
+    {
+      "_id": "req_037",
+      "_type": "request",
+      "parentId": "fld_05",
+      "name": "List methodologies → 200",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/admin/methodologies/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 37
+    },
+    {
+      "_id": "req_skill_create",
+      "_type": "request",
+      "parentId": "fld_05",
+      "name": "Create skill → 201",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/skills/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Insomnia testing\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 38
+    },
+    {
+      "_id": "req_tool_create",
+      "_type": "request",
+      "parentId": "fld_05",
+      "name": "Create tool → 201",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/tools/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Insomnia\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 39
+    },
+    {
+      "_id": "req_methodology_create",
+      "_type": "request",
+      "parentId": "fld_05",
+      "name": "Create methodology → 201",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/methodologies/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Manual testing\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 40
+    },
+    {
+      "_id": "req_041",
+      "_type": "request",
+      "parentId": "fld_05",
+      "name": "Create duplicate skill → 400",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/skills/",
+      "description": "Error on name.",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Insomnia testing\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 41
+    },
+    {
+      "_id": "req_tool_same_name",
+      "_type": "request",
+      "parentId": "fld_05",
+      "name": "Same name as a skill, as a tool → 201",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/tools/",
+      "description": "Names are unique per kind only.",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Insomnia testing\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 42
+    },
+    {
+      "_id": "req_skill_kind_ignored",
+      "_type": "request",
+      "parentId": "fld_05",
+      "name": "Kind in the body is ignored → 201",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/skills/",
+      "description": "The tag appears under skills/, not tools/.",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Kind ignored\",\n  \"kind\": \"tool\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 43
+    },
+    {
+      "_id": "req_044",
+      "_type": "request",
+      "parentId": "fld_05",
+      "name": "Create without name → 400",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/skills/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 44
+    },
+    {
+      "_id": "req_045",
+      "_type": "request",
+      "parentId": "fld_05",
+      "name": "Retrieve skill → 200",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/admin/skills/{% response 'body', 'req_skill_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 45
+    },
+    {
+      "_id": "req_046",
+      "_type": "request",
+      "parentId": "fld_05",
+      "name": "Retrieve the tool id under skills/ → 404",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/admin/skills/{% response 'body', 'req_tool_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "Tag ids are shared, but each route only reaches its kind.",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 46
+    },
+    {
+      "_id": "req_047",
+      "_type": "request",
+      "parentId": "fld_05",
+      "name": "Rename skill → 200",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/v1/admin/skills/{% response 'body', 'req_skill_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Insomnia manual testing\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 47
+    },
+    {
+      "_id": "req_048",
+      "_type": "request",
+      "parentId": "fld_05",
+      "name": "PUT the same name → 200",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/api/v1/admin/skills/{% response 'body', 'req_skill_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "Keeping its own name is not a duplicate.",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Insomnia manual testing\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 48
+    },
+    {
+      "_id": "req_049",
+      "_type": "request",
+      "parentId": "fld_05",
+      "name": "Rename to a taken name → 400",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/v1/admin/skills/{% response 'body', 'req_skill_kind_ignored', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Insomnia manual testing\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 49
+    },
+    {
+      "_id": "req_050",
+      "_type": "request",
+      "parentId": "fld_05",
+      "name": "Delete the extra tool → 204",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/api/v1/admin/tools/{% response 'body', 'req_tool_same_name', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 50
+    },
+    {
+      "_id": "req_051",
+      "_type": "request",
+      "parentId": "fld_05",
+      "name": "Delete the extra skill → 204",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/api/v1/admin/skills/{% response 'body', 'req_skill_kind_ignored', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 51
+    },
+    {
+      "_id": "fld_06",
+      "_type": "request_group",
+      "parentId": "wrk_portfolio_admin",
+      "name": "06. Projects",
+      "description": "Uses the experience and tags created in the previous folders.",
+      "metaSortKey": 6
+    },
+    {
+      "_id": "req_052",
+      "_type": "request",
+      "parentId": "fld_06",
+      "name": "List (hidden included) → 200",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/admin/projects/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 52
+    },
+    {
+      "_id": "req_project_create",
+      "_type": "request",
+      "parentId": "fld_06",
+      "name": "Create work project with tags and missions → 201",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/projects/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"title\": \"Admin API\",\n  \"start_date\": \"2026-09-01\",\n  \"experience\": {% response 'body', 'req_exp_create', 'b64::JC5pZA==::46b', 'no-history', 60 %},\n  \"tags\": [\n    {% response 'body', 'req_skill_create', 'b64::JC5pZA==::46b', 'no-history', 60 %},\n    {% response 'body', 'req_tool_create', 'b64::JC5pZA==::46b', 'no-history', 60 %},\n    {% response 'body', 'req_methodology_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}\n  ],\n  \"missions\": [\n    \"Design the endpoints\",\n    \"Write the tests\",\n    \"Document it\"\n  ],\n  \"achievements\": [\n    \"100% coverage\"\n  ],\n  \"description\": \"Created from Insomnia.\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 53
+    },
+    {
+      "_id": "req_side_project_create",
+      "_type": "request",
+      "parentId": "fld_06",
+      "name": "Create side project with required fields only → 201",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/projects/",
+      "description": "experience null, tags/missions/achievements empty lists.",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"title\": \"Side project\",\n  \"start_date\": \"2026-01-01\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 54
+    },
+    {
+      "_id": "req_055",
+      "_type": "request",
+      "parentId": "fld_06",
+      "name": "Create with an unknown experience → 400",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/projects/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"title\": \"X\",\n  \"start_date\": \"2026-01-01\",\n  \"experience\": 999999\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 55
+    },
+    {
+      "_id": "req_056",
+      "_type": "request",
+      "parentId": "fld_06",
+      "name": "Create with an unknown tag → 400",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/projects/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"title\": \"X\",\n  \"start_date\": \"2026-01-01\",\n  \"tags\": [\n    999999\n  ]\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 56
+    },
+    {
+      "_id": "req_057",
+      "_type": "request",
+      "parentId": "fld_06",
+      "name": "Create with a blank mission → 400",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/projects/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"title\": \"X\",\n  \"start_date\": \"2026-01-01\",\n  \"missions\": [\n    \"Ok\",\n    \"\"\n  ]\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 57
+    },
+    {
+      "_id": "req_058",
+      "_type": "request",
+      "parentId": "fld_06",
+      "name": "Create with missions not a list → 400",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/projects/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"title\": \"X\",\n  \"start_date\": \"2026-01-01\",\n  \"missions\": \"Design\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 58
+    },
+    {
+      "_id": "req_059",
+      "_type": "request",
+      "parentId": "fld_06",
+      "name": "Create with a non-string achievement → 400",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/projects/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"title\": \"X\",\n  \"start_date\": \"2026-01-01\",\n  \"achievements\": [\n    {\n      \"award\": \"Innovation\"\n    }\n  ]\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 59
+    },
+    {
+      "_id": "req_060",
+      "_type": "request",
+      "parentId": "fld_06",
+      "name": "Create ending before it starts → 400",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/projects/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"title\": \"X\",\n  \"start_date\": \"2026-01-02\",\n  \"end_date\": \"2026-01-01\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 60
+    },
+    {
+      "_id": "req_061",
+      "_type": "request",
+      "parentId": "fld_06",
+      "name": "Retrieve → 200",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/admin/projects/{% response 'body', 'req_project_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "experience and tags are ids.",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 61
+    },
+    {
+      "_id": "req_062",
+      "_type": "request",
+      "parentId": "fld_06",
+      "name": "Public detail (nested experience, tag kinds) → 200",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/experience/projects/{% response 'body', 'req_project_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {},
+      "metaSortKey": 62
+    },
+    {
+      "_id": "req_063",
+      "_type": "request",
+      "parentId": "fld_06",
+      "name": "Reorder and edit missions → 200",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/v1/admin/projects/{% response 'body', 'req_project_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "The list replaces every mission, in this order.",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"missions\": [\n    \"Write the tests\",\n    \"Design the endpoints\",\n    \"Review\"\n  ]\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 63
+    },
+    {
+      "_id": "req_064",
+      "_type": "request",
+      "parentId": "fld_06",
+      "name": "PATCH title only, missions and tags kept → 200",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/v1/admin/projects/{% response 'body', 'req_project_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"title\": \"Admin API v1\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 64
+    },
+    {
+      "_id": "req_065",
+      "_type": "request",
+      "parentId": "fld_06",
+      "name": "Replace tags → 200",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/v1/admin/projects/{% response 'body', 'req_project_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"tags\": [\n    {% response 'body', 'req_tool_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}\n  ]\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 65
+    },
+    {
+      "_id": "req_066",
+      "_type": "request",
+      "parentId": "fld_06",
+      "name": "Invalid PATCH changes nothing → 400",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/v1/admin/projects/{% response 'body', 'req_project_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "Retrieve afterwards: title and missions are unchanged.",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"title\": \"Should not be saved\",\n  \"missions\": [\n    \"Ok\",\n    \"\"\n  ]\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 66
+    },
+    {
+      "_id": "req_067",
+      "_type": "request",
+      "parentId": "fld_06",
+      "name": "Clear missions → 200",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/v1/admin/projects/{% response 'body', 'req_project_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"missions\": []\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 67
+    },
+    {
+      "_id": "req_068",
+      "_type": "request",
+      "parentId": "fld_06",
+      "name": "Detach from experience with PUT → 200",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/api/v1/admin/projects/{% response 'body', 'req_side_project_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"title\": \"Side project\",\n  \"start_date\": \"2026-01-01\",\n  \"experience\": null,\n  \"tags\": [\n    {% response 'body', 'req_skill_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}\n  ],\n  \"missions\": [\n    \"Try the admin API\"\n  ]\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 68
+    },
+    {
+      "_id": "req_069",
+      "_type": "request",
+      "parentId": "fld_06",
+      "name": "Hide → 200",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/v1/admin/projects/{% response 'body', 'req_project_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"is_visible\": false\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 69
+    },
+    {
+      "_id": "req_070",
+      "_type": "request",
+      "parentId": "fld_06",
+      "name": "Public detail of the hidden project → 404",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/experience/projects/{% response 'body', 'req_project_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {},
+      "metaSortKey": 70
+    },
+    {
+      "_id": "req_071",
+      "_type": "request",
+      "parentId": "fld_06",
+      "name": "Show again → 200",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/v1/admin/projects/{% response 'body', 'req_project_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"is_visible\": true\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 71
+    },
+    {
+      "_id": "req_072",
+      "_type": "request",
+      "parentId": "fld_06",
+      "name": "Hide its experience → 200",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/v1/admin/professional-experiences/{% response 'body', 'req_exp_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"is_visible\": false\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 72
+    },
+    {
+      "_id": "req_073",
+      "_type": "request",
+      "parentId": "fld_06",
+      "name": "Public detail of a project of a hidden experience → 404",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/experience/projects/{% response 'body', 'req_project_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {},
+      "metaSortKey": 73
+    },
+    {
+      "_id": "req_074",
+      "_type": "request",
+      "parentId": "fld_06",
+      "name": "Admin retrieve still works → 200",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/admin/projects/{% response 'body', 'req_project_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 74
+    },
+    {
+      "_id": "req_075",
+      "_type": "request",
+      "parentId": "fld_06",
+      "name": "Show the experience again → 200",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/v1/admin/professional-experiences/{% response 'body', 'req_exp_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"is_visible\": true\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 75
+    },
+    {
+      "_id": "fld_07",
+      "_type": "request_group",
+      "parentId": "wrk_portfolio_admin",
+      "name": "07. Certifications",
+      "description": "",
+      "metaSortKey": 7
+    },
+    {
+      "_id": "req_076",
+      "_type": "request",
+      "parentId": "fld_07",
+      "name": "List → 200",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/admin/certifications/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 76
+    },
+    {
+      "_id": "req_cert_create",
+      "_type": "request",
+      "parentId": "fld_07",
+      "name": "Create with tags → 201",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/certifications/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Insomnia Certified Tester\",\n  \"issuer\": \"Insomnia\",\n  \"issue_date\": \"2026-09-01\",\n  \"expiration_date\": \"2028-09-01\",\n  \"credential_id\": \"INS-123\",\n  \"credential_url\": \"https://insomnia.example/certificates/INS-123\",\n  \"tags\": [\n    {% response 'body', 'req_tool_create', 'b64::JC5pZA==::46b', 'no-history', 60 %},\n    {% response 'body', 'req_methodology_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}\n  ]\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 77
+    },
+    {
+      "_id": "req_cert2_create",
+      "_type": "request",
+      "parentId": "fld_07",
+      "name": "Create a second one → 201",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/certifications/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Insomnia Advanced\",\n  \"issuer\": \"Insomnia\",\n  \"issue_date\": \"2026-09-15\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 78
+    },
+    {
+      "_id": "req_079",
+      "_type": "request",
+      "parentId": "fld_07",
+      "name": "Create expiring before issue → 400",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/certifications/",
+      "description": "Error on expiration_date.",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"X\",\n  \"issuer\": \"Y\",\n  \"issue_date\": \"2026-01-02\",\n  \"expiration_date\": \"2026-01-01\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 79
+    },
+    {
+      "_id": "req_080",
+      "_type": "request",
+      "parentId": "fld_07",
+      "name": "Create with an invalid credential_url → 400",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/certifications/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"X\",\n  \"issuer\": \"Y\",\n  \"issue_date\": \"2026-01-01\",\n  \"credential_url\": \"nope\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 80
+    },
+    {
+      "_id": "req_081",
+      "_type": "request",
+      "parentId": "fld_07",
+      "name": "Create without required fields → 400",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/certifications/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 81
+    },
+    {
+      "_id": "req_082",
+      "_type": "request",
+      "parentId": "fld_07",
+      "name": "Retrieve → 200",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/admin/certifications/{% response 'body', 'req_cert_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 82
+    },
+    {
+      "_id": "req_083",
+      "_type": "request",
+      "parentId": "fld_07",
+      "name": "Replace tags and hide → 200",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/v1/admin/certifications/{% response 'body', 'req_cert_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"tags\": [\n    {% response 'body', 'req_skill_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}\n  ],\n  \"is_visible\": false\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 83
+    },
+    {
+      "_id": "req_084",
+      "_type": "request",
+      "parentId": "fld_07",
+      "name": "Writing specializations is ignored → 200",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/v1/admin/certifications/{% response 'body', 'req_cert_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "specializations stays unchanged; it is edited on the specialization.",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"specializations\": [\n    1\n  ],\n  \"is_visible\": true\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 84
+    },
+    {
+      "_id": "req_085",
+      "_type": "request",
+      "parentId": "fld_07",
+      "name": "PATCH expiration before stored issue date → 400",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/v1/admin/certifications/{% response 'body', 'req_cert_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"expiration_date\": \"2020-01-01\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 85
+    },
+    {
+      "_id": "req_086",
+      "_type": "request",
+      "parentId": "fld_07",
+      "name": "PATCH never expires → 200",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/v1/admin/certifications/{% response 'body', 'req_cert_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"expiration_date\": null\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 86
+    },
+    {
+      "_id": "fld_08",
+      "_type": "request_group",
+      "parentId": "wrk_portfolio_admin",
+      "name": "08. Specializations",
+      "description": "",
+      "metaSortKey": 8
+    },
+    {
+      "_id": "req_087",
+      "_type": "request",
+      "parentId": "fld_08",
+      "name": "List → 200",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/admin/specializations/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 87
+    },
+    {
+      "_id": "req_spec_create",
+      "_type": "request",
+      "parentId": "fld_08",
+      "name": "Create with certifications → 201",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/specializations/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Insomnia path\",\n  \"issuer\": \"Insomnia\",\n  \"issue_date\": \"2026-09-20\",\n  \"certifications\": [\n    {% response 'body', 'req_cert_create', 'b64::JC5pZA==::46b', 'no-history', 60 %},\n    {% response 'body', 'req_cert2_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}\n  ]\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 88
+    },
+    {
+      "_id": "req_089",
+      "_type": "request",
+      "parentId": "fld_08",
+      "name": "Certification now lists the specialization → 200",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/admin/certifications/{% response 'body', 'req_cert_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "specializations contains the new id.",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 89
+    },
+    {
+      "_id": "req_090",
+      "_type": "request",
+      "parentId": "fld_08",
+      "name": "Create with an unknown certification → 400",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/specializations/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"X\",\n  \"issuer\": \"Y\",\n  \"issue_date\": \"2026-01-01\",\n  \"certifications\": [\n    999999\n  ]\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 90
+    },
+    {
+      "_id": "req_091",
+      "_type": "request",
+      "parentId": "fld_08",
+      "name": "Create expiring before issue → 400",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/specializations/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"X\",\n  \"issuer\": \"Y\",\n  \"issue_date\": \"2026-01-02\",\n  \"expiration_date\": \"2026-01-01\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 91
+    },
+    {
+      "_id": "req_092",
+      "_type": "request",
+      "parentId": "fld_08",
+      "name": "Retrieve → 200",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/admin/specializations/{% response 'body', 'req_spec_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 92
+    },
+    {
+      "_id": "req_093",
+      "_type": "request",
+      "parentId": "fld_08",
+      "name": "Keep only one certification → 200",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/v1/admin/specializations/{% response 'body', 'req_spec_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"certifications\": [\n    {% response 'body', 'req_cert2_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}\n  ]\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 93
+    },
+    {
+      "_id": "req_094",
+      "_type": "request",
+      "parentId": "fld_08",
+      "name": "Public detail → 200",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/experience/specializations/{% response 'body', 'req_spec_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {},
+      "metaSortKey": 94
+    },
+    {
+      "_id": "fld_09",
+      "_type": "request_group",
+      "parentId": "wrk_portfolio_admin",
+      "name": "09. Cleanup (deletes)",
+      "description": "Removes what the collection created. After running it, the chained ids point to deleted rows: re-run the Create requests before the other ones.",
+      "metaSortKey": 9
+    },
+    {
+      "_id": "req_095",
+      "_type": "request",
+      "parentId": "fld_09",
+      "name": "Delete specialization → 204",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/api/v1/admin/specializations/{% response 'body', 'req_spec_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 95
+    },
+    {
+      "_id": "req_096",
+      "_type": "request",
+      "parentId": "fld_09",
+      "name": "Delete certification → 204",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/api/v1/admin/certifications/{% response 'body', 'req_cert_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 96
+    },
+    {
+      "_id": "req_097",
+      "_type": "request",
+      "parentId": "fld_09",
+      "name": "Delete second certification → 204",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/api/v1/admin/certifications/{% response 'body', 'req_cert2_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 97
+    },
+    {
+      "_id": "req_098",
+      "_type": "request",
+      "parentId": "fld_09",
+      "name": "Delete side project → 204",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/api/v1/admin/projects/{% response 'body', 'req_side_project_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 98
+    },
+    {
+      "_id": "req_099",
+      "_type": "request",
+      "parentId": "fld_09",
+      "name": "Delete experience (cascades to its project) → 204",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/api/v1/admin/professional-experiences/{% response 'body', 'req_exp_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 99
+    },
+    {
+      "_id": "req_100",
+      "_type": "request",
+      "parentId": "fld_09",
+      "name": "Its project is gone → 404",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/admin/projects/{% response 'body', 'req_project_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "Deleting an experience deletes its projects and their missions.",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 100
+    },
+    {
+      "_id": "req_101",
+      "_type": "request",
+      "parentId": "fld_09",
+      "name": "Delete skill → 204",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/api/v1/admin/skills/{% response 'body', 'req_skill_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 101
+    },
+    {
+      "_id": "req_102",
+      "_type": "request",
+      "parentId": "fld_09",
+      "name": "Delete tool → 204",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/api/v1/admin/tools/{% response 'body', 'req_tool_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 102
+    },
+    {
+      "_id": "req_103",
+      "_type": "request",
+      "parentId": "fld_09",
+      "name": "Delete methodology → 204",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/api/v1/admin/methodologies/{% response 'body', 'req_methodology_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 103
+    },
+    {
+      "_id": "req_104",
+      "_type": "request",
+      "parentId": "fld_09",
+      "name": "Delete education → 204",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/api/v1/admin/education/{% response 'body', 'req_edu_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 104
+    },
+    {
+      "_id": "req_105",
+      "_type": "request",
+      "parentId": "fld_09",
+      "name": "Deleted education → 404",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/admin/education/{% response 'body', 'req_edu_create', 'b64::JC5pZA==::46b', 'no-history', 60 %}/",
+      "description": "",
+      "headers": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "prefix": "Bearer",
+        "token": "{{ _.access }}"
+      },
+      "metaSortKey": 105
+    },
+    {
+      "_id": "req_106",
+      "_type": "request",
+      "parentId": "fld_09",
+      "name": "Logout (blacklist refresh token) → 200",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/auth/jwt/blacklist/",
+      "description": "The access token keeps working until it expires.",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"refresh\": \"{% response 'body', 'req_login', 'b64::JC5yZWZyZXNo::46b', 'never', 60 %}\"\n}"
+      },
+      "authentication": {},
+      "metaSortKey": 106
+    }
+  ]
+}
