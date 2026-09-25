@@ -15,6 +15,30 @@ pipenv run pytest experience/tests/test_tags.py -k skill   # one file, one kind
 [`pytest.ini`](../pytest.ini) and runs every test against a fresh test
 database, rolled back after each test.
 
+To see which lines the tests reach (configured in [`.coveragerc`](../.coveragerc)):
+
+```bash
+pipenv run pytest --cov --cov-report=term-missing
+```
+
+## Continuous integration
+
+[`backend-ci.yml`](../../.github/workflows/backend-ci.yml) runs on every pull
+request and every push to `main` that touches `backend/`. The job fails at the
+first step that fails:
+
+| Step | Run locally with |
+|---|---|
+| Lint | `pipenv run ruff check .` |
+| Formatting | `pipenv run ruff format --check .` (fix with `ruff format .`) |
+| Django system check | `pipenv run python manage.py check` |
+| Missing migrations | `pipenv run python manage.py makemigrations --check --dry-run` |
+| Tests with coverage | `pipenv run pytest --cov --cov-report=term-missing` |
+
+Dependencies are installed with `pipenv install --dev --deploy`, so CI also
+fails if `Pipfile.lock` is out of date. There is no `.env` in CI: the workflow
+sets a throwaway `SECRET_KEY` and `DEBUG=False`.
+
 ## Demo data for manual testing
 
 To try the API by hand, fill the local database with fictional content:

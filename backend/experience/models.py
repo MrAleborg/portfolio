@@ -88,7 +88,9 @@ class Tag(models.Model):
     class Meta:
         ordering = ["kind", "name"]
         constraints = [
-            models.UniqueConstraint(fields=["name", "kind"], name="unique_tag_per_kind"),
+            models.UniqueConstraint(
+                fields=["name", "kind"], name="unique_tag_per_kind"
+            ),
         ]
 
     def save(self, *args, **kwargs):

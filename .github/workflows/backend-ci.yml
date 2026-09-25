@@ -1,0 +1,59 @@
+name: Backend CI
+
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      # Settings read these from the environment; backend/.env is not committed.
+      SECRET_KEY: ci-insecure-key-not-used-outside-of-tests
+      DEBUG: "False"
+      PIPENV_VERBOSITY: -1
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pipenv
+          cache-dependency-path: backend/Pipfile.lock
+
+      - name: Install dependencies
+        run: |
+          pip install pipenv
+          pipenv install --dev --deploy
+
+      - name: Lint
+        run: pipenv run ruff check --output-format=github .
+
+      - name: Check formatting
+        run: pipenv run ruff format --check .
+
+      - name: Django system check
+        run: pipenv run python manage.py check
+
+      - name: Check for missing migrations
+        run: pipenv run python manage.py makemigrations --check --dry-run
+
+      - name: Run tests
+        run: pipenv run pytest --cov --cov-report=term-missing

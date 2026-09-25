@@ -14,6 +14,7 @@ djangorestframework-simplejwt = "*"
 [dev-packages]
 ruff = "*"
 pytest-django = "*"
+pytest-cov = "*"
 
 [requires]
 python_version = "3.12"

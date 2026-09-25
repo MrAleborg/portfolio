@@ -47,9 +47,7 @@ def flush():
 
     Like Django's flush command, but limited to the portfolio tables.
     """
-    sql = connection.ops.sql_flush(
-        no_style(), content_tables(), reset_sequences=True
-    )
+    sql = connection.ops.sql_flush(no_style(), content_tables(), reset_sequences=True)
     connection.ops.execute_sql_flush(sql)
 
 

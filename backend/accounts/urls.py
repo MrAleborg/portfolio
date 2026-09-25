@@ -7,12 +7,8 @@ app_name = "accounts"
 # Only the djoser routes the site admin needs; signup, activation and password
 # reset are left out (see docs/auth.md to add password reset later).
 urlpatterns = [
-    path(
-        "jwt/create/", jwt_views.TokenObtainPairView.as_view(), name="jwt-create"
-    ),
-    path(
-        "jwt/refresh/", jwt_views.TokenRefreshView.as_view(), name="jwt-refresh"
-    ),
+    path("jwt/create/", jwt_views.TokenObtainPairView.as_view(), name="jwt-create"),
+    path("jwt/refresh/", jwt_views.TokenRefreshView.as_view(), name="jwt-refresh"),
     path("jwt/verify/", jwt_views.TokenVerifyView.as_view(), name="jwt-verify"),
     path(
         "jwt/blacklist/",
