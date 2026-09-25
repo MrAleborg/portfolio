@@ -24,7 +24,8 @@ pipenv run pytest --cov --cov-report=term-missing
 ## Continuous integration
 
 [`backend-ci.yml`](../../.github/workflows/backend-ci.yml) runs on every pull
-request and every push to `main` that touches `backend/`. The job fails at the
+request and every push to `main` that touches `backend/` or `deploy/`. The job
+fails at the
 first step that fails:
 
 | Step | Run locally with |
@@ -33,11 +34,25 @@ first step that fails:
 | Formatting | `pipenv run ruff format --check .` (fix with `ruff format .`) |
 | Django system check | `pipenv run python manage.py check` |
 | Missing migrations | `pipenv run python manage.py makemigrations --check --dry-run` |
+| Deployment check | see below |
 | Tests with coverage | `pipenv run pytest --cov --cov-report=term-missing` |
 
 Dependencies are installed with `pipenv install --dev --deploy`, so CI also
 fails if `Pipfile.lock` is out of date. There is no `.env` in CI: the workflow
 sets a throwaway `SECRET_KEY` and `DEBUG=False`.
+
+The deployment check runs `manage.py check --deploy` with production-like
+values, so a setting that is unsafe in production fails CI. To run it locally,
+stop pipenv from loading `.env` (which usually has `DEBUG=True`):
+
+```bash
+PIPENV_DONT_LOAD_ENV=1 DEBUG=False SECRET_KEY=$(python -c "import secrets; print(secrets.token_urlsafe(50))") \
+  ALLOWED_HOSTS=api.example.com CSRF_TRUSTED_ORIGINS=https://api.example.com \
+  EMAIL_URL=smtp+tls://user:password@smtp.example.com:587 \
+  pipenv run python manage.py check --deploy --fail-level WARNING
+```
+
+When CI passes on `main`, the backend is deployed: see [deployment.md](deployment.md).
 
 ## Demo data for manual testing
 
@@ -75,8 +90,9 @@ point to deleted rows.
 Tests live in each app's `tests/` folder, one file per API resource. Shared
 fixtures are in [`conftest.py`](../conftest.py) at the backend root
 (`api_client`, `staff_api_client` authenticated as the site admin,
-`user_api_client` authenticated as a user who is not staff, and a fast
-password hasher applied to every test). The admin API tests share a few URL
+`user_api_client` authenticated as a user who is not staff; and, applied to
+every test, a fast password hasher, no HTTPS redirect and static files that
+don't need `collectstatic`). The admin API tests share a few URL
 and timestamp helpers in
 [`admin_api/helpers.py`](../experience/tests/admin_api/helpers.py).
 
