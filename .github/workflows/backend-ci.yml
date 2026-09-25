@@ -55,5 +55,14 @@ jobs:
       - name: Check for missing migrations
         run: pipenv run python manage.py makemigrations --check --dry-run
 
+      - name: Django deployment check
+        # Production-like values, so the check sees the settings the server uses.
+        env:
+          SECRET_KEY: ci-deploy-check-key-long-and-random-enough-for-django-0123456789abcdef
+          ALLOWED_HOSTS: api.example.com
+          CSRF_TRUSTED_ORIGINS: https://api.example.com
+          EMAIL_URL: smtp+tls://user:password@smtp.example.com:587
+        run: pipenv run python manage.py check --deploy --fail-level WARNING
+
       - name: Run tests
         run: pipenv run pytest --cov --cov-report=term-missing

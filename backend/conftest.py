@@ -8,6 +8,12 @@ def fast_password_hasher(settings):
     settings.PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 
 
+@pytest.fixture(autouse=True)
+def no_https_redirect(settings):
+    """The test client uses plain HTTP; don't redirect it to HTTPS."""
+    settings.SECURE_SSL_REDIRECT = False
+
+
 @pytest.fixture
 def api_client():
     return APIClient()
