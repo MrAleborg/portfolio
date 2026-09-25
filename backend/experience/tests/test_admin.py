@@ -1,6 +1,6 @@
 """Tests for the Django admin, where all portfolio content is managed.
 
-The API is read-only, so every content model must be editable here. These are
+Every content model must be editable here, as well as in the admin API. These are
 smoke tests: each admin page must load for a superuser, which also catches
 misconfigured options (unknown fields in list_display, list_filter, ...).
 """
