@@ -11,7 +11,7 @@ from datetime import date
 
 import pytest
 
-from experience.models import Education, ProfessionalExperience, Project
+from experience.models import Certification, Education, ProfessionalExperience, Project
 from experience.tests.admin_api.helpers import detail_url, list_url
 
 pytestmark = pytest.mark.django_db
@@ -41,6 +41,17 @@ def make_project():
     )
 
 
+def make_certification():
+    return Certification.objects.create(
+        name="PCAP",
+        issuer="Python Institute",
+        issue_date=date(2024, 1, 1),
+        expiration_date=date(2024, 6, 30),
+    )
+
+
+CREDENTIAL = {"name": "PCAP", "issuer": "Python Institute"}
+
 # (URL basename, minimal create payload, start field, end field, row factory)
 RESOURCES = [
     (
@@ -58,6 +69,13 @@ RESOURCES = [
         make_experience,
     ),
     ("project", {"title": "Portfolio"}, "start_date", "end_date", make_project),
+    (
+        "certification",
+        CREDENTIAL,
+        "issue_date",
+        "expiration_date",
+        make_certification,
+    ),
 ]
 
 

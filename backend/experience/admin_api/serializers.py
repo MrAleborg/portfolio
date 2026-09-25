@@ -4,6 +4,7 @@ from django.db import transaction
 from rest_framework import serializers
 
 from experience.models import (
+    Certification,
     Education,
     Methodology,
     Mission,
@@ -12,6 +13,7 @@ from experience.models import (
     Skill,
     Tool,
 )
+from experience.serializers import CREDENTIAL_FIELDS
 
 # Fields of every entry that the public API hides.
 INTERNAL_FIELDS = ["display_order", "is_visible", "created_at", "updated_at"]
@@ -44,6 +46,20 @@ class DateRangeSerializer(serializers.ModelSerializer):
             "start_date",
             "end_date",
             "The end date cannot be before the start date.",
+        )
+        return attrs
+
+
+class CredentialSerializer(serializers.ModelSerializer):
+    """Base for CredentialEntry models."""
+
+    def validate(self, attrs):
+        check_dates(
+            self,
+            attrs,
+            "issue_date",
+            "expiration_date",
+            "The expiration date cannot be before the issue date.",
         )
         return attrs
 
@@ -137,6 +153,16 @@ class ProjectSerializer(DateRangeSerializer):
             Mission(project=project, description=description, display_order=order)
             for order, description in enumerate(descriptions)
         )
+
+
+class CertificationSerializer(CredentialSerializer):
+    """The link to specializations is edited on the specialization."""
+
+    specializations = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+
+    class Meta:
+        model = Certification
+        fields = [*CREDENTIAL_FIELDS, "tags", "specializations", *INTERNAL_FIELDS]
 
 
 class TagSerializer(serializers.ModelSerializer):

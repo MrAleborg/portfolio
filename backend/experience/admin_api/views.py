@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAdminUser
 
 from experience.admin_api import serializers
 from experience.models import (
+    Certification,
     Education,
     Methodology,
     ProfessionalExperience,
@@ -31,6 +32,11 @@ class ProfessionalExperienceViewSet(AdminViewSet):
 class ProjectViewSet(AdminViewSet):
     queryset = Project.objects.prefetch_related("missions", "tags")
     serializer_class = serializers.ProjectSerializer
+
+
+class CertificationViewSet(AdminViewSet):
+    queryset = Certification.objects.prefetch_related("tags", "specializations")
+    serializer_class = serializers.CertificationSerializer
 
 
 class SkillViewSet(AdminViewSet):
