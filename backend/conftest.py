@@ -34,3 +34,14 @@ def user_api_client(django_user_model):
     client = APIClient()
     client.force_authenticate(user=user)
     return client
+
+
+@pytest.fixture(autouse=True)
+def plain_static_storage(settings):
+    """Render admin pages without running collectstatic first."""
+    settings.STORAGES = {
+        **settings.STORAGES,
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
