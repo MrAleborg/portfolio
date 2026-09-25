@@ -11,6 +11,7 @@ from experience.models import (
     ProfessionalExperience,
     Project,
     Skill,
+    Specialization,
     Tool,
 )
 from experience.serializers import CREDENTIAL_FIELDS
@@ -163,6 +164,12 @@ class CertificationSerializer(CredentialSerializer):
     class Meta:
         model = Certification
         fields = [*CREDENTIAL_FIELDS, "tags", "specializations", *INTERNAL_FIELDS]
+
+
+class SpecializationSerializer(CredentialSerializer):
+    class Meta:
+        model = Specialization
+        fields = [*CREDENTIAL_FIELDS, "certifications", *INTERNAL_FIELDS]
 
 
 class TagSerializer(serializers.ModelSerializer):

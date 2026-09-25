@@ -9,6 +9,7 @@ from experience.models import (
     ProfessionalExperience,
     Project,
     Skill,
+    Specialization,
     Tool,
 )
 
@@ -37,6 +38,11 @@ class ProjectViewSet(AdminViewSet):
 class CertificationViewSet(AdminViewSet):
     queryset = Certification.objects.prefetch_related("tags", "specializations")
     serializer_class = serializers.CertificationSerializer
+
+
+class SpecializationViewSet(AdminViewSet):
+    queryset = Specialization.objects.prefetch_related("certifications")
+    serializer_class = serializers.SpecializationSerializer
 
 
 class SkillViewSet(AdminViewSet):

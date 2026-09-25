@@ -23,6 +23,9 @@ router.register(
 )
 router.register("projects", views.ProjectViewSet, basename="project")
 router.register("certifications", views.CertificationViewSet, basename="certification")
+router.register(
+    "specializations", views.SpecializationViewSet, basename="specialization"
+)
 router.register("skills", views.SkillViewSet, basename="skill")
 router.register("tools", views.ToolViewSet, basename="tool")
 router.register("methodologies", views.MethodologyViewSet, basename="methodology")
