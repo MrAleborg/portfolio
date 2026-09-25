@@ -2,7 +2,7 @@
 
 from rest_framework import serializers
 
-from experience.models import Education
+from experience.models import Education, ProfessionalExperience
 
 # Fields of every entry that the public API hides.
 INTERNAL_FIELDS = ["display_order", "is_visible", "created_at", "updated_at"]
@@ -48,6 +48,24 @@ class EducationSerializer(DateRangeSerializer):
             "degree",
             "field_of_study",
             "grade",
+            "location",
+            "start_date",
+            "end_date",
+            "is_current",
+            "description",
+            *INTERNAL_FIELDS,
+        ]
+
+
+class ProfessionalExperienceSerializer(DateRangeSerializer):
+    class Meta:
+        model = ProfessionalExperience
+        fields = [
+            "id",
+            "company",
+            "position",
+            "employment_type",
+            "company_url",
             "location",
             "start_date",
             "end_date",

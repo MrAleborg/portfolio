@@ -11,7 +11,7 @@ from datetime import date
 
 import pytest
 
-from experience.models import Education
+from experience.models import Education, ProfessionalExperience
 from experience.tests.admin_api.helpers import detail_url, list_url
 
 pytestmark = pytest.mark.django_db
@@ -26,6 +26,15 @@ def make_education():
     )
 
 
+def make_experience():
+    return ProfessionalExperience.objects.create(
+        company="Acme",
+        position="Developer",
+        start_date=date(2024, 1, 1),
+        end_date=date(2024, 6, 30),
+    )
+
+
 # (URL basename, minimal create payload, start field, end field, row factory)
 RESOURCES = [
     (
@@ -34,6 +43,13 @@ RESOURCES = [
         "start_date",
         "end_date",
         make_education,
+    ),
+    (
+        "professionalexperience",
+        {"company": "Acme", "position": "Developer"},
+        "start_date",
+        "end_date",
+        make_experience,
     ),
 ]
 

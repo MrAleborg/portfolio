@@ -16,5 +16,10 @@ class AdminRouter(DefaultRouter):
 
 router = AdminRouter()
 router.register("education", views.EducationViewSet, basename="education")
+router.register(
+    "professional-experiences",
+    views.ProfessionalExperienceViewSet,
+    basename="professionalexperience",
+)
 
 urlpatterns = router.urls
