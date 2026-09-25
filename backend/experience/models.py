@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import F, Q
 
 
 class BaseEntry(models.Model):
@@ -25,6 +26,13 @@ class DateRangeEntry(BaseEntry):
     class Meta:
         abstract = True
         ordering = ["display_order", "-start_date"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(end_date__isnull=True) | Q(end_date__gte=F("start_date")),
+                name="%(app_label)s_%(class)s_end_after_start",
+                violation_error_message="The end date cannot be before the start date.",
+            ),
+        ]
 
     @property
     def is_current(self) -> bool:
@@ -190,6 +198,16 @@ class CredentialEntry(BaseEntry):
     class Meta:
         abstract = True
         ordering = ["display_order", "-issue_date"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(expiration_date__isnull=True)
+                | Q(expiration_date__gte=F("issue_date")),
+                name="%(app_label)s_%(class)s_expiration_after_issue",
+                violation_error_message=(
+                    "The expiration date cannot be before the issue date."
+                ),
+            ),
+        ]
 
     def __str__(self):
         return f"{self.name} ({self.issuer})"
