@@ -1,16 +1,19 @@
 # Deployment
 
-The backend runs on a VPS with Docker Compose. [Caddy](https://caddyserver.com/)
-takes the HTTPS traffic and passes it to gunicorn, which runs Django. The
-database is a SQLite file on a Docker volume. Every push to `main` that passes
+The backend runs on a VPS with Docker Compose. The server's own
+[Caddy](https://caddyserver.com/), installed on the host and shared with other
+sites, takes the HTTPS traffic and passes it to gunicorn, which runs Django and
+listens on `127.0.0.1` only. The database is a SQLite file on a Docker volume. Every push to `main` that passes
 CI is deployed by GitHub Actions.
 
 ```mermaid
 flowchart LR
-    Browser -- "HTTPS :443" --> Caddy
-    subgraph VPS [VPS, Docker Compose]
-        Caddy -- "HTTP :8000" --> Backend["backend<br>gunicorn + Django"]
-        Backend --> DB[("db-data volume<br>/data/db.sqlite3")]
+    Browser -- "HTTPS :443" --> Caddy["Caddy<br>(host service)"]
+    subgraph VPS
+        Caddy -- "HTTP 127.0.0.1:8000" --> Backend
+        subgraph Compose [Docker Compose]
+            Backend["backend<br>gunicorn + Django"] --> DB[("db-data volume<br>/data/db.sqlite3")]
+        end
     end
 ```
 
@@ -18,14 +21,16 @@ flowchart LR
 |---|---|
 | [`backend/Dockerfile`](../Dockerfile) | Backend image: dependencies, collected static files, non-root user |
 | [`backend/docker-entrypoint.sh`](../docker-entrypoint.sh) | Applies migrations, then starts gunicorn |
-| [`deploy/compose.yml`](../../deploy/compose.yml) | The stack: `backend` and `caddy` |
-| [`deploy/Caddyfile`](../../deploy/Caddyfile) | Domain and reverse proxy. Caddy gets and renews the certificate |
+| [`deploy/compose.yml`](../../deploy/compose.yml) | The stack: the `backend` service, published on `127.0.0.1` |
+| [`deploy/Caddyfile.example`](../../deploy/Caddyfile.example) | Site block to add to the server's Caddy config |
 | [`deploy/.env.example`](../../deploy/.env.example) | Production settings template |
 | [`deploy/backup.sh`](../../deploy/backup.sh) | Database backup, run from cron |
 | [`backend-deploy.yml`](../../.github/workflows/backend-deploy.yml) | Builds, pushes and deploys the image |
 
-On the server, everything lives in `/opt/portfolio/`: the three files from
-`deploy/` (copied by each deploy) and `.env` (written by hand, never copied).
+On the server, the stack lives in `/opt/portfolio/`: `compose.yml` and
+`backup.sh` (copied by each deploy) and `.env` (written by hand, never copied).
+The Caddy config, `/etc/caddy/Caddyfile`, is edited by hand too, since other
+sites share it.
 
 ## Settings
 
@@ -35,7 +40,7 @@ Django reads its settings from the environment
 
 | Variable | Production value | Notes |
 |---|---|---|
-| `API_DOMAIN` | `api.example.com` | Read by Caddy, not Django |
+| `BACKEND_PORT` | `8000` | Read by Compose: host port on `127.0.0.1`. Change it if 8000 is taken |
 | `SECRET_KEY` | long random string | `python3 -c "import secrets; print(secrets.token_urlsafe(50))"` |
 | `DEBUG` | `False` | Also turns on the HTTPS settings below |
 | `ALLOWED_HOSTS` | `api.example.com,localhost` | `localhost` is for the container health check |
@@ -79,8 +84,9 @@ Use both layers:
   ```
 
 Docker writes its own iptables rules, so **a port published by a container
-bypasses ufw**. That is why only Caddy has `ports:` in `compose.yml`. The
-backend is reachable only on the compose network. Don't add `ports:` to it.
+bypasses ufw**. That is why the backend is published on `127.0.0.1` only:
+Caddy on the host can reach it, the internet can't. Keep the `127.0.0.1:` prefix
+in `compose.yml`, and do the same for any other container on the server.
 
 ### 3. Users and SSH
 
@@ -132,7 +138,32 @@ chmod 600 /opt/portfolio/.env
 For `EMAIL_URL`, use any SMTP provider: a transactional service (Brevo,
 Mailjet...), your domain's mailbox, or a Gmail app password.
 
-### 6. GitHub
+Check that `BACKEND_PORT` (default 8000) is free: `sudo ss -tlnp | grep ':8000 '`.
+
+### 6. Caddy
+
+Add the site block from
+[`deploy/Caddyfile.example`](../../deploy/Caddyfile.example) to
+`/etc/caddy/Caddyfile`, with your domain (and your port if it isn't 8000):
+
+```caddy
+api.example.com {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:8000
+}
+```
+
+Then check and reload:
+
+```bash
+caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+sudo systemctl reload caddy
+```
+
+Until the first deploy, Caddy answers `502 Bad Gateway` for this domain: the
+backend isn't running yet.
+
+### 7. GitHub
 
 In the repository settings:
 
@@ -157,7 +188,7 @@ ssh-copy-id -i portfolio-deploy.pub deploy@<server>
 # VPS_SSH_KEY = contents of portfolio-deploy; then delete the local copy
 ```
 
-### 7. First deploy
+### 8. First deploy
 
 Run **Actions → Backend deploy → Run workflow**. The build job pushes
 `ghcr.io/mraleborg/portfolio-backend`. The package is private at first, so the
@@ -179,7 +210,7 @@ docker compose exec backend python manage.py createsuperuser
 Never run `seed_demo`, `flush_demo` or `reset_demo` here
 (see [demo_data.md](demo_data.md)).
 
-### 8. Backups
+### 9. Backups
 
 ```bash
 crontab -e
@@ -201,7 +232,7 @@ tab.
 
 1. **build**: builds the image from `backend/` and pushes it to GHCR, tagged
    `sha-<commit>` and `latest`.
-2. **deploy**: copies `compose.yml`, `Caddyfile` and `backup.sh` to
+2. **deploy**: copies `compose.yml` and `backup.sh` to
    `/opt/portfolio/`, then over SSH runs `docker compose pull backend` and
    `docker compose up -d --wait` with `TAG=sha-<commit>`. `--wait` fails the
    job if the new container doesn't pass its health check.
@@ -216,7 +247,7 @@ All from `/opt/portfolio` on the server.
 | Task | Command |
 |---|---|
 | Status | `docker compose ps` |
-| Logs | `docker compose logs -f backend` (or `caddy`) |
+| Logs | `docker compose logs -f backend`; Caddy: `journalctl -u caddy -f` |
 | Django shell | `docker compose exec backend python manage.py shell` |
 | Restart | `docker compose restart backend` |
 | Change a setting | edit `.env`, then `docker compose up -d` |
@@ -253,9 +284,9 @@ write-ahead log onto the restored file.
 
 ## HTTPS
 
-Caddy gets a Let's Encrypt certificate for `API_DOMAIN` the first time it
-starts and renews it by itself. The certificates are kept in the `caddy-data`
-volume, so don't delete it.
+Caddy gets a Let's Encrypt certificate for each domain in its config and
+renews it by itself. It needs the DNS record in place and ports 80 and 443
+open.
 
 HSTS tells browsers to use HTTPS only, for `SECURE_HSTS_SECONDS`. It starts at
 one hour so a mistake is quick to undo. Once the site has run fine over HTTPS
@@ -266,24 +297,26 @@ means submitting the domain to browser vendors, which takes months to undo.
 
 ```bash
 docker build -t ghcr.io/mraleborg/portfolio-backend:local backend/
-cp deploy/compose.yml deploy/Caddyfile /some/tmp/dir/
-# In that dir: a .env from deploy/.env.example with API_DOMAIN=localhost,
-# ALLOWED_HOSTS=localhost, TAG=local, EMAIL_URL=consolemail://
-docker compose up -d
-curl -k https://localhost/api/v1/experience/
+cp deploy/compose.yml /some/tmp/dir/
+# In that dir: a .env from deploy/.env.example with ALLOWED_HOSTS=localhost,
+# CSRF_TRUSTED_ORIGINS=https://localhost:8443, TAG=local, EMAIL_URL=consolemail://
+docker compose up -d --wait
+# A Caddy on the host network plays the server's Caddy:
+printf 'localhost:8443 {\n\treverse_proxy 127.0.0.1:8000\n}\n' > Caddyfile
+docker run --rm -d --name caddy --network host -v "$PWD/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2
+curl -k https://localhost:8443/api/v1/experience/
 ```
 
-Caddy serves `localhost` with its own local certificate, hence `-k`. If ports
-80/443 are busy, remap them in a `compose.override.yml` with `ports: !override`.
+Caddy serves `localhost` with its own local certificate, hence `-k`.
 
 ## Adding the frontend later
 
 The frontend build is static files, so it needs no container of its own at
-runtime: Caddy can serve it. Two layouts work:
+runtime: the server's Caddy can serve it from a folder. Two layouts work:
 
 - **One domain** (simplest for the browser): `example.com` serves the frontend,
   and `example.com/api/*` and `/admin/*` go to the backend. There are no
   cross-origin requests, so CORS isn't needed.
 - **Two domains**: `example.com` for the frontend and `api.example.com` for
   the API, with `CORS_ALLOWED_ORIGINS=https://example.com`. This is the
-  current setup, plus one more Caddy site block.
+  current setup, plus one more site block in `/etc/caddy/Caddyfile`.

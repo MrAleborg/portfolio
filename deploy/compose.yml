@@ -1,5 +1,6 @@
-# Production stack: Caddy (HTTPS) in front of the Django backend.
-# Run from this directory, next to a .env file (see .env.example):
+# Production stack: the Django backend, behind the server's own Caddy
+# (see Caddyfile.example). Run from this directory, next to a .env file
+# (see .env.example):
 #   docker compose up -d
 name: portfolio
 
@@ -7,30 +8,13 @@ services:
   backend:
     image: ghcr.io/mraleborg/portfolio-backend:${TAG:-latest}
     env_file: .env
+    ports:
+      # Loopback only: Caddy on the host reaches it, the internet can't.
+      # (Docker bypasses ufw for ports published on all interfaces.)
+      - "127.0.0.1:${BACKEND_PORT:-8000}:8000"
     volumes:
       - db-data:/data
-    restart: unless-stopped
-    # No "ports": only Caddy can reach the backend, on the compose network.
-    # (Docker would bypass the host firewall for a published port.)
-
-  caddy:
-    image: caddy:2
-    environment:
-      API_DOMAIN: ${API_DOMAIN:?Set API_DOMAIN in .env}
-    ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp" # HTTP/3
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy-data:/data # certificates
-      - caddy-config:/config
-    depends_on:
-      backend:
-        condition: service_healthy
     restart: unless-stopped
 
 volumes:
   db-data:
-  caddy-data:
-  caddy-config:
