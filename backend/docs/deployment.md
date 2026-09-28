@@ -36,8 +36,7 @@ flowchart LR
 | [`deploy/Caddyfile.example`](../../deploy/Caddyfile.example) | Site blocks to add to the server's Caddy config |
 | [`deploy/.env.example`](../../deploy/.env.example) | Production settings template |
 | [`deploy/backup.sh`](../../deploy/backup.sh) | Database backup, run from cron |
-| [`backend-deploy.yml`](../../.github/workflows/backend-deploy.yml) | Builds, pushes and deploys the backend image |
-| [`frontend-deploy.yml`](../../.github/workflows/frontend-deploy.yml) | Builds, pushes and deploys the frontend image |
+| [`deploy.yml`](../../.github/workflows/deploy.yml) | Builds and pushes both images, then deploys the stack |
 
 On the server, the stack lives in `/opt/portfolio/`: `compose.yml` and
 `backup.sh` (copied by each deploy) and `.env` (written by hand, never copied).
@@ -211,12 +210,12 @@ ssh-copy-id -i portfolio-deploy.pub deploy@<server>
 
 ### 8. First deploy
 
-Run **Actions → Backend deploy → Run workflow**. The build job pushes
-`ghcr.io/mraleborg/portfolio-backend`. The package is private at first, so the
-server can't pull it yet. Do one of these:
+Run **Actions → Deploy → Run workflow**. The build job pushes
+`ghcr.io/mraleborg/portfolio-backend` and `portfolio-frontend`. The packages
+are private at first, so the server can't pull them yet. Do one of these:
 
-- make the package public (GitHub → Packages → portfolio-backend → Package
-  settings → Change visibility). The image holds no secrets: `.env` is
+- make both packages public (GitHub → Packages → the package → Package
+  settings → Change visibility). The images hold no secrets: `.env` is
   excluded by [`.dockerignore`](../.dockerignore);
 - or log in once on the server with a personal access token that has only
   `read:packages`: `docker login ghcr.io -u <github user>`.
@@ -230,10 +229,6 @@ docker compose exec backend python manage.py createsuperuser
 
 Never run `seed_demo`, `flush_demo` or `reset_demo` here
 (see [demo_data.md](demo_data.md)).
-
-Then do the same for the frontend: run **Actions → Frontend deploy → Run
-workflow**, make `portfolio-frontend` public (the token above already covers
-it otherwise), and run it again.
 
 ### 9. Backups
 
@@ -256,46 +251,33 @@ A backup on the same disk doesn't survive losing the server, so also copy that
 folder elsewhere (e.g. `rclone` to object storage, or `rsync` to another
 machine).
 
-## How a backend deploy works
+## How a deploy works
 
-[`backend-deploy.yml`](../../.github/workflows/backend-deploy.yml) runs when
-[Backend CI](testing.md#continuous-integration) passes on a push to `main`
-(CI runs when `backend/` or `deploy/` changes), or by hand from the Actions
-tab.
+[`deploy.yml`](../../.github/workflows/deploy.yml) deploys the whole stack for
+one commit. It runs when [Backend CI](testing.md#continuous-integration)
+(`backend/` or `deploy/` changed) or Frontend CI (`frontend/` changed) passes
+on a push to `main`, or by hand from the Actions tab.
 
-1. **build**: builds the image from `backend/` and pushes it to GHCR, tagged
-   `sha-<commit>` and `latest`.
-2. **deploy**: copies `compose.yml` and `backup.sh` to
-   `/opt/portfolio/`, then over SSH runs `docker compose pull backend` and
-   `docker compose up -d --wait backend` with `TAG=sha-<commit>`. `--wait`
-   fails the job if the new container doesn't pass its health check. The
-   frontend container is left alone.
-3. **Smoke test**: `curl` on `https://$API_DOMAIN/api/v1/experience/`.
+1. **check**: a push that touches both parts runs both CIs. The deploy goes
+   on only once every CI run for the commit has passed. While the other one
+   is still running, this run stops and the other one's completion triggers
+   the deploy. If one failed, nothing is deployed.
+2. **build**: builds the `backend` and `frontend` images and pushes them to
+   GHCR, both tagged `sha-<commit>` and `latest`.
+3. **deploy**: copies `compose.yml` and `backup.sh` to `/opt/portfolio/`,
+   then over SSH runs `docker compose pull` and `docker compose up -d --wait`
+   with `TAG=sha-<commit>`. `--wait` fails the job if a new container doesn't
+   pass its health check. A container whose image didn't change isn't
+   restarted.
+4. **Smoke test**: `curl` on `https://$API_DOMAIN/api/v1/experience/` and
+   `https://$FRONTEND_DOMAIN/`.
 
-The container applies migrations when it starts, before gunicorn.
+The backend container applies migrations when it starts, before gunicorn.
 
-## How a frontend deploy works
-
-[`frontend-deploy.yml`](../../.github/workflows/frontend-deploy.yml) runs when
-Frontend CI passes on a push to `main` (CI runs when `frontend/` changes), or
-by hand from the Actions tab.
-
-1. **build**: builds the image from `frontend/` (`npm ci`, `npm run build`,
-   then the result copied into nginx) and pushes it to GHCR as
-   `portfolio-frontend`, tagged `sha-<commit>` and `latest`.
-2. **deploy**: copies `compose.yml` to `/opt/portfolio/`, then over SSH runs
-   `docker compose pull frontend` and `docker compose up -d --wait frontend`
-   with `FRONTEND_TAG=sha-<commit>`. The backend container is left alone.
-3. **Smoke test**: `curl` on `https://$FRONTEND_DOMAIN/`.
-
-In the container, nginx serves `index.html` for unknown paths, so client-side
-routes survive a reload. Files under `assets/` have a content hash in their
-name and are cached for a year; everything else is checked again on each
-visit, so a deploy shows at once.
-
-A change to `deploy/compose.yml` alone runs the backend deploy, which copies
-the file but only restarts the backend. To apply a change to the `frontend`
-service, run the frontend deploy by hand.
+In the frontend container, nginx serves `index.html` for unknown paths, so
+client-side routes survive a reload. Files under `assets/` have a content hash
+in their name and are cached for a year; everything else is checked again on
+each visit, so a deploy shows at once.
 
 ## Operations
 
@@ -311,11 +293,10 @@ All from `/opt/portfolio` on the server.
 
 ### Rollback
 
-Every deploy keeps its image tag in GHCR. To go back to an earlier commit:
+Every deploy keeps its image tags in GHCR. To go back to an earlier commit:
 
 ```bash
-TAG=sha-<commit> docker compose up -d --wait backend
-FRONTEND_TAG=sha-<commit> docker compose up -d --wait frontend
+TAG=sha-<commit> docker compose up -d --wait
 ```
 
 The next deploy from `main` replaces it. If the bad backend version had
@@ -358,8 +339,7 @@ docker build -t ghcr.io/mraleborg/portfolio-backend:local backend/
 docker build -t ghcr.io/mraleborg/portfolio-frontend:local frontend/
 cp deploy/compose.yml /some/tmp/dir/
 # In that dir: a .env from deploy/.env.example with ALLOWED_HOSTS=localhost,
-# CSRF_TRUSTED_ORIGINS=https://localhost:8443, TAG=local, FRONTEND_TAG=local,
-# EMAIL_URL=consolemail://
+# CSRF_TRUSTED_ORIGINS=https://localhost:8443, TAG=local, EMAIL_URL=consolemail://
 docker compose up -d --wait
 # A Caddy on the host network plays the server's Caddy:
 printf 'localhost:8443 {\n\treverse_proxy 127.0.0.1:8000\n}\nlocalhost:8444 {\n\treverse_proxy 127.0.0.1:8080\n}\n' > Caddyfile

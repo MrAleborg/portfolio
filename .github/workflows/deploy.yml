@@ -1,0 +1,135 @@
+name: Deploy
+
+# Deploys the whole Compose stack (backend and frontend) for one commit.
+# Runs after Backend CI or Frontend CI passes on main, or by hand (e.g. to
+# redeploy).
+on:
+  workflow_run:
+    workflows: [Backend CI, Frontend CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One deploy at a time, and never cancel one halfway.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+env:
+  # The commit CI tested (workflow_run), or the one picked by hand.
+  COMMIT: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+jobs:
+  # A push can run both CIs. Deploy only once every CI run for the commit has
+  # passed: while another one is still running, its own completion triggers
+  # the deploy.
+  check:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+    outputs:
+      ready: ${{ steps.ci.outputs.ready }}
+      tag: ${{ steps.ci.outputs.tag }}
+    steps:
+      - name: Check the CI runs for the commit
+        id: ci
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "tag=sha-${COMMIT::7}" >> "$GITHUB_OUTPUT"
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          runs=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$COMMIT&event=push" \
+            --jq '[.workflow_runs[] | select(.name == "Backend CI" or .name == "Frontend CI")]')
+          echo "$runs" | jq -r '.[] | "\(.name): \(.status) \(.conclusion // "")"'
+          if [ "$(echo "$runs" | jq '[.[] | select(.status != "completed")] | length')" != 0 ]; then
+            echo "::notice::Another CI run is still going; it will trigger the deploy."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          elif [ "$(echo "$runs" | jq '[.[] | select(.conclusion != "success")] | length')" != 0 ]; then
+            echo "::warning::A CI run failed for this commit; not deploying."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    needs: check
+    if: needs.check.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        service: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.COMMIT }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.service }}
+          push: true
+          tags: |
+            ghcr.io/mraleborg/portfolio-${{ matrix.service }}:${{ needs.check.outputs.tag }}
+            ghcr.io/mraleborg/portfolio-${{ matrix.service }}:latest
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+  deploy:
+    needs: [check, build]
+    runs-on: ubuntu-latest
+    environment:
+      name: Portfolio production
+      url: https://${{ vars.FRONTEND_DOMAIN }}
+    env:
+      TAG: ${{ needs.check.outputs.tag }}
+      TARGET: ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.COMMIT }}
+          sparse-checkout: deploy
+
+      - name: Set up SSH
+        run: |
+          install -m 700 -d ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          echo "${{ secrets.VPS_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519
+
+      - name: Copy the stack files
+        # .env stays on the server and is never overwritten. The server's
+        # Caddy config is managed by hand (see deploy/Caddyfile.example).
+        run: scp deploy/compose.yml deploy/backup.sh "$TARGET:/opt/portfolio/"
+
+      - name: Start the new images
+        # --wait returns once every service passes its health check.
+        run: |
+          # $TAG is expanded here on purpose, to send its value to the server.
+          # shellcheck disable=SC2029
+          ssh "$TARGET" "cd /opt/portfolio \
+            && export TAG=$TAG \
+            && docker compose pull \
+            && docker compose up -d --wait \
+            && docker image prune -f"
+
+      - name: Smoke test
+        run: |
+          curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-all-errors "https://${{ vars.API_DOMAIN }}/api/v1/experience/" > /dev/null
+          curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-all-errors "https://${{ vars.FRONTEND_DOMAIN }}/" > /dev/null

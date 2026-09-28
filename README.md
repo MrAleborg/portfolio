@@ -1,8 +1,7 @@
 # portfolio
 [![Backend CI](https://github.com/MrAleborg/portfolio/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/MrAleborg/portfolio/actions/workflows/backend-ci.yml)
-[![Backend deploy](https://github.com/MrAleborg/portfolio/actions/workflows/backend-deploy.yml/badge.svg)](https://github.com/MrAleborg/portfolio/actions/workflows/backend-deploy.yml)
 [![Frontend CI](https://github.com/MrAleborg/portfolio/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/MrAleborg/portfolio/actions/workflows/frontend-ci.yml)
-[![Frontend deploy](https://github.com/MrAleborg/portfolio/actions/workflows/frontend-deploy.yml/badge.svg)](https://github.com/MrAleborg/portfolio/actions/workflows/frontend-deploy.yml)
+[![Deploy](https://github.com/MrAleborg/portfolio/actions/workflows/deploy.yml/badge.svg)](https://github.com/MrAleborg/portfolio/actions/workflows/deploy.yml)
 
 Here is the source of my Portfolio
 
