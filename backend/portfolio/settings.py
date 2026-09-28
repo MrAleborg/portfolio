@@ -209,10 +209,16 @@ CORS_ALLOWED_ORIGINS = env("CORS_ALLOWED_ORIGINS")
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
-# EMAIL_URL, e.g. smtp+tls://user:password@smtp.example.com:587 in production.
-# Without it, emails are printed to the console.
+# Two mailers, since an SMTP account can usually only send from its own address:
+# - "default" (EMAIL_URL) sends from DEFAULT_FROM_EMAIL, for emails people
+#   receive, e.g. smtp+tls://contact%40example.com:password@smtp.example.com:587
+# - "server" (SERVER_EMAIL_URL, defaults to EMAIL_URL) sends the error reports
+#   to ADMINS, from SERVER_EMAIL.
+# Without EMAIL_URL, emails are printed to the console.
+EMAIL_URL = env("EMAIL_URL", default="consolemail://")
 MAILERS = {
-    "default": mailer_from_url(env("EMAIL_URL", default="consolemail://")),
+    "default": mailer_from_url(EMAIL_URL),
+    "server": mailer_from_url(env("SERVER_EMAIL_URL", default=EMAIL_URL)),
 }
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="webmaster@localhost")
 SERVER_EMAIL = env("SERVER_EMAIL", default=DEFAULT_FROM_EMAIL)
@@ -220,22 +226,36 @@ SERVER_EMAIL = env("SERVER_EMAIL", default=DEFAULT_FROM_EMAIL)
 ADMINS = env("ADMINS")
 
 
-# Logging: also print warnings and errors to stdout when DEBUG is off, so they
-# show up in `docker compose logs`.
+# Logging: Django's defaults, except that error reports go through the "server"
+# mailer, and warnings and errors are also printed to stdout when DEBUG is off,
+# so they show up in `docker compose logs`.
 # https://docs.djangoproject.com/en/6.1/topics/logging/
 
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "filters": {
-        # With DEBUG on, Django's own console handler already prints these.
         "require_debug_false": {"()": "django.utils.log.RequireDebugFalse"},
+        "require_debug_true": {"()": "django.utils.log.RequireDebugTrue"},
     },
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
             "filters": ["require_debug_false"],
         },
+        "debug_console": {
+            "class": "logging.StreamHandler",
+            "filters": ["require_debug_true"],
+        },
+        "mail_admins": {
+            "level": "ERROR",
+            "filters": ["require_debug_false"],
+            "class": "django.utils.log.AdminEmailHandler",
+            "using": "server",
+        },
+    },
+    "loggers": {
+        "django": {"handlers": ["debug_console", "mail_admins"], "level": "INFO"},
     },
     "root": {"handlers": ["console"], "level": "WARNING"},
 }

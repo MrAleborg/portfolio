@@ -47,8 +47,10 @@ Django reads its settings from the environment
 | `CSRF_TRUSTED_ORIGINS` | `https://api.example.com` | Needed to log into `/admin/` |
 | `CORS_ALLOWED_ORIGINS` | `https://example.com` | Where the frontend runs |
 | `DATABASE_URL` | `sqlite:////data/db.sqlite3` | Four slashes: absolute path |
-| `EMAIL_URL` | `smtp+tls://user:password@smtp.example.com:587` | `smtp+ssl://…:465` also works. URL-encode `@` and `:` in credentials |
-| `DEFAULT_FROM_EMAIL`, `SERVER_EMAIL` | `portfolio@example.com` | Sender addresses |
+| `EMAIL_URL` | `smtp+tls://contact%40example.com:password@smtp.example.com:587` | Sends the emails people receive. `smtp+ssl://…:465` also works. URL-encode `@` and `:` in credentials |
+| `DEFAULT_FROM_EMAIL` | `contact@example.com` | Sender of those emails. Must match the `EMAIL_URL` account |
+| `SERVER_EMAIL_URL` | `smtp+tls://logs%40example.com:password@smtp.example.com:587` | Sends the error reports. Defaults to `EMAIL_URL` |
+| `SERVER_EMAIL` | `logs@example.com` | Sender of the error reports. Must match the `SERVER_EMAIL_URL` account |
 | `ADMINS` | `you@example.com` | Receive server error reports by email |
 | `SECURE_HSTS_SECONDS` | `3600`, later `31536000` | See [HTTPS](#https) |
 | `SECURE_SSL_REDIRECT` | default `True` | Only for testing without HTTPS |
@@ -135,8 +137,13 @@ Copy [`deploy/.env.example`](../../deploy/.env.example) to
 chmod 600 /opt/portfolio/.env
 ```
 
-For `EMAIL_URL`, use any SMTP provider: a transactional service (Brevo,
-Mailjet...), your domain's mailbox, or a Gmail app password.
+For `EMAIL_URL` and `SERVER_EMAIL_URL`, use any SMTP provider: a
+transactional service (Brevo, Mailjet...), your domain's mailbox, or a Gmail
+app password. Two URLs exist because an SMTP account can usually only send from
+its own address: with Proton, for example, each address gets its own SMTP token
+(Settings → IMAP/SMTP → SMTP tokens, server `smtp.protonmail.ch:587`). To test
+the error reports once the backend runs:
+`docker compose exec backend python manage.py sendtestemail --admins`.
 
 Check that `BACKEND_PORT` (default 8000) is free: `sudo ss -tlnp | grep ':8000 '`.
 
