@@ -25,6 +25,15 @@
       }
     },
     {
+      "_id": "env_production",
+      "_type": "environment",
+      "parentId": "env_base",
+      "name": "Production (writes real data)",
+      "data": {
+        "base_url": "https://api.example.com"
+      }
+    },
+    {
       "_id": "fld_01",
       "_type": "request_group",
       "parentId": "wrk_portfolio_admin",

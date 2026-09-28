@@ -15,6 +15,8 @@ from pathlib import Path
 
 import environ
 
+from portfolio.mailers import mailer_from_url
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -23,6 +25,8 @@ env = environ.Env(
     DEBUG=(bool, False),
     ALLOWED_HOSTS=(list, []),
     CORS_ALLOWED_ORIGINS=(list, []),
+    CSRF_TRUSTED_ORIGINS=(list, []),
+    ADMINS=(list, []),
 )
 environ.Env.read_env(BASE_DIR / ".env")
 
@@ -36,6 +40,28 @@ SECRET_KEY = env("SECRET_KEY")
 DEBUG = env("DEBUG")
 
 ALLOWED_HOSTS = env("ALLOWED_HOSTS")
+
+# Origins allowed to send unsafe requests with a CSRF cookie (the Django admin),
+# e.g. https://api.example.com
+CSRF_TRUSTED_ORIGINS = env("CSRF_TRUSTED_ORIGINS")
+
+# HTTPS. In production, Caddy terminates TLS and forwards plain HTTP with the
+# X-Forwarded-Proto header. The secure defaults only apply when DEBUG is off,
+# so runserver keeps working over HTTP.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=not DEBUG)
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+# Start small, raise once HTTPS is known to work (browsers remember HSTS).
+SECURE_HSTS_SECONDS = env.int("SECURE_HSTS_SECONDS", default=0 if DEBUG else 3600)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool(
+    "SECURE_HSTS_INCLUDE_SUBDOMAINS", default=True
+)
+SILENCED_SYSTEM_CHECKS = [
+    # HSTS preload means submitting the domain to the browsers' preload list,
+    # which takes months to undo. Not needed for a portfolio.
+    "security.W021",
+]
 
 
 # Application definition
@@ -60,6 +86,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -92,11 +119,15 @@ WSGI_APPLICATION = "portfolio.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
+# DATABASE_URL, e.g. sqlite:////data/db.sqlite3 in the container
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+    "default": env.db("DATABASE_URL", default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
+}
+# WAL mode and immediate transactions let several gunicorn workers share the
+# SQLite file without "database is locked" errors.
+DATABASES["default"]["OPTIONS"] = {
+    "transaction_mode": "IMMEDIATE",
+    "init_command": "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;",
 }
 
 
@@ -135,6 +166,16 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = "static/"
+# Filled by collectstatic, served by WhiteNoise (the Django admin's CSS and JS)
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 
 # REST framework and authentication
@@ -168,8 +209,53 @@ CORS_ALLOWED_ORIGINS = env("CORS_ALLOWED_ORIGINS")
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
+# Two mailers, since an SMTP account can usually only send from its own address:
+# - "default" (EMAIL_URL) sends from DEFAULT_FROM_EMAIL, for emails people
+#   receive, e.g. smtp+tls://contact%40example.com:password@smtp.example.com:587
+# - "server" (SERVER_EMAIL_URL, defaults to EMAIL_URL) sends the error reports
+#   to ADMINS, from SERVER_EMAIL.
+# Without EMAIL_URL, emails are printed to the console.
+EMAIL_URL = env("EMAIL_URL", default="consolemail://")
 MAILERS = {
-    "default": {
-        "BACKEND": "django.core.mail.backends.console.EmailBackend",
+    "default": mailer_from_url(EMAIL_URL),
+    "server": mailer_from_url(env("SERVER_EMAIL_URL", default=EMAIL_URL)),
+}
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="webmaster@localhost")
+SERVER_EMAIL = env("SERVER_EMAIL", default=DEFAULT_FROM_EMAIL)
+# Addresses that receive server error reports
+ADMINS = env("ADMINS")
+
+
+# Logging: Django's defaults, except that error reports go through the "server"
+# mailer, and warnings and errors are also printed to stdout when DEBUG is off,
+# so they show up in `docker compose logs`.
+# https://docs.djangoproject.com/en/6.1/topics/logging/
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": {
+        "require_debug_false": {"()": "django.utils.log.RequireDebugFalse"},
+        "require_debug_true": {"()": "django.utils.log.RequireDebugTrue"},
     },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "filters": ["require_debug_false"],
+        },
+        "debug_console": {
+            "class": "logging.StreamHandler",
+            "filters": ["require_debug_true"],
+        },
+        "mail_admins": {
+            "level": "ERROR",
+            "filters": ["require_debug_false"],
+            "class": "django.utils.log.AdminEmailHandler",
+            "using": "server",
+        },
+    },
+    "loggers": {
+        "django": {"handlers": ["debug_console", "mail_admins"], "level": "INFO"},
+    },
+    "root": {"handlers": ["console"], "level": "WARNING"},
 }

@@ -1,0 +1,14 @@
+# Secrets and local data
+.env
+db.sqlite3*
+staticfiles/
+
+# Development and test files
+.coverage
+.pytest_cache/
+.ruff_cache/
+.vscode/
+**/__pycache__/
+docs/
+Dockerfile
+.dockerignore
