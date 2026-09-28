@@ -219,16 +219,24 @@ Never run `seed_demo`, `flush_demo` or `reset_demo` here
 
 ### 9. Backups
 
+The job must belong to `deploy`, which owns `/opt/portfolio` and can use
+Docker. In another user's crontab it fails without a trace:
+
 ```bash
-crontab -e
+sudo crontab -u deploy -e
 # 0 3 * * * /opt/portfolio/backup.sh >> /opt/portfolio/backup.log 2>&1
 ```
 
 `backup.sh` writes a compressed, consistent copy of the database to
-`/opt/portfolio/backups/` and deletes copies older than 14 days
-(`BACKUP_DIR` and `KEEP_DAYS` change that). A backup on the same disk doesn't
-survive losing the server, so also copy that folder elsewhere (e.g. `rclone`
-to object storage, or `rsync` to another machine).
+`/opt/portfolio/backups/`, unless the database hasn't changed since the latest
+backup (logging into the admin counts as a change). It then deletes backups
+older than 180 days, but always keeps the latest one, however old.
+`BACKUP_DIR` and `KEEP_DAYS` change the folder and the retention, at the start
+of the cron line (`0 3 * * * KEEP_DAYS=365 /opt/portfolio/backup.sh ...`).
+
+A backup on the same disk doesn't survive losing the server, so also copy that
+folder elsewhere (e.g. `rclone` to object storage, or `rsync` to another
+machine).
 
 ## How a deploy works
 
