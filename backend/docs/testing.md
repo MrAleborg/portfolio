@@ -52,7 +52,7 @@ PIPENV_DONT_LOAD_ENV=1 DEBUG=False SECRET_KEY=$(python -c "import secrets; print
   pipenv run python manage.py check --deploy --fail-level WARNING
 ```
 
-When CI passes on `main`, the backend is deployed: see [deployment.md](deployment.md).
+When CI passes on `main`, the stack is deployed: see [deployment.md](deployment.md).
 
 ## Demo data for manual testing
 
