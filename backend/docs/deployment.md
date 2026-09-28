@@ -174,9 +174,9 @@ backend isn't running yet.
 
 In the repository settings:
 
-1. **Environments** → create `production` (optionally require a review before
+1. **Environments** → create `Portfolio production` (the name the workflow uses) (optionally require a review before
    each deploy).
-2. **Secrets** (repository or `production` environment):
+2. **Secrets** (repository or `Portfolio production` environment):
 
    | Secret | Value |
    |---|---|
