@@ -1,0 +1,9 @@
+# Installed and built in the image
+node_modules/
+dist/
+
+# Development files
+.vscode/
+README.md
+Dockerfile
+.dockerignore

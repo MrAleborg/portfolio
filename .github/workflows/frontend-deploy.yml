@@ -1,9 +1,9 @@
-name: Backend deploy
+name: Frontend deploy
 
-# Runs after Backend CI passes on main, or by hand (e.g. to redeploy).
+# Runs after Frontend CI passes on main, or by hand (e.g. to redeploy).
 on:
   workflow_run:
-    workflows: [Backend CI]
+    workflows: [Frontend CI]
     types: [completed]
     branches: [main]
   workflow_dispatch:
@@ -13,11 +13,11 @@ permissions:
 
 # One deploy at a time, and never cancel one halfway.
 concurrency:
-  group: backend-deploy
+  group: frontend-deploy
   cancel-in-progress: false
 
 env:
-  IMAGE: ghcr.io/mraleborg/portfolio-backend
+  IMAGE: ghcr.io/mraleborg/portfolio-frontend
   # The commit CI tested (workflow_run), or the one picked by hand.
   COMMIT: ${{ github.event.workflow_run.head_sha || github.sha }}
 
@@ -49,20 +49,20 @@ jobs:
 
       - uses: docker/build-push-action@v6
         with:
-          context: backend
+          context: frontend
           push: true
           tags: |
             ${{ env.IMAGE }}:${{ steps.tag.outputs.tag }}
             ${{ env.IMAGE }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
     environment:
       name: Portfolio production
-      url: https://${{ vars.API_DOMAIN }}
+      url: https://${{ vars.FRONTEND_DOMAIN }}
     env:
       TAG: ${{ needs.build.outputs.tag }}
       TARGET: ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}
@@ -79,22 +79,21 @@ jobs:
           echo "${{ secrets.VPS_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/id_ed25519
 
-      - name: Copy the stack files
-        # .env stays on the server and is never overwritten. The server's
-        # Caddy config is managed by hand (see deploy/Caddyfile.example).
-        run: scp deploy/compose.yml deploy/backup.sh "$TARGET:/opt/portfolio/"
+      - name: Copy the stack file
+        # .env stays on the server and is never overwritten.
+        run: scp deploy/compose.yml "$TARGET:/opt/portfolio/"
 
       - name: Start the new image
-        # Only the backend service: the frontend keeps running as it is.
-        # --wait returns once the backend passes its health check.
+        # Only the frontend service: the backend keeps running as it is.
+        # --wait returns once the frontend passes its health check.
         run: |
           # $TAG is expanded here on purpose, to send its value to the server.
           # shellcheck disable=SC2029
           ssh "$TARGET" "cd /opt/portfolio \
-            && export TAG=$TAG \
-            && docker compose pull backend \
-            && docker compose up -d --wait backend \
+            && export FRONTEND_TAG=$TAG \
+            && docker compose pull frontend \
+            && docker compose up -d --wait frontend \
             && docker image prune -f"
 
       - name: Smoke test
-        run: curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-all-errors "https://${{ vars.API_DOMAIN }}/api/v1/experience/" > /dev/null
+        run: curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-all-errors "https://${{ vars.FRONTEND_DOMAIN }}/" > /dev/null

@@ -1,9 +1,20 @@
-# Site block to add to the server's Caddy config (/etc/caddy/Caddyfile),
+# Site blocks to add to the server's Caddy config (/etc/caddy/Caddyfile),
 # then reload with: sudo systemctl reload caddy
-# Caddy gets and renews the HTTPS certificate for the domain by itself.
-# The port is BACKEND_PORT from .env (default 8000).
+# Caddy gets and renews the HTTPS certificate for each domain by itself.
 
+# Backend. The port is BACKEND_PORT from .env (default 8000).
 api.example.com {
 	encode zstd gzip
 	reverse_proxy 127.0.0.1:8000
+}
+
+# Frontend. The port is FRONTEND_PORT from .env (default 8080).
+example.com {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:8080
+}
+
+# www redirects to the bare domain.
+www.example.com {
+	redir https://example.com{uri} permanent
 }

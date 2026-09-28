@@ -1,6 +1,6 @@
-# Production stack: the Django backend, behind the server's own Caddy
-# (see Caddyfile.example). Run from this directory, next to a .env file
-# (see .env.example):
+# Production stack: the Django backend and the frontend, behind the server's
+# own Caddy (see Caddyfile.example). Run from this directory, next to a .env
+# file (see .env.example):
 #   docker compose up -d
 name: portfolio
 
@@ -14,6 +14,13 @@ services:
       - "127.0.0.1:${BACKEND_PORT:-8000}:8000"
     volumes:
       - db-data:/data
+    restart: unless-stopped
+
+  frontend:
+    image: ghcr.io/mraleborg/portfolio-frontend:${FRONTEND_TAG:-latest}
+    ports:
+      # Loopback only, like the backend.
+      - "127.0.0.1:${FRONTEND_PORT:-8080}:8080"
     restart: unless-stopped
 
 volumes:
