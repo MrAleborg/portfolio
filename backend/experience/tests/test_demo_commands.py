@@ -145,35 +145,35 @@ def test_flush_keeps_users():
 def test_destructive_commands_stop_unless_confirmed(monkeypatch, command):
     """Anything but "yes" at the prompt leaves the content untouched."""
     run("seed_demo")
-    Tag.objects.create(name="Leftover", kind=Tag.Kind.TOOL)
+    Tag.objects.create(name_en="Leftover", name_fr="Leftover", kind=Tag.Kind.TOOL)
     monkeypatch.setattr("builtins.input", lambda prompt: "no")
 
     with pytest.raises(CommandError, match="Cancelled"):
         run(command)
 
-    assert Tag.objects.filter(name="Leftover").exists()
+    assert Tag.objects.filter(name_en="Leftover", name_fr="Leftover").exists()
 
 
 @pytest.mark.parametrize("command", ["flush_demo", "reset_demo"])
 def test_destructive_commands_run_when_confirmed(monkeypatch, command):
     """Typing "yes" at the prompt goes ahead."""
     run("seed_demo")
-    Tag.objects.create(name="Leftover", kind=Tag.Kind.TOOL)
+    Tag.objects.create(name_en="Leftover", name_fr="Leftover", kind=Tag.Kind.TOOL)
     monkeypatch.setattr("builtins.input", lambda prompt: "yes")
 
     run(command)
 
-    assert not Tag.objects.filter(name="Leftover").exists()
+    assert not Tag.objects.filter(name_en="Leftover", name_fr="Leftover").exists()
 
 
 def test_reset_replaces_the_content():
     """reset_demo deletes the existing content, then seeds again."""
     run("seed_demo")
-    Tag.objects.create(name="Leftover", kind=Tag.Kind.TOOL)
+    Tag.objects.create(name_en="Leftover", name_fr="Leftover", kind=Tag.Kind.TOOL)
 
     run("reset_demo", interactive=False)
 
-    assert not Tag.objects.filter(name="Leftover").exists()
+    assert not Tag.objects.filter(name_en="Leftover", name_fr="Leftover").exists()
     assert Education.objects.exists()
     assert Certification.objects.exists()
     assert Specialization.objects.exists()

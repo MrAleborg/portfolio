@@ -27,7 +27,8 @@ def make_experience(**kwargs):
     """Create a professional experience; only pass the fields the test cares about."""
     fields = {
         "company": "Acme",
-        "position": "Developer",
+        "position_en": "Developer",
+        "position_fr": "Développeur",
         "start_date": date(2020, 1, 1),
     }
     fields.update(kwargs)
@@ -36,7 +37,11 @@ def make_experience(**kwargs):
 
 def make_project(experience, **kwargs):
     """Create a project of `experience`; only pass the fields the test cares about."""
-    fields = {"title": "Billing API", "start_date": date(2021, 1, 1)}
+    fields = {
+        "title_en": "Billing API",
+        "title_fr": "API de facturation",
+        "start_date": date(2021, 1, 1),
+    }
     fields.update(kwargs)
     return Project.objects.create(experience=experience, **fields)
 
@@ -89,24 +94,33 @@ def test_detail_returns_public_fields(api_client):
     """
     experience = make_experience(
         company="Acme",
-        position="Backend Developer",
+        position_en="Backend Developer",
+        position_fr="Développeur backend",
         employment_type=ProfessionalExperience.EmploymentType.CONTRACT,
         company_url="https://acme.example.com",
-        location="Paris",
+        location_en="Paris",
+        location_fr="Paris",
         start_date=date(2020, 1, 1),
         end_date=date(2023, 12, 31),
-        description="Payments team.",
+        description_en="Payments team.",
+        description_fr="Équipe paiements.",
     )
     project = make_project(
         experience,
-        title="Billing API",
         start_date=date(2021, 3, 1),
         end_date=None,
-        description="Rewrote billing.",
-        achievements=["Cut invoice time by 80%"],
+        description_en="Rewrote billing.",
+        description_fr="Refonte de la facturation.",
+        achievements=[
+            {"en": "Cut invoice time by 80%", "fr": "Facturation 80 % plus rapide"}
+        ],
     )
-    Mission.objects.create(project=project, description="Design the API")
-    skill = Skill.objects.create(name="Python")
+    Mission.objects.create(
+        project=project,
+        description_en="Design the API",
+        description_fr="Concevoir l'API",
+    )
+    skill = Skill.objects.create(name_en="Python", name_fr="Python")
     project.tags.add(skill)
 
     response = api_client.get(detail_url(experience.id))
@@ -115,25 +129,39 @@ def test_detail_returns_public_fields(api_client):
     assert response.json() == {
         "id": experience.id,
         "company": "Acme",
-        "position": "Backend Developer",
+        "position": {"en": "Backend Developer", "fr": "Développeur backend"},
         "employment_type": "contract",
         "company_url": "https://acme.example.com",
-        "location": "Paris",
+        "location": {"en": "Paris", "fr": "Paris"},
         "start_date": "2020-01-01",
         "end_date": "2023-12-31",
         "is_current": False,
-        "description": "Payments team.",
+        "description": {"en": "Payments team.", "fr": "Équipe paiements."},
         "projects": [
             {
                 "id": project.id,
-                "title": "Billing API",
+                "title": {"en": "Billing API", "fr": "API de facturation"},
                 "start_date": "2021-03-01",
                 "end_date": None,
                 "is_current": True,
-                "description": "Rewrote billing.",
-                "achievements": ["Cut invoice time by 80%"],
-                "missions": ["Design the API"],
-                "tags": [{"id": skill.id, "name": "Python", "kind": "skill"}],
+                "description": {
+                    "en": "Rewrote billing.",
+                    "fr": "Refonte de la facturation.",
+                },
+                "achievements": [
+                    {
+                        "en": "Cut invoice time by 80%",
+                        "fr": "Facturation 80 % plus rapide",
+                    }
+                ],
+                "missions": [{"en": "Design the API", "fr": "Concevoir l'API"}],
+                "tags": [
+                    {
+                        "id": skill.id,
+                        "name": {"en": "Python", "fr": "Python"},
+                        "kind": "skill",
+                    }
+                ],
             }
         ],
     }
@@ -142,8 +170,8 @@ def test_detail_returns_public_fields(api_client):
 def test_detail_hides_invisible_projects(api_client):
     """Hidden projects are left out of their experience."""
     experience = make_experience()
-    visible = make_project(experience, title="Visible")
-    make_project(experience, title="Hidden", is_visible=False)
+    visible = make_project(experience, title_en="Visible", title_fr="Visible")
+    make_project(experience, title_en="Hidden", title_fr="Hidden", is_visible=False)
 
     response = api_client.get(detail_url(experience.id))
 
@@ -167,8 +195,10 @@ def test_list_items_have_the_detail_shape(api_client):
     """List and detail share one shape, so the frontend needs a single type."""
     experience = make_experience()
     project = make_project(experience)
-    Mission.objects.create(project=project, description="Build it")
-    project.tags.add(Skill.objects.create(name="Python"))
+    Mission.objects.create(
+        project=project, description_en="Build it", description_fr="Build it"
+    )
+    project.tags.add(Skill.objects.create(name_en="Python", name_fr="Python"))
 
     listed = api_client.get(LIST_URL).json()[0]
     detailed = api_client.get(detail_url(experience.id)).json()

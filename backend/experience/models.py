@@ -1,11 +1,32 @@
+from functools import reduce
+from operator import and_
+
 from django.db import models
 from django.db.models import F, Q
+
+from experience.languages import LANGUAGES
+
+
+def translated_together(field):
+    """Constraint: optional text `field` is empty in every language or in none.
+
+    The field is stored as one column per language, e.g. grade_en and grade_fr.
+    """
+    columns = [f"{field}_{language}" for language in LANGUAGES]
+    all_empty = reduce(and_, (Q(**{column: ""}) for column in columns))
+    all_filled = reduce(and_, (~Q(**{column: ""}) for column in columns))
+    return models.CheckConstraint(
+        condition=all_empty | all_filled,
+        name=f"%(app_label)s_%(class)s_{field}_translated",
+        violation_error_message="Fill in every language, or leave them all empty.",
+    )
 
 
 class BaseEntry(models.Model):
     """Fields shared by every portfolio entry."""
 
-    description = models.TextField(blank=True)
+    description_en = models.TextField(blank=True)
+    description_fr = models.TextField(blank=True)
     display_order = models.PositiveIntegerField(
         default=0, help_text="Lower values are shown first."
     )
@@ -32,6 +53,7 @@ class DateRangeEntry(BaseEntry):
                 name="%(app_label)s_%(class)s_end_after_start",
                 violation_error_message="The end date cannot be before the start date.",
             ),
+            translated_together("description"),
         ]
 
     @property
@@ -41,16 +63,26 @@ class DateRangeEntry(BaseEntry):
 
 class Education(DateRangeEntry):
     institution = models.CharField(max_length=255)
-    degree = models.CharField(max_length=255)
-    field_of_study = models.CharField(max_length=255, blank=True)
-    grade = models.CharField(max_length=100, blank=True)
-    location = models.CharField(max_length=255, blank=True)
+    degree_en = models.CharField(max_length=255)
+    degree_fr = models.CharField(max_length=255)
+    field_of_study_en = models.CharField(max_length=255, blank=True)
+    field_of_study_fr = models.CharField(max_length=255, blank=True)
+    grade_en = models.CharField(max_length=100, blank=True)
+    grade_fr = models.CharField(max_length=100, blank=True)
+    location_en = models.CharField(max_length=255, blank=True)
+    location_fr = models.CharField(max_length=255, blank=True)
 
     class Meta(DateRangeEntry.Meta):
         verbose_name_plural = "education"
+        constraints = [
+            *DateRangeEntry.Meta.constraints,
+            translated_together("field_of_study"),
+            translated_together("grade"),
+            translated_together("location"),
+        ]
 
     def __str__(self):
-        return f"{self.degree} — {self.institution}"
+        return f"{self.degree_en} — {self.institution}"
 
 
 class ProfessionalExperience(DateRangeEntry):
@@ -63,20 +95,26 @@ class ProfessionalExperience(DateRangeEntry):
         APPRENTICESHIP = "apprenticeship", "Apprenticeship"
 
     company = models.CharField(max_length=255)
-    position = models.CharField(max_length=255)
+    position_en = models.CharField(max_length=255)
+    position_fr = models.CharField(max_length=255)
     employment_type = models.CharField(
         max_length=20,
         choices=EmploymentType.choices,
         default=EmploymentType.FULL_TIME,
     )
     company_url = models.URLField(blank=True)
-    location = models.CharField(max_length=255, blank=True)
+    location_en = models.CharField(max_length=255, blank=True)
+    location_fr = models.CharField(max_length=255, blank=True)
 
     class Meta(DateRangeEntry.Meta):
         verbose_name_plural = "professional experiences"
+        constraints = [
+            *DateRangeEntry.Meta.constraints,
+            translated_together("location"),
+        ]
 
     def __str__(self):
-        return f"{self.position} @ {self.company}"
+        return f"{self.position_en} @ {self.company}"
 
 
 class Tag(models.Model):
@@ -90,15 +128,19 @@ class Tag(models.Model):
     # Set by the proxy subclasses below.
     KIND = None
 
-    name = models.CharField(max_length=100)
+    name_en = models.CharField(max_length=100)
+    name_fr = models.CharField(max_length=100)
     kind = models.CharField(max_length=20, choices=Kind.choices)
 
     class Meta:
-        ordering = ["kind", "name"]
+        ordering = ["kind", "name_en"]
+        # A name is unique within its kind, in each language.
         constraints = [
             models.UniqueConstraint(
-                fields=["name", "kind"], name="unique_tag_per_kind"
-            ),
+                fields=[f"name_{language}", "kind"],
+                name=f"unique_tag_name_{language}_per_kind",
+            )
+            for language in LANGUAGES
         ]
 
     def save(self, *args, **kwargs):
@@ -107,7 +149,7 @@ class Tag(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.name
+        return self.name_en
 
 
 class TagKindManager(models.Manager):
@@ -151,12 +193,16 @@ class Project(DateRangeEntry):
         related_name="projects",
         help_text="Leave empty for a side project.",
     )
-    title = models.CharField(max_length=255)
+    title_en = models.CharField(max_length=255)
+    title_fr = models.CharField(max_length=255)
     tags = models.ManyToManyField(Tag, related_name="projects", blank=True)
     achievements = models.JSONField(
         default=list,
         blank=True,
-        help_text='Valorization elements, e.g. ["Won the 2024 innovation award"].',
+        help_text=(
+            "Valorization elements, each in every language, e.g. "
+            '[{"en": "Won an award", "fr": "A remporté un prix"}].'
+        ),
     )
 
     @property
@@ -165,15 +211,16 @@ class Project(DateRangeEntry):
 
     def __str__(self):
         if self.is_side_project:
-            return f"{self.title} (side project)"
-        return f"{self.title} ({self.experience.company})"
+            return f"{self.title_en} (side project)"
+        return f"{self.title_en} ({self.experience.company})"
 
 
 class Mission(models.Model):
     project = models.ForeignKey(
         Project, on_delete=models.CASCADE, related_name="missions"
     )
-    description = models.TextField()
+    description_en = models.TextField()
+    description_fr = models.TextField()
     display_order = models.PositiveIntegerField(
         default=0, help_text="Lower values are shown first."
     )
@@ -182,13 +229,14 @@ class Mission(models.Model):
         ordering = ["display_order"]
 
     def __str__(self):
-        return self.description[:50]
+        return self.description_en[:50]
 
 
 class CredentialEntry(BaseEntry):
     """Fields shared by certifications and specializations."""
 
-    name = models.CharField(max_length=255)
+    name_en = models.CharField(max_length=255)
+    name_fr = models.CharField(max_length=255)
     issuer = models.CharField(max_length=255)
     issue_date = models.DateField()
     expiration_date = models.DateField(null=True, blank=True)
@@ -207,10 +255,11 @@ class CredentialEntry(BaseEntry):
                     "The expiration date cannot be before the issue date."
                 ),
             ),
+            translated_together("description"),
         ]
 
     def __str__(self):
-        return f"{self.name} ({self.issuer})"
+        return f"{self.name_en} ({self.issuer})"
 
 
 class Certification(CredentialEntry):

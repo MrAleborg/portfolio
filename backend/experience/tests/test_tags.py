@@ -45,14 +45,23 @@ def detail_url(basename, pk):
 
 def make_project(**kwargs):
     """Create a project; only pass the fields the test cares about."""
-    fields = {"title": "Portfolio", "start_date": date(2024, 1, 1)}
+    fields = {
+        "title_en": "Portfolio",
+        "title_fr": "Portfolio",
+        "start_date": date(2024, 1, 1),
+    }
     fields.update(kwargs)
     return Project.objects.create(**fields)
 
 
 def make_certification(**kwargs):
     """Create a certification; only pass the fields the test cares about."""
-    fields = {"name": "AWS SAA", "issuer": "AWS", "issue_date": date(2024, 1, 1)}
+    fields = {
+        "name_en": "AWS SAA",
+        "name_fr": "AWS SAA",
+        "issuer": "AWS",
+        "issue_date": date(2024, 1, 1),
+    }
     fields.update(kwargs)
     return Certification.objects.create(**fields)
 
@@ -81,17 +90,17 @@ def test_list_only_returns_tags_of_its_kind_ordered_by_name(api_client, route):
     kind is not returned: the route already tells it.
     """
     basename, _, model = route
-    b = model.objects.create(name="B")
-    a = model.objects.create(name="A")
+    b = model.objects.create(name_en="B", name_fr="B")
+    a = model.objects.create(name_en="A", name_fr="A")
     for other in (Skill, Tool, Methodology):
         if other is not model:
-            other.objects.create(name="Other")
+            other.objects.create(name_en="Other", name_fr="Other")
 
     response = api_client.get(list_url(basename))
 
     assert response.json() == [
-        {"id": a.id, "name": "A"},
-        {"id": b.id, "name": "B"},
+        {"id": a.id, "name": {"en": "A", "fr": "A"}},
+        {"id": b.id, "name": {"en": "B", "fr": "B"}},
     ]
 
 
@@ -101,51 +110,66 @@ def test_detail_returns_visible_projects_and_certifications(api_client, route):
     Related entries are short summaries; hidden and untagged ones are left out.
     """
     basename, _, model = route
-    tag = model.objects.create(name="Python")
-    project = make_project(title="Portfolio")
-    hidden_project = make_project(title="Secret", is_visible=False)
-    certification = make_certification(name="PCAP")
-    hidden_certification = make_certification(name="Old", is_visible=False)
+    tag = model.objects.create(
+        name_en="Project management", name_fr="Gestion de projet"
+    )
+    project = make_project(title_en="Portfolio", title_fr="Portefolio")
+    hidden_project = make_project(
+        title_en="Secret", title_fr="Secret", is_visible=False
+    )
+    certification = make_certification(name_en="PCAP", name_fr="PCAP")
+    hidden_certification = make_certification(
+        name_en="Old", name_fr="Old", is_visible=False
+    )
     for entry in (project, hidden_project, certification, hidden_certification):
         entry.tags.add(tag)
-    make_project(title="Untagged")
+    make_project(title_en="Untagged", title_fr="Untagged")
 
     response = api_client.get(detail_url(basename, tag.id))
 
     assert response.status_code == 200
     assert response.json() == {
         "id": tag.id,
-        "name": "Python",
-        "projects": [{"id": project.id, "title": "Portfolio"}],
-        "certifications": [{"id": certification.id, "name": "PCAP"}],
+        "name": {"en": "Project management", "fr": "Gestion de projet"},
+        "projects": [
+            {"id": project.id, "title": {"en": "Portfolio", "fr": "Portefolio"}}
+        ],
+        "certifications": [
+            {"id": certification.id, "name": {"en": "PCAP", "fr": "PCAP"}}
+        ],
     }
 
 
 def test_detail_hides_projects_of_invisible_experiences(api_client, route):
     """Hiding an experience hides its projects here too, as on projects/."""
     basename, _, model = route
-    tag = model.objects.create(name="Python")
+    tag = model.objects.create(name_en="Python", name_fr="Python")
     hidden_experience = ProfessionalExperience.objects.create(
         company="Secret Corp",
-        position="Developer",
+        position_en="Developer",
+        position_fr="Développeur",
         start_date=date(2020, 1, 1),
         is_visible=False,
     )
-    hidden_job_project = make_project(title="Hidden job", experience=hidden_experience)
-    side_project = make_project(title="Side")
+    hidden_job_project = make_project(
+        title_en="Hidden job", title_fr="Hidden job", experience=hidden_experience
+    )
+    side_project = make_project(title_en="Side", title_fr="Side")
     for entry in (hidden_job_project, side_project):
         entry.tags.add(tag)
 
     response = api_client.get(detail_url(basename, tag.id))
 
-    assert response.json()["projects"] == [{"id": side_project.id, "title": "Side"}]
+    assert response.json()["projects"] == [
+        {"id": side_project.id, "title": {"en": "Side", "fr": "Side"}}
+    ]
 
 
 def test_detail_of_tag_of_another_kind_is_not_found(api_client, route):
     """skills/{id}/ does not serve a tool, even though both live in Tag."""
     basename, _, model = route
     other_model = next(m for _, _, m in TAG_ROUTES if m is not model)
-    other = other_model.objects.create(name="Python")
+    other = other_model.objects.create(name_en="Python", name_fr="Python")
 
     response = api_client.get(detail_url(basename, other.id))
 
@@ -174,7 +198,7 @@ def test_list_is_read_only(api_client, route):
 def test_detail_is_read_only(api_client, route, method):
     """Tags are managed in the admin, so the API refuses changes."""
     basename, _, model = route
-    tag = model.objects.create(name="Python")
+    tag = model.objects.create(name_en="Python", name_fr="Python")
 
     response = getattr(api_client, method)(detail_url(basename, tag.id))
 

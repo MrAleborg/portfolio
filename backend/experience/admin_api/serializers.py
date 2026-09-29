@@ -3,6 +3,8 @@
 from django.db import transaction
 from rest_framework import serializers
 
+from experience.languages import LANGUAGES
+from experience.localized import LocalizedField, LocalizedText
 from experience.models import (
     Certification,
     Education,
@@ -14,7 +16,7 @@ from experience.models import (
     Specialization,
     Tool,
 )
-from experience.serializers import CREDENTIAL_FIELDS
+from experience.serializers import CREDENTIAL_FIELDS, MissionListField
 
 # Fields of every entry that the public API hides.
 INTERNAL_FIELDS = ["display_order", "is_visible", "created_at", "updated_at"]
@@ -40,6 +42,8 @@ def check_dates(serializer, attrs, start, end, message):
 class DateRangeSerializer(serializers.ModelSerializer):
     """Base for DateRangeEntry models."""
 
+    description = LocalizedField(required=False, allow_blank=True)
+
     def validate(self, attrs):
         check_dates(
             self,
@@ -54,6 +58,9 @@ class DateRangeSerializer(serializers.ModelSerializer):
 class CredentialSerializer(serializers.ModelSerializer):
     """Base for CredentialEntry models."""
 
+    name = LocalizedField()
+    description = LocalizedField(required=False, allow_blank=True)
+
     def validate(self, attrs):
         check_dates(
             self,
@@ -66,6 +73,11 @@ class CredentialSerializer(serializers.ModelSerializer):
 
 
 class EducationSerializer(DateRangeSerializer):
+    degree = LocalizedField()
+    field_of_study = LocalizedField(required=False, allow_blank=True)
+    grade = LocalizedField(required=False, allow_blank=True)
+    location = LocalizedField(required=False, allow_blank=True)
+
     class Meta:
         model = Education
         fields = [
@@ -84,6 +96,9 @@ class EducationSerializer(DateRangeSerializer):
 
 
 class ProfessionalExperienceSerializer(DateRangeSerializer):
+    position = LocalizedField()
+    location = LocalizedField(required=False, allow_blank=True)
+
     class Meta:
         model = ProfessionalExperience
         fields = [
@@ -101,19 +116,11 @@ class ProfessionalExperienceSerializer(DateRangeSerializer):
         ]
 
 
-class MissionListField(serializers.ListField):
-    """A project's missions as plain strings, in display order."""
-
-    child = serializers.CharField()
-
-    def to_representation(self, missions):
-        return [mission.description for mission in missions.all()]
-
-
 class ProjectSerializer(DateRangeSerializer):
     """Sending missions replaces them all, in the order sent."""
 
-    achievements = serializers.ListField(child=serializers.CharField(), required=False)
+    title = LocalizedField()
+    achievements = serializers.ListField(child=LocalizedText(), required=False)
     missions = MissionListField(required=False)
 
     class Meta:
@@ -150,9 +157,16 @@ class ProjectSerializer(DateRangeSerializer):
 
     @staticmethod
     def set_missions(project, descriptions):
+        """Create the missions; each description is a text in every language."""
         Mission.objects.bulk_create(
-            Mission(project=project, description=description, display_order=order)
-            for order, description in enumerate(descriptions)
+            Mission(
+                project=project,
+                display_order=order,
+                **{
+                    f"description_{language}": texts[language] for language in LANGUAGES
+                },
+            )
+            for order, texts in enumerate(descriptions)
         )
 
 
@@ -175,23 +189,35 @@ class SpecializationSerializer(CredentialSerializer):
 class TagSerializer(serializers.ModelSerializer):
     """Base for the tag kinds; subclasses set Meta.model to their proxy.
 
-    Saving through the proxy sets the kind. A name is unique within its kind;
-    DRF does not derive that validator from the (name, kind) constraint since
-    kind is not a field here, so it is checked by hand.
+    Saving through the proxy sets the kind. A name is unique within its kind,
+    in each language; DRF does not derive that validator from the
+    (name_<language>, kind) constraints since kind is not a field here, so it
+    is checked by hand.
     """
+
+    name = LocalizedField()
 
     class Meta:
         fields = ["id", "name"]
 
-    def validate_name(self, value):
-        others = self.Meta.model.objects.filter(name=value)
+    def validate_name(self, columns):
+        """`columns` is {"name_en": ..., "name_fr": ...}; errors are per language."""
+        others = self.Meta.model.objects.all()
         if self.instance is not None:
             others = others.exclude(pk=self.instance.pk)
-        if others.exists():
-            raise serializers.ValidationError(
-                f"A {self.Meta.model._meta.verbose_name} with this name already exists."
-            )
-        return value
+        message = (
+            f"A {self.Meta.model._meta.verbose_name} with this name already exists."
+        )
+        errors = {
+            language: [message]
+            for language in LANGUAGES
+            if others.filter(
+                **{f"name_{language}": columns[f"name_{language}"]}
+            ).exists()
+        }
+        if errors:
+            raise serializers.ValidationError(errors)
+        return columns
 
 
 class SkillSerializer(TagSerializer):

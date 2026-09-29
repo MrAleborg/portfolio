@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from experience.languages import LANGUAGES
+from experience.localized import LocalizedField, LocalizedText
 from experience.models import (
     Certification,
     Education,
@@ -23,6 +25,12 @@ CREDENTIAL_FIELDS = [
 
 
 class EducationSerializer(serializers.ModelSerializer):
+    degree = LocalizedField()
+    field_of_study = LocalizedField()
+    grade = LocalizedField()
+    location = LocalizedField()
+    description = LocalizedField()
+
     class Meta:
         model = Education
         fields = [
@@ -40,6 +48,8 @@ class EducationSerializer(serializers.ModelSerializer):
 
 
 class TagSerializer(serializers.ModelSerializer):
+    name = LocalizedField()
+
     class Meta:
         model = Tag
         fields = ["id", "name"]
@@ -53,6 +63,8 @@ class TagWithKindSerializer(TagSerializer):
 
 
 class SpecializationSummarySerializer(serializers.ModelSerializer):
+    name = LocalizedField()
+
     class Meta:
         model = Specialization
         fields = ["id", "name"]
@@ -61,6 +73,8 @@ class SpecializationSummarySerializer(serializers.ModelSerializer):
 class CertificationSerializer(serializers.ModelSerializer):
     """The view must prefetch specializations filtered on is_visible."""
 
+    name = LocalizedField()
+    description = LocalizedField()
     tags = TagWithKindSerializer(many=True, read_only=True)
     specializations = SpecializationSummarySerializer(many=True, read_only=True)
 
@@ -70,24 +84,44 @@ class CertificationSerializer(serializers.ModelSerializer):
 
 
 class ProjectSummarySerializer(serializers.ModelSerializer):
+    title = LocalizedField()
+
     class Meta:
         model = Project
         fields = ["id", "title"]
 
 
 class ExperienceSummarySerializer(serializers.ModelSerializer):
+    position = LocalizedField()
+
     class Meta:
         model = ProfessionalExperience
         fields = ["id", "company", "position"]
 
 
-class ProjectSerializer(serializers.ModelSerializer):
-    """experience is null for a side project; missions are plain strings."""
+class MissionListField(serializers.ListField):
+    """A project's missions in display order, each a text in every language."""
 
+    child = LocalizedText()
+
+    def to_representation(self, missions):
+        return [
+            {
+                language: getattr(mission, f"description_{language}")
+                for language in LANGUAGES
+            }
+            for mission in missions.all()
+        ]
+
+
+class ProjectSerializer(serializers.ModelSerializer):
+    """experience is null for a side project. Missions and achievements are
+    lists of texts in every language."""
+
+    title = LocalizedField()
+    description = LocalizedField()
     experience = ExperienceSummarySerializer(read_only=True)
-    missions = serializers.SlugRelatedField(
-        many=True, read_only=True, slug_field="description"
-    )
+    missions = MissionListField(read_only=True)
     tags = TagWithKindSerializer(many=True, read_only=True)
 
     class Meta:
@@ -107,6 +141,8 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 
 class CertificationSummarySerializer(serializers.ModelSerializer):
+    name = LocalizedField()
+
     class Meta:
         model = Certification
         fields = ["id", "name"]
@@ -115,6 +151,8 @@ class CertificationSummarySerializer(serializers.ModelSerializer):
 class SpecializationSerializer(serializers.ModelSerializer):
     """The view must prefetch certifications filtered on is_visible."""
 
+    name = LocalizedField()
+    description = LocalizedField()
     certifications = CertificationSummarySerializer(many=True, read_only=True)
 
     class Meta:
@@ -147,6 +185,9 @@ class ExperienceProjectSerializer(ProjectSerializer):
 
 
 class ProfessionalExperienceSerializer(serializers.ModelSerializer):
+    position = LocalizedField()
+    location = LocalizedField()
+    description = LocalizedField()
     projects = ExperienceProjectSerializer(many=True, read_only=True)
 
     class Meta:

@@ -26,7 +26,8 @@ LIST_URL = list_url("certification")
 def make_certification(**kwargs):
     """Create a certification; only pass the fields the test cares about."""
     fields = {
-        "name": "PCAP",
+        "name_en": "PCAP",
+        "name_fr": "PCAP",
         "issuer": "Python Institute",
         "issue_date": date(2024, 1, 1),
     }
@@ -37,7 +38,8 @@ def make_certification(**kwargs):
 def make_specialization(**kwargs):
     """Create a specialization; only pass the fields the test cares about."""
     fields = {
-        "name": "Python Path",
+        "name_en": "Python Path",
+        "name_fr": "Python Path",
         "issuer": "Python Institute",
         "issue_date": date(2024, 1, 1),
     }
@@ -66,17 +68,19 @@ def test_list_includes_hidden_entries_in_display_order(staff_api_client):
 def test_detail_returns_every_field(staff_api_client):
     """Tags and specializations come back as ids, hidden specializations included."""
     certification = make_certification(
-        name="Professional Scrum Master I",
+        name_en="Professional Scrum Master I",
+        name_fr="Professional Scrum Master I (fr)",
         issuer="Scrum.org",
         issue_date=date(2023, 5, 12),
         expiration_date=date(2026, 5, 12),
         credential_id="123456",
         credential_url="https://www.scrum.org/certificates/123456",
-        description="Scrum basics.",
+        description_en="Scrum basics.",
+        description_fr="Les bases de Scrum.",
         display_order=1,
         is_visible=False,
     )
-    methodology = Methodology.objects.create(name="Scrum")
+    methodology = Methodology.objects.create(name_en="Scrum", name_fr="Scrum")
     certification.tags.add(methodology)
     specialization = make_specialization(is_visible=False)
     specialization.certifications.add(certification)
@@ -86,13 +90,16 @@ def test_detail_returns_every_field(staff_api_client):
     assert response.status_code == 200
     assert response.json() == {
         "id": certification.id,
-        "name": "Professional Scrum Master I",
+        "name": {
+            "en": "Professional Scrum Master I",
+            "fr": "Professional Scrum Master I (fr)",
+        },
         "issuer": "Scrum.org",
         "issue_date": "2023-05-12",
         "expiration_date": "2026-05-12",
         "credential_id": "123456",
         "credential_url": "https://www.scrum.org/certificates/123456",
-        "description": "Scrum basics.",
+        "description": {"en": "Scrum basics.", "fr": "Les bases de Scrum."},
         "tags": [methodology.id],
         "specializations": [specialization.id],
         "display_order": 1,
@@ -103,12 +110,12 @@ def test_detail_returns_every_field(staff_api_client):
 
 def test_create_with_tags(staff_api_client):
     """A certification is created with its tags in one request."""
-    skill = Skill.objects.create(name="Python")
+    skill = Skill.objects.create(name_en="Python", name_fr="Python")
 
     response = staff_api_client.post(
         LIST_URL,
         {
-            "name": "PCAP",
+            "name": {"en": "PCAP", "fr": "PCAP"},
             "issuer": "Python Institute",
             "issue_date": "2024-01-01",
             "tags": [skill.id],
@@ -140,7 +147,7 @@ def test_create_with_invalid_value_is_a_bad_request(staff_api_client, field, val
     response = staff_api_client.post(
         LIST_URL,
         {
-            "name": "PCAP",
+            "name": {"en": "PCAP", "fr": "PCAP"},
             "issuer": "Python Institute",
             "issue_date": "2024-01-01",
             field: value,
@@ -170,8 +177,8 @@ def test_specializations_cannot_be_written_here(staff_api_client):
 def test_partial_update_replaces_tags(staff_api_client):
     """Sending tags sets them to exactly the sent ids."""
     certification = make_certification()
-    old = Skill.objects.create(name="Python")
-    new = Methodology.objects.create(name="Scrum")
+    old = Skill.objects.create(name_en="Python", name_fr="Python")
+    new = Methodology.objects.create(name_en="Scrum", name_fr="Scrum")
     certification.tags.add(old)
 
     response = staff_api_client.patch(

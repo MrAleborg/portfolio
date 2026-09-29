@@ -24,14 +24,24 @@ def detail_url(pk):
 
 def make_certification(**kwargs):
     """Create a certification; only pass the fields the test cares about."""
-    fields = {"name": "AWS SAA", "issuer": "AWS", "issue_date": date(2024, 1, 1)}
+    fields = {
+        "name_en": "AWS SAA",
+        "name_fr": "AWS SAA",
+        "issuer": "AWS",
+        "issue_date": date(2024, 1, 1),
+    }
     fields.update(kwargs)
     return Certification.objects.create(**fields)
 
 
 def make_specialization(**kwargs):
     """Create a specialization; only pass the fields the test cares about."""
-    fields = {"name": "Cloud Path", "issuer": "AWS", "issue_date": date(2024, 6, 1)}
+    fields = {
+        "name_en": "Cloud Path",
+        "name_fr": "Cloud Path",
+        "issuer": "AWS",
+        "issue_date": date(2024, 6, 1),
+    }
     fields.update(kwargs)
     return Specialization.objects.create(**fields)
 
@@ -73,10 +83,10 @@ def test_list_is_ordered_by_display_order_then_newest_issue_date(api_client):
 
 def test_list_filters_by_tag(api_client):
     """?tag={id} keeps only the certifications tagged with it."""
-    python = Skill.objects.create(name="Python")
-    tagged = make_certification(name="PCAP")
+    python = Skill.objects.create(name_en="Python", name_fr="Python")
+    tagged = make_certification(name_en="PCAP", name_fr="PCAP")
     tagged.tags.add(python)
-    make_certification(name="Untagged")
+    make_certification(name_en="Untagged", name_fr="Untagged")
 
     response = api_client.get(LIST_URL, {"tag": python.id})
 
@@ -126,20 +136,26 @@ def test_detail_returns_public_fields(api_client):
     updated_at must not leak.
     """
     certification = make_certification(
-        name="PCAP",
+        name_en="PCAP",
+        name_fr="PCAP",
         issuer="Python Institute",
         issue_date=date(2023, 3, 15),
         expiration_date=date(2026, 3, 15),
         credential_id="ABC-123",
         credential_url="https://example.com/abc-123",
-        description="Python programming.",
+        description_en="Python programming.",
+        description_fr="Programmation Python.",
     )
-    skill = Skill.objects.create(name="Python")
-    tool = Tool.objects.create(name="Pytest")
-    methodology = Methodology.objects.create(name="TDD")
+    skill = Skill.objects.create(name_en="Python", name_fr="Python")
+    tool = Tool.objects.create(name_en="Pytest", name_fr="Pytest")
+    methodology = Methodology.objects.create(name_en="TDD", name_fr="TDD")
     certification.tags.add(skill, tool, methodology)
-    specialization = make_specialization(name="Python Path")
-    hidden_specialization = make_specialization(name="Secret", is_visible=False)
+    specialization = make_specialization(
+        name_en="Python Path", name_fr="Parcours Python"
+    )
+    hidden_specialization = make_specialization(
+        name_en="Secret", name_fr="Secret", is_visible=False
+    )
     for entry in (specialization, hidden_specialization):
         entry.certifications.add(certification)
 
@@ -148,19 +164,28 @@ def test_detail_returns_public_fields(api_client):
     assert response.status_code == 200
     assert response.json() == {
         "id": certification.id,
-        "name": "PCAP",
+        "name": {"en": "PCAP", "fr": "PCAP"},
         "issuer": "Python Institute",
         "issue_date": "2023-03-15",
         "expiration_date": "2026-03-15",
         "credential_id": "ABC-123",
         "credential_url": "https://example.com/abc-123",
-        "description": "Python programming.",
+        "description": {"en": "Python programming.", "fr": "Programmation Python."},
         "tags": [
-            {"id": methodology.id, "name": "TDD", "kind": "methodology"},
-            {"id": skill.id, "name": "Python", "kind": "skill"},
-            {"id": tool.id, "name": "Pytest", "kind": "tool"},
+            {
+                "id": methodology.id,
+                "name": {"en": "TDD", "fr": "TDD"},
+                "kind": "methodology",
+            },
+            {"id": skill.id, "name": {"en": "Python", "fr": "Python"}, "kind": "skill"},
+            {"id": tool.id, "name": {"en": "Pytest", "fr": "Pytest"}, "kind": "tool"},
         ],
-        "specializations": [{"id": specialization.id, "name": "Python Path"}],
+        "specializations": [
+            {
+                "id": specialization.id,
+                "name": {"en": "Python Path", "fr": "Parcours Python"},
+            }
+        ],
     }
 
 

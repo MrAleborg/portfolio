@@ -34,7 +34,8 @@ def make_experience(**kwargs):
     """Create a professional experience; only pass the fields the test cares about."""
     fields = {
         "company": "Acme",
-        "position": "Developer",
+        "position_en": "Developer",
+        "position_fr": "Développeur",
         "start_date": date(2020, 1, 1),
     }
     fields.update(kwargs)
@@ -43,7 +44,11 @@ def make_experience(**kwargs):
 
 def make_project(**kwargs):
     """Create a side project by default; pass experience= for a work project."""
-    fields = {"title": "Portfolio", "start_date": date(2024, 1, 1)}
+    fields = {
+        "title_en": "Portfolio",
+        "title_fr": "Portfolio",
+        "start_date": date(2024, 1, 1),
+    }
     fields.update(kwargs)
     return Project.objects.create(**fields)
 
@@ -100,25 +105,43 @@ def test_list_is_ordered_by_display_order_then_newest_start_date(api_client):
 def test_detail_returns_public_fields(api_client):
     """The detail exposes public fields, its experience, missions and tags.
 
-    The experience is a short summary. Missions are plain strings in their
-    display order. Tags carry their kind and follow the Tag ordering (kind,
+    The experience is a short summary. Missions and achievements are texts in
+    every language, missions in their display order. Tags carry their kind and follow the Tag ordering (kind,
     then name). is_visible, display_order, created_at and updated_at must not
     leak.
     """
-    experience = make_experience(company="Acme", position="Backend Developer")
+    experience = make_experience(
+        company="Acme",
+        position_en="Backend Developer",
+        position_fr="Développeur backend",
+    )
     project = make_project(
         experience=experience,
-        title="Billing API",
+        title_en="Billing API",
+        title_fr="API de facturation",
         start_date=date(2021, 3, 1),
         end_date=date(2022, 6, 30),
-        description="Rewrote billing.",
-        achievements=["Cut invoice time by 80%"],
+        description_en="Rewrote billing.",
+        description_fr="Refonte de la facturation.",
+        achievements=[
+            {"en": "Cut invoice time by 80%", "fr": "Facturation 80 % plus rapide"}
+        ],
     )
-    Mission.objects.create(project=project, description="Second", display_order=1)
-    Mission.objects.create(project=project, description="First", display_order=0)
-    skill = Skill.objects.create(name="Python")
-    tool = Tool.objects.create(name="Django")
-    methodology = Methodology.objects.create(name="Scrum")
+    Mission.objects.create(
+        project=project,
+        description_en="Second",
+        description_fr="Deuxième",
+        display_order=1,
+    )
+    Mission.objects.create(
+        project=project,
+        description_en="First",
+        description_fr="Première",
+        display_order=0,
+    )
+    skill = Skill.objects.create(name_en="Python", name_fr="Python")
+    tool = Tool.objects.create(name_en="Django", name_fr="Django")
+    methodology = Methodology.objects.create(name_en="Scrum", name_fr="Scrum")
     project.tags.add(skill, tool, methodology)
 
     response = api_client.get(detail_url(project.id))
@@ -126,22 +149,31 @@ def test_detail_returns_public_fields(api_client):
     assert response.status_code == 200
     assert response.json() == {
         "id": project.id,
-        "title": "Billing API",
+        "title": {"en": "Billing API", "fr": "API de facturation"},
         "start_date": "2021-03-01",
         "end_date": "2022-06-30",
         "is_current": False,
-        "description": "Rewrote billing.",
-        "achievements": ["Cut invoice time by 80%"],
+        "description": {"en": "Rewrote billing.", "fr": "Refonte de la facturation."},
+        "achievements": [
+            {"en": "Cut invoice time by 80%", "fr": "Facturation 80 % plus rapide"}
+        ],
         "experience": {
             "id": experience.id,
             "company": "Acme",
-            "position": "Backend Developer",
+            "position": {"en": "Backend Developer", "fr": "Développeur backend"},
         },
-        "missions": ["First", "Second"],
+        "missions": [
+            {"en": "First", "fr": "Première"},
+            {"en": "Second", "fr": "Deuxième"},
+        ],
         "tags": [
-            {"id": methodology.id, "name": "Scrum", "kind": "methodology"},
-            {"id": skill.id, "name": "Python", "kind": "skill"},
-            {"id": tool.id, "name": "Django", "kind": "tool"},
+            {
+                "id": methodology.id,
+                "name": {"en": "Scrum", "fr": "Scrum"},
+                "kind": "methodology",
+            },
+            {"id": skill.id, "name": {"en": "Python", "fr": "Python"}, "kind": "skill"},
+            {"id": tool.id, "name": {"en": "Django", "fr": "Django"}, "kind": "tool"},
         ],
     }
 
@@ -159,8 +191,10 @@ def test_detail_of_side_project_has_no_experience(api_client):
 def test_list_items_have_the_detail_shape(api_client):
     """List and detail share one shape, so the frontend needs a single type."""
     project = make_project(experience=make_experience())
-    Mission.objects.create(project=project, description="Build it")
-    project.tags.add(Skill.objects.create(name="Python"))
+    Mission.objects.create(
+        project=project, description_en="Build it", description_fr="Build it"
+    )
+    project.tags.add(Skill.objects.create(name_en="Python", name_fr="Python"))
 
     listed = api_client.get(LIST_URL).json()[0]
     detailed = api_client.get(detail_url(project.id)).json()
@@ -202,10 +236,10 @@ def test_list_filters_work_projects(api_client):
 
 def test_list_filters_by_tag(api_client):
     """?tag={id} keeps only the projects tagged with it."""
-    python = Skill.objects.create(name="Python")
-    tagged = make_project(title="Tagged")
+    python = Skill.objects.create(name_en="Python", name_fr="Python")
+    tagged = make_project(title_en="Tagged", title_fr="Tagged")
     tagged.tags.add(python)
-    make_project(title="Untagged")
+    make_project(title_en="Untagged", title_fr="Untagged")
 
     response = api_client.get(LIST_URL, {"tag": python.id})
 
@@ -218,12 +252,12 @@ def test_list_filters_combine(api_client):
     Each other project fails exactly one filter, so dropping either filter
     makes the test fail.
     """
-    python = Skill.objects.create(name="Python")
+    python = Skill.objects.create(name_en="Python", name_fr="Python")
     side = make_project()
     work = make_project(experience=make_experience())
     side.tags.add(python)
     work.tags.add(python)
-    make_project(title="Untagged side project")
+    make_project(title_en="Untagged side project", title_fr="Untagged side project")
 
     response = api_client.get(LIST_URL, {"tag": python.id, "side_project": "true"})
 
@@ -318,8 +352,12 @@ def test_detail_is_read_only(api_client, method):
 
 def test_str_names_the_company_or_flags_a_side_project():
     """The admin labels a project with its company, or as a side project."""
-    work = make_project(title="Billing", experience=make_experience(company="Acme"))
-    side = make_project(title="Portfolio")
+    work = make_project(
+        title_en="Billing",
+        title_fr="Facturation",
+        experience=make_experience(company="Acme"),
+    )
+    side = make_project(title_en="Portfolio", title_fr="Portfolio")
 
     assert str(work) == "Billing (Acme)"
     assert str(side) == "Portfolio (side project)"
@@ -327,6 +365,8 @@ def test_str_names_the_company_or_flags_a_side_project():
 
 def test_mission_str_is_truncated_description():
     """A mission is labelled by the first 50 characters of its description."""
-    mission = Mission.objects.create(project=make_project(), description="x" * 60)
+    mission = Mission.objects.create(
+        project=make_project(), description_en="x" * 60, description_fr="y" * 60
+    )
 
     assert str(mission) == "x" * 50
