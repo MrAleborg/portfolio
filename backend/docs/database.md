@@ -16,13 +16,18 @@ erDiagram
     Education {
         bigint id PK
         varchar institution
-        varchar degree
-        varchar field_of_study
-        varchar grade
-        varchar location
+        varchar degree_en
+        varchar degree_fr
+        varchar field_of_study_en
+        varchar field_of_study_fr
+        varchar grade_en
+        varchar grade_fr
+        varchar location_en
+        varchar location_fr
         date start_date
         date end_date "null = ongoing"
-        text description
+        text description_en
+        text description_fr
         int display_order
         bool is_visible
         datetime created_at
@@ -32,13 +37,16 @@ erDiagram
     ProfessionalExperience {
         bigint id PK
         varchar company
-        varchar position
+        varchar position_en
+        varchar position_fr
         varchar employment_type "choices"
         varchar company_url
-        varchar location
+        varchar location_en
+        varchar location_fr
         date start_date
         date end_date "null = ongoing"
-        text description
+        text description_en
+        text description_fr
         int display_order
         bool is_visible
         datetime created_at
@@ -48,11 +56,13 @@ erDiagram
     Project {
         bigint id PK
         bigint experience_id FK "null = side project"
-        varchar title
-        json achievements "list of strings"
+        varchar title_en
+        varchar title_fr
+        json achievements "list of {en, fr}"
         date start_date
         date end_date "null = ongoing"
-        text description
+        text description_en
+        text description_fr
         int display_order
         bool is_visible
         datetime created_at
@@ -62,25 +72,29 @@ erDiagram
     Mission {
         bigint id PK
         bigint project_id FK
-        text description
+        text description_en
+        text description_fr
         int display_order
     }
 
     Tag {
         bigint id PK
-        varchar name "unique per kind"
+        varchar name_en "unique per kind"
+        varchar name_fr "unique per kind"
         varchar kind "tool | methodology | skill"
     }
 
     Certification {
         bigint id PK
-        varchar name
+        varchar name_en
+        varchar name_fr
         varchar issuer
         date issue_date
         date expiration_date "nullable"
         varchar credential_id
         varchar credential_url
-        text description
+        text description_en
+        text description_fr
         int display_order
         bool is_visible
         datetime created_at
@@ -89,13 +103,15 @@ erDiagram
 
     Specialization {
         bigint id PK
-        varchar name
+        varchar name_en
+        varchar name_fr
         varchar issuer
         date issue_date
         date expiration_date "nullable"
         varchar credential_id
         varchar credential_url
-        text description
+        text description_en
+        text description_fr
         int display_order
         bool is_visible
         datetime created_at
@@ -116,10 +132,10 @@ they have no table of their own, their queries only return tags of their kind,
 and saving one sets `kind` automatically.
 
 ```python
-Tool.objects.create(name="Docker")                    # stored with kind="tool"
-Tool.objects.all()                                    # tools only
-project.tags.filter(kind=Tag.Kind.SKILL)              # a project's skills
-Tag.objects.get(name="Scrum").certifications.all()    # certifications about Scrum
+Tool.objects.create(name_en="Docker", name_fr="Docker")  # stored with kind="tool"
+Tool.objects.all()                                       # tools only
+project.tags.filter(kind=Tag.Kind.SKILL)                 # a project's skills
+Tag.objects.get(name_en="Scrum").certifications.all()    # certifications about Scrum
 ```
 
 ## Abstract base classes
@@ -129,9 +145,43 @@ model gets its own copy of the fields.
 
 | Base | Fields | Used by |
 |---|---|---|
-| `BaseEntry` | `description`, `display_order`, `is_visible`, `created_at`, `updated_at` | every entry below |
+| `BaseEntry` | `description_en`, `description_fr`, `display_order`, `is_visible`, `created_at`, `updated_at` | every entry below |
 | `DateRangeEntry` (extends `BaseEntry`) | `start_date`, `end_date` | `Education`, `ProfessionalExperience`, `Project` |
-| `CredentialEntry` (extends `BaseEntry`) | `name`, `issuer`, `issue_date`, `expiration_date`, `credential_id`, `credential_url` | `Certification`, `Specialization` |
+| `CredentialEntry` (extends `BaseEntry`) | `name_en`, `name_fr`, `issuer`, `issue_date`, `expiration_date`, `credential_id`, `credential_url` | `Certification`, `Specialization` |
+
+## Translations
+
+The site is shown in English and French, so every text a visitor reads is
+stored in both languages, as one column per language: `title_en` and
+`title_fr`. The languages are listed once, in
+[`experience/languages.py`](../experience/languages.py).
+
+- **Every language is filled in.** A required text (`degree`, `position`,
+  `title`, `name`) is required in each language. An optional text
+  (`field_of_study`, `grade`, `location`, `description`) is either filled in
+  every language or empty in all of them: a check constraint per field
+  (`translated_together()` in [`models.py`](../experience/models.py)) refuses
+  anything else, so the rule holds for every writer.
+- **List items are translated one by one.** A project's `achievements` is a
+  JSON list of `{"en": ..., "fr": ...}` objects, and each `Mission` has a
+  `description_en` and a `description_fr`.
+- **Tag names are unique within their kind, in each language**: one unique
+  constraint on `(name_en, kind)`, another on `(name_fr, kind)`.
+- **Not translated**: proper nouns (`institution`, `company`, `issuer`),
+  `credential_id`, URLs, dates and codes (`employment_type` and `kind`, which
+  the frontend labels in the visitor's language).
+- **The APIs hide the columns.** Both APIs expose a translated field under
+  its plain name as `{"en": ..., "fr": ...}` (see [api.md](api.md)), through
+  `LocalizedField` in [`localized.py`](../experience/localized.py).
+- **Content from before the translation was kept.** The migrations
+  (`0003` to `0007`, built with
+  [`migrations/_translation.py`](../experience/migrations/_translation.py))
+  renamed each column to its `_en` version and copied it to `_fr`, to be
+  translated in the admin.
+
+Why columns rather than a JSON object per field or a translation table:
+there are two fixed languages, the Django admin shows each column as a
+plain input, and the database can check each column.
 
 ## Design decisions
 
@@ -160,8 +210,8 @@ model gets its own copy of the fields.
   [`experience/views.py`](../experience/views.py).
 - **Missions belong to a single project** (foreign key); deleting a project or
   an experience also deletes the rows under it.
-- **Achievements (valorization elements) are a JSON list of strings** on the
-  project instead of a separate table.
+- **Achievements (valorization elements) are a JSON list** of translated
+  texts on the project instead of a separate table.
 - **Date order is enforced by the database.** Check constraints refuse an
   `end_date` before the `start_date` and an `expiration_date` before the
   `issue_date`, so the rule holds for every writer. The Django admin reports it
