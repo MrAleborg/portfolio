@@ -23,14 +23,22 @@ from experience.models import (
 pytestmark = pytest.mark.django_db
 
 DATE_RANGE_ROWS = {
-    Education: {"institution": "University", "degree": "MSc"},
-    ProfessionalExperience: {"company": "Acme", "position": "Developer"},
-    Project: {"title": "Portfolio"},
+    Education: {"institution": "University", "degree_en": "MSc", "degree_fr": "Master"},
+    ProfessionalExperience: {
+        "company": "Acme",
+        "position_en": "Developer",
+        "position_fr": "Développeur",
+    },
+    Project: {"title_en": "Portfolio", "title_fr": "Portfolio"},
 }
 
 CREDENTIAL_ROWS = {
-    Certification: {"name": "PCAP", "issuer": "Python Institute"},
-    Specialization: {"name": "Python Path", "issuer": "Python Institute"},
+    Certification: {"name_en": "PCAP", "name_fr": "PCAP", "issuer": "Python Institute"},
+    Specialization: {
+        "name_en": "Python Path",
+        "name_fr": "Parcours Python",
+        "issuer": "Python Institute",
+    },
 }
 
 
@@ -88,7 +96,8 @@ def test_full_clean_reports_the_date_rule():
     """Model validation (used by the Django admin forms) catches the rule too."""
     education = Education(
         institution="University",
-        degree="MSc",
+        degree_en="MSc",
+        degree_fr="Master",
         start_date=date(2024, 1, 2),
         end_date=date(2024, 1, 1),
     )

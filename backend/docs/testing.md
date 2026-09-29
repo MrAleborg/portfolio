@@ -67,8 +67,9 @@ See [demo_data.md](demo_data.md) for the three commands (`seed_demo`,
 
 ## Manual testing of the admin API
 
-[`portfolio_admin_api.insomnia.json`](portfolio_admin_api.insomnia.json) is an
-[Insomnia](https://insomnia.rest/) collection that exercises every admin API
+[`portfolio_admin_api.insomnia.yaml`](portfolio_admin_api.insomnia.yaml) is an
+[Insomnia](https://insomnia.rest/) collection (format
+`collection.insomnia.rest/5.0`) that exercises every admin API
 route over real HTTP, one folder per resource. Each request name ends with the
 expected status (e.g. `Create ending before it starts → 400`).
 
@@ -80,7 +81,9 @@ expected status (e.g. `Create ending before it starts → 400`).
 
 Requests are chained: the access token is read from the Login response (and
 Login is sent again once the token is 14 minutes old), and detail requests
-take their id from the matching Create request. The collection writes to the
+take their id from the matching Create request. The chaining tags reference
+requests by id (`{% response 'body', 'req_…', … %}`), so keep the ids when
+editing the file by hand. The collection writes to the
 local database; its last folder deletes what it created. After running it,
 send the Create requests again before the others, since the chained ids then
 point to deleted rows.

@@ -3,7 +3,7 @@
 Three management commands fill the local database with fictional content, so
 the API can be tried by hand (in a browser, curl or Insomnia) without typing
 entries into the Django admin. The data includes hidden entries, to check that
-the API leaves them out.
+the API leaves them out, and every text is written in English and French.
 
 | Command | Does |
 |---|---|
@@ -86,10 +86,12 @@ database.
 
 ## What gets created
 
+Entries are listed by their English text.
+
 | Resource | Id | Entry | Notes |
 |---|---|---|---|
-| Education | 1 | Master, Demo University (2015–2017) | |
-| | 2 | Bachelor, Demo Institute of Technology (2012–2015) | |
+| Education | 1 | Master's degree, Demo University (2015–2017) | French: Master |
+| | 2 | Bachelor's degree, Demo Institute of Technology (2012–2015) | French: Licence |
 | Experience | 1 | Backend developer @ Acme Corp | Ongoing (`end_date` null) |
 | | 2 | Junior developer @ Globex | Apprenticeship |
 | | 3 | Consultant @ Hidden Inc | **Hidden** |
@@ -116,7 +118,8 @@ relative to `http://localhost:8000/api/v1/experience/`; see
 
 | Request | Expected |
 |---|---|
-| `education/` | Master first, then Bachelor (newest first) |
+| `education/` | Master's degree first, then Bachelor's degree (newest first) |
+| `education/1/` | Each text in both languages, e.g. `"degree": {"en": "Master's degree", "fr": "Master"}` |
 | `professional-experiences/` | Acme and Globex, not Hidden Inc |
 | `professional-experiences/1/` | Projects Billing platform then Customer dashboard, not "Hidden project" |
 | `professional-experiences/3/` | `404` |
@@ -132,7 +135,7 @@ relative to `http://localhost:8000/api/v1/experience/`; see
 | `skills/3/` | `404`: Django is a tool |
 | `methodologies/6/` | Certifications 2 then 1, not the hidden one |
 | `certifications/?tag=6` | Certifications 2, 1 |
-| `certifications/1/` | `specializations: [{"id": 1, "name": "Agile path"}]` |
+| `certifications/1/` | `specializations: [{"id": 1, "name": {"en": "Agile path", "fr": "Parcours agile"}}]` |
 | `specializations/1/` | Certifications 2, 1, not the hidden one |
 
 No response should contain `is_visible`, `display_order`, `created_at` or

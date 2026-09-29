@@ -4,7 +4,8 @@ Routes: ``professional-experiences/`` (list, create) and
 ``professional-experiences/{id}/`` (retrieve, update, partial update, delete)
 under ``/api/v1/admin/``. Projects are not nested here: they are edited on
 ``projects/`` and point to their experience. Deleting an experience deletes
-its projects.
+its projects. Translated fields are read and written in every language:
+``{"en": ..., "fr": ...}``.
 """
 
 from datetime import date
@@ -29,7 +30,8 @@ def make_experience(**kwargs):
     """Create a professional experience; only pass the fields the test cares about."""
     fields = {
         "company": "Acme",
-        "position": "Developer",
+        "position_en": "Developer",
+        "position_fr": "Développeur",
         "start_date": date(2020, 1, 1),
     }
     fields.update(kwargs)
@@ -58,17 +60,23 @@ def test_detail_returns_every_field_without_projects(staff_api_client):
     """The internal fields are included; projects are managed on their own route."""
     experience = make_experience(
         company="Acme",
-        position="Backend developer",
+        position_en="Backend developer",
+        position_fr="Développeur backend",
         employment_type=ProfessionalExperience.EmploymentType.CONTRACT,
         company_url="https://acme.example",
-        location="Paris",
+        location_en="Paris",
+        location_fr="Paris",
         start_date=date(2021, 1, 4),
-        description="Payments team.",
+        description_en="Payments team.",
+        description_fr="Équipe paiements.",
         display_order=2,
         is_visible=False,
     )
     Project.objects.create(
-        experience=experience, title="Billing", start_date=date(2021, 2, 1)
+        experience=experience,
+        title_en="Billing",
+        title_fr="Billing",
+        start_date=date(2021, 2, 1),
     )
 
     response = staff_api_client.get(detail_url(BASENAME, experience.id))
@@ -77,14 +85,14 @@ def test_detail_returns_every_field_without_projects(staff_api_client):
     assert response.json() == {
         "id": experience.id,
         "company": "Acme",
-        "position": "Backend developer",
+        "position": {"en": "Backend developer", "fr": "Développeur backend"},
         "employment_type": "contract",
         "company_url": "https://acme.example",
-        "location": "Paris",
+        "location": {"en": "Paris", "fr": "Paris"},
         "start_date": "2021-01-04",
         "end_date": None,
         "is_current": True,
-        "description": "Payments team.",
+        "description": {"en": "Payments team.", "fr": "Équipe paiements."},
         "display_order": 2,
         "is_visible": False,
         **timestamps(experience),
@@ -95,12 +103,17 @@ def test_create_with_required_fields_only(staff_api_client):
     """The employment type defaults to full-time, like in the model."""
     response = staff_api_client.post(
         LIST_URL,
-        {"company": "Acme", "position": "Developer", "start_date": "2024-01-01"},
+        {
+            "company": "Acme",
+            "position": {"en": "Developer", "fr": "Développeur"},
+            "start_date": "2024-01-01",
+        },
         format="json",
     )
 
     assert response.status_code == 201
     assert response.json()["employment_type"] == "full_time"
+    assert response.json()["location"] == {"en": "", "fr": ""}
     assert ProfessionalExperience.objects.get().company == "Acme"
 
 
@@ -122,7 +135,7 @@ def test_create_with_invalid_value_is_a_bad_request(staff_api_client, field, val
         LIST_URL,
         {
             "company": "Acme",
-            "position": "Developer",
+            "position": {"en": "Developer", "fr": "Développeur"},
             "start_date": "2024-01-01",
             field: value,
         },
@@ -135,7 +148,7 @@ def test_create_with_invalid_value_is_a_bad_request(staff_api_client, field, val
 
 def test_partial_update_changes_only_sent_fields(staff_api_client):
     """PATCH is how the admin hides an entry or changes a single field."""
-    experience = make_experience(position="Developer")
+    experience = make_experience()
 
     response = staff_api_client.patch(
         detail_url(BASENAME, experience.id),
@@ -147,7 +160,10 @@ def test_partial_update_changes_only_sent_fields(staff_api_client):
     experience.refresh_from_db()
     assert experience.is_visible is False
     assert experience.employment_type == "freelance"
-    assert experience.position == "Developer"
+    assert (experience.position_en, experience.position_fr) == (
+        "Developer",
+        "Développeur",
+    )
 
 
 def test_update_replaces_the_entry(staff_api_client):
@@ -156,13 +172,19 @@ def test_update_replaces_the_entry(staff_api_client):
 
     response = staff_api_client.put(
         detail_url(BASENAME, experience.id),
-        {"company": "Globex", "position": "Lead", "start_date": "2019-03-01"},
+        {
+            "company": "Globex",
+            "position": {"en": "Lead developer", "fr": "Développeur principal"},
+            "start_date": "2019-03-01",
+        },
         format="json",
     )
 
     assert response.status_code == 200
     experience.refresh_from_db()
-    assert (experience.company, experience.position) == ("Globex", "Lead")
+    assert experience.company == "Globex"
+    assert experience.position_en == "Lead developer"
+    assert experience.position_fr == "Développeur principal"
     assert experience.start_date == date(2019, 3, 1)
 
 
@@ -170,9 +192,14 @@ def test_delete_also_deletes_its_projects(staff_api_client):
     """Projects belong to their experience, so they go with it; side projects stay."""
     experience = make_experience()
     Project.objects.create(
-        experience=experience, title="Billing", start_date=date(2021, 1, 1)
+        experience=experience,
+        title_en="Billing",
+        title_fr="Billing",
+        start_date=date(2021, 1, 1),
     )
-    side = Project.objects.create(title="Portfolio", start_date=date(2021, 1, 1))
+    side = Project.objects.create(
+        title_en="Portfolio", title_fr="Portfolio", start_date=date(2021, 1, 1)
+    )
 
     response = staff_api_client.delete(detail_url(BASENAME, experience.id))
 

@@ -3,6 +3,7 @@
 Routes: ``education/`` (list) and ``education/{id}/`` (detail) under
 ``/api/v1/experience/``. Only visible entries are exposed, ordered by
 ``display_order`` then newest ``start_date``, and write methods are rejected.
+Translated fields are returned in every language: ``{"en": ..., "fr": ...}``.
 """
 
 from datetime import date
@@ -25,7 +26,8 @@ def make_education(**kwargs):
     """Create an education entry; only pass the fields the test cares about."""
     fields = {
         "institution": "University",
-        "degree": "MSc",
+        "degree_en": "MSc",
+        "degree_fr": "Master",
         "start_date": date(2020, 9, 1),
     }
     fields.update(kwargs)
@@ -76,11 +78,15 @@ def test_detail_returns_public_fields(api_client):
     is_visible, display_order, created_at and updated_at must not leak.
     """
     education = make_education(
-        field_of_study="Computer Science",
-        grade="Honours",
-        location="Paris",
+        field_of_study_en="Computer Science",
+        field_of_study_fr="Informatique",
+        grade_en="Honours",
+        grade_fr="Mention très bien",
+        location_en="Paris",
+        location_fr="Paris",
         end_date=date(2022, 6, 30),
-        description="Thesis on compilers.",
+        description_en="Thesis on compilers.",
+        description_fr="Mémoire sur les compilateurs.",
     )
 
     response = api_client.get(detail_url(education.id))
@@ -89,14 +95,17 @@ def test_detail_returns_public_fields(api_client):
     assert response.json() == {
         "id": education.id,
         "institution": "University",
-        "degree": "MSc",
-        "field_of_study": "Computer Science",
-        "grade": "Honours",
-        "location": "Paris",
+        "degree": {"en": "MSc", "fr": "Master"},
+        "field_of_study": {"en": "Computer Science", "fr": "Informatique"},
+        "grade": {"en": "Honours", "fr": "Mention très bien"},
+        "location": {"en": "Paris", "fr": "Paris"},
         "start_date": "2020-09-01",
         "end_date": "2022-06-30",
         "is_current": False,
-        "description": "Thesis on compilers.",
+        "description": {
+            "en": "Thesis on compilers.",
+            "fr": "Mémoire sur les compilateurs.",
+        },
     }
 
 

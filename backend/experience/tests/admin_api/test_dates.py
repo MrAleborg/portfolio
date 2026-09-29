@@ -26,7 +26,8 @@ pytestmark = pytest.mark.django_db
 def make_education():
     return Education.objects.create(
         institution="University",
-        degree="MSc",
+        degree_en="MSc",
+        degree_fr="Master",
         start_date=date(2024, 1, 1),
         end_date=date(2024, 6, 30),
     )
@@ -35,7 +36,8 @@ def make_education():
 def make_experience():
     return ProfessionalExperience.objects.create(
         company="Acme",
-        position="Developer",
+        position_en="Developer",
+        position_fr="Développeur",
         start_date=date(2024, 1, 1),
         end_date=date(2024, 6, 30),
     )
@@ -43,13 +45,17 @@ def make_experience():
 
 def make_project():
     return Project.objects.create(
-        title="Portfolio", start_date=date(2024, 1, 1), end_date=date(2024, 6, 30)
+        title_en="Portfolio",
+        title_fr="Portfolio",
+        start_date=date(2024, 1, 1),
+        end_date=date(2024, 6, 30),
     )
 
 
 def make_certification():
     return Certification.objects.create(
-        name="PCAP",
+        name_en="PCAP",
+        name_fr="PCAP",
         issuer="Python Institute",
         issue_date=date(2024, 1, 1),
         expiration_date=date(2024, 6, 30),
@@ -58,32 +64,39 @@ def make_certification():
 
 def make_specialization():
     return Specialization.objects.create(
-        name="Python Path",
+        name_en="Python Path",
+        name_fr="Python Path",
         issuer="Python Institute",
         issue_date=date(2024, 1, 1),
         expiration_date=date(2024, 6, 30),
     )
 
 
-CREDENTIAL = {"name": "PCAP", "issuer": "Python Institute"}
+CREDENTIAL = {"name": {"en": "PCAP", "fr": "PCAP"}, "issuer": "Python Institute"}
 
 # (URL basename, minimal create payload, start field, end field, row factory)
 RESOURCES = [
     (
         "education",
-        {"institution": "University", "degree": "MSc"},
+        {"institution": "University", "degree": {"en": "MSc", "fr": "Master"}},
         "start_date",
         "end_date",
         make_education,
     ),
     (
         "professionalexperience",
-        {"company": "Acme", "position": "Developer"},
+        {"company": "Acme", "position": {"en": "Developer", "fr": "Développeur"}},
         "start_date",
         "end_date",
         make_experience,
     ),
-    ("project", {"title": "Portfolio"}, "start_date", "end_date", make_project),
+    (
+        "project",
+        {"title": {"en": "Portfolio", "fr": "Portfolio"}},
+        "start_date",
+        "end_date",
+        make_project,
+    ),
     (
         "certification",
         CREDENTIAL,

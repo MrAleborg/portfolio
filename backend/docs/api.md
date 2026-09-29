@@ -41,9 +41,29 @@ Every path below is relative to the base URL `/api/v1/experience/`.
 - **Internal fields are never returned**: `is_visible`, `display_order`,
   `created_at`, `updated_at`.
 - **Ordering**: `display_order`, then newest first (`start_date` or
-  `issue_date`). Tags are ordered by name. Nested lists follow the same order.
+  `issue_date`). Tags are ordered by English name. Nested lists follow the
+  same order.
 - **Dates** are ISO 8601 strings (`"2024-03-01"`). A null `end_date` means the
   entry is ongoing, and `is_current` is then `true`.
+- **Translated texts** are returned in every language at once, so the
+  frontend shows the visitor's language and can switch without a new request:
+
+  ```json
+  "position": {"en": "Backend developer", "fr": "Développeur backend"}
+  ```
+
+  The languages are `en` and `fr`. A text is filled in every language, or
+  empty (`""`) in every language. Proper nouns, codes, URLs and dates are not
+  translated: `institution`, `company`, `issuer`, `credential_id`, the URLs,
+  `employment_type` (a code the frontend labels) and `kind`.
+
+  | Resource | Translated fields |
+  |---|---|
+  | Education | `degree`, `field_of_study`, `grade`, `location`, `description` |
+  | Professional experience | `position`, `location`, `description` |
+  | Project | `title`, `description`, each item of `achievements` and `missions` |
+  | Certification, specialization | `name`, `description` |
+  | Tag | `name` |
 
 These rules are pinned down by the test suite; see
 [testing.md](testing.md#rules-every-endpoint-is-tested-against).
@@ -59,14 +79,14 @@ the same objects, except for tags (see [Tags](#skills-tools-methodologies)).
 {
   "id": 1,
   "institution": "Université de Rennes",
-  "degree": "Master",
-  "field_of_study": "Computer Science",
-  "grade": "",
-  "location": "Rennes",
+  "degree": {"en": "Master's degree", "fr": "Master"},
+  "field_of_study": {"en": "Computer Science", "fr": "Informatique"},
+  "grade": {"en": "", "fr": ""},
+  "location": {"en": "Rennes", "fr": "Rennes"},
   "start_date": "2015-09-01",
   "end_date": "2017-06-30",
   "is_current": false,
-  "description": ""
+  "description": {"en": "", "fr": ""}
 }
 ```
 
@@ -81,25 +101,27 @@ projects, in the same shape as [`projects/`](#projects) without the
 {
   "id": 3,
   "company": "Acme",
-  "position": "Backend developer",
+  "position": {"en": "Backend developer", "fr": "Développeur backend"},
   "employment_type": "full_time",
   "company_url": "https://acme.example",
-  "location": "Paris",
+  "location": {"en": "Paris", "fr": "Paris"},
   "start_date": "2021-01-04",
   "end_date": null,
   "is_current": true,
-  "description": "",
+  "description": {"en": "", "fr": ""},
   "projects": [
     {
       "id": 5,
-      "title": "Billing platform",
+      "title": {"en": "Billing platform", "fr": "Plateforme de facturation"},
       "start_date": "2021-02-01",
       "end_date": "2022-06-30",
       "is_current": false,
-      "description": "",
-      "achievements": ["Cut invoice generation time by half"],
-      "missions": ["Design the REST API"],
-      "tags": [{"id": 2, "name": "Django", "kind": "tool"}]
+      "description": {"en": "", "fr": ""},
+      "achievements": [
+        {"en": "Cut invoice generation time by half", "fr": "Temps de facturation divisé par deux"}
+      ],
+      "missions": [{"en": "Design the REST API", "fr": "Concevoir l'API REST"}],
+      "tags": [{"id": 2, "name": {"en": "Django", "fr": "Django"}, "kind": "tool"}]
     }
   ]
 }
@@ -108,21 +130,27 @@ projects, in the same shape as [`projects/`](#projects) without the
 ### `projects/`
 
 `experience` is `null` for a side project. `missions` and `achievements` are
-lists of strings. `tags` mixes the three kinds, so each tag carries its `kind`
+lists of translated texts. `tags` mixes the three kinds, so each tag carries its `kind`
 (`skill`, `tool` or `methodology`).
 
 ```json
 {
   "id": 5,
-  "title": "Billing platform",
+  "title": {"en": "Billing platform", "fr": "Plateforme de facturation"},
   "start_date": "2021-02-01",
   "end_date": "2022-06-30",
   "is_current": false,
-  "description": "",
-  "achievements": ["Cut invoice generation time by half"],
-  "experience": {"id": 3, "company": "Acme", "position": "Backend developer"},
-  "missions": ["Design the REST API"],
-  "tags": [{"id": 2, "name": "Django", "kind": "tool"}]
+  "description": {"en": "", "fr": ""},
+  "achievements": [
+    {"en": "Cut invoice generation time by half", "fr": "Temps de facturation divisé par deux"}
+  ],
+  "experience": {
+    "id": 3,
+    "company": "Acme",
+    "position": {"en": "Backend developer", "fr": "Développeur backend"}
+  },
+  "missions": [{"en": "Design the REST API", "fr": "Concevoir l'API REST"}],
+  "tags": [{"id": 2, "name": {"en": "Django", "fr": "Django"}, "kind": "tool"}]
 }
 ```
 
@@ -143,15 +171,15 @@ of.
 ```json
 {
   "id": 7,
-  "name": "Professional Scrum Master I",
+  "name": {"en": "Professional Scrum Master I", "fr": "Professional Scrum Master I"},
   "issuer": "Scrum.org",
   "issue_date": "2023-05-12",
   "expiration_date": null,
   "credential_id": "123456",
   "credential_url": "https://www.scrum.org/certificates/123456",
-  "description": "",
-  "tags": [{"id": 9, "name": "Scrum", "kind": "methodology"}],
-  "specializations": [{"id": 1, "name": "Agile path"}]
+  "description": {"en": "", "fr": ""},
+  "tags": [{"id": 9, "name": {"en": "Scrum", "fr": "Scrum"}, "kind": "methodology"}],
+  "specializations": [{"id": 1, "name": {"en": "Agile path", "fr": "Parcours agile"}}]
 }
 ```
 
@@ -165,14 +193,16 @@ path.
 ```json
 {
   "id": 1,
-  "name": "Agile path",
+  "name": {"en": "Agile path", "fr": "Parcours agile"},
   "issuer": "Scrum.org",
   "issue_date": "2024-01-15",
   "expiration_date": null,
   "credential_id": "",
   "credential_url": "",
-  "description": "",
-  "certifications": [{"id": 7, "name": "Professional Scrum Master I"}]
+  "description": {"en": "", "fr": ""},
+  "certifications": [
+    {"id": 7, "name": {"en": "Professional Scrum Master I", "fr": "Professional Scrum Master I"}}
+  ]
 }
 ```
 
@@ -182,7 +212,10 @@ The three tag kinds behave the same way; each only returns tags of its kind.
 The list returns `id` and `name`:
 
 ```json
-[{"id": 2, "name": "Django"}, {"id": 4, "name": "Docker"}]
+[
+  {"id": 12, "name": {"en": "API design", "fr": "Conception d'API"}},
+  {"id": 2, "name": {"en": "Python", "fr": "Python"}}
+]
 ```
 
 The detail adds the visible projects and certifications tagged with it, so the
@@ -191,8 +224,10 @@ frontend can show everything related to a tag:
 ```json
 {
   "id": 2,
-  "name": "Django",
-  "projects": [{"id": 5, "title": "Billing platform"}],
+  "name": {"en": "Django", "fr": "Django"},
+  "projects": [
+    {"id": 5, "title": {"en": "Billing platform", "fr": "Plateforme de facturation"}}
+  ],
   "certifications": []
 }
 ```

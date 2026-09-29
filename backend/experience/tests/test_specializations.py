@@ -24,14 +24,24 @@ def detail_url(pk):
 
 def make_specialization(**kwargs):
     """Create a specialization; only pass the fields the test cares about."""
-    fields = {"name": "Cloud Path", "issuer": "AWS", "issue_date": date(2024, 6, 1)}
+    fields = {
+        "name_en": "Cloud Path",
+        "name_fr": "Cloud Path",
+        "issuer": "AWS",
+        "issue_date": date(2024, 6, 1),
+    }
     fields.update(kwargs)
     return Specialization.objects.create(**fields)
 
 
 def make_certification(**kwargs):
     """Create a certification; only pass the fields the test cares about."""
-    fields = {"name": "AWS SAA", "issuer": "AWS", "issue_date": date(2024, 1, 1)}
+    fields = {
+        "name_en": "AWS SAA",
+        "name_fr": "AWS SAA",
+        "issuer": "AWS",
+        "issue_date": date(2024, 1, 1),
+    }
     fields.update(kwargs)
     return Certification.objects.create(**fields)
 
@@ -77,16 +87,20 @@ def test_detail_returns_public_fields(api_client):
     is_visible, display_order, created_at and updated_at must not leak.
     """
     specialization = make_specialization(
-        name="Python Path",
+        name_en="Python Path",
+        name_fr="Parcours Python",
         issuer="Python Institute",
         issue_date=date(2024, 6, 1),
         expiration_date=date(2027, 6, 1),
         credential_id="SPEC-1",
         credential_url="https://example.com/spec-1",
-        description="Every Python certification.",
+        description_en="Every Python certification.",
+        description_fr="Toutes les certifications Python.",
     )
-    certification = make_certification(name="PCAP")
-    hidden_certification = make_certification(name="Old", is_visible=False)
+    certification = make_certification(name_en="PCAP", name_fr="PCAP")
+    hidden_certification = make_certification(
+        name_en="Old", name_fr="Old", is_visible=False
+    )
     specialization.certifications.add(certification, hidden_certification)
 
     response = api_client.get(detail_url(specialization.id))
@@ -94,14 +108,19 @@ def test_detail_returns_public_fields(api_client):
     assert response.status_code == 200
     assert response.json() == {
         "id": specialization.id,
-        "name": "Python Path",
+        "name": {"en": "Python Path", "fr": "Parcours Python"},
         "issuer": "Python Institute",
         "issue_date": "2024-06-01",
         "expiration_date": "2027-06-01",
         "credential_id": "SPEC-1",
         "credential_url": "https://example.com/spec-1",
-        "description": "Every Python certification.",
-        "certifications": [{"id": certification.id, "name": "PCAP"}],
+        "description": {
+            "en": "Every Python certification.",
+            "fr": "Toutes les certifications Python.",
+        },
+        "certifications": [
+            {"id": certification.id, "name": {"en": "PCAP", "fr": "PCAP"}}
+        ],
     }
 
 
@@ -111,14 +130,18 @@ def test_detail_lists_certifications_in_their_display_order(api_client):
     display_order first, then newest issue_date, as on certifications/.
     """
     specialization = make_specialization()
-    old = make_certification(name="Old", issue_date=date(2015, 1, 1), display_order=1)
-    new = make_certification(name="New", issue_date=date(2020, 1, 1), display_order=1)
-    pinned = make_certification(name="Pinned", display_order=0)
+    old = make_certification(
+        name_en="Old", name_fr="Old", issue_date=date(2015, 1, 1), display_order=1
+    )
+    new = make_certification(
+        name_en="New", name_fr="New", issue_date=date(2020, 1, 1), display_order=1
+    )
+    pinned = make_certification(name_en="Pinned", name_fr="Pinned", display_order=0)
     specialization.certifications.add(old, new, pinned)
 
     response = api_client.get(detail_url(specialization.id))
 
-    names = [entry["name"] for entry in response.json()["certifications"]]
+    names = [entry["name"]["en"] for entry in response.json()["certifications"]]
     assert names == ["Pinned", "New", "Old"]
 
 

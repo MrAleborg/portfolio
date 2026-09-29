@@ -3,7 +3,7 @@
 Routes: ``skills/``, ``tools/`` and ``methodologies/`` (list, create) and
 their ``{id}/`` detail (retrieve, update, partial update, delete) under
 ``/api/v1/admin/``. The kind comes from the route, and a name is unique
-within its kind. The three kinds behave the same, so every test runs once per
+within its kind, in each language. The three kinds behave the same, so every test runs once per
 kind through the ``route`` fixture.
 """
 
@@ -41,9 +41,9 @@ def test_routes(route):
 def test_list_returns_only_tags_of_its_kind_by_name(staff_api_client, route):
     """Each route lists its own kind, ordered by name."""
     basename, _, model, other = route
-    second = model.objects.create(name="B")
-    first = model.objects.create(name="A")
-    other.objects.create(name="C")
+    second = model.objects.create(name_en="B", name_fr="B")
+    first = model.objects.create(name_en="A", name_fr="A")
+    other.objects.create(name_en="C", name_fr="C")
 
     response = staff_api_client.get(list_url(basename))
 
@@ -54,12 +54,17 @@ def test_list_returns_only_tags_of_its_kind_by_name(staff_api_client, route):
 def test_detail_returns_id_and_name(staff_api_client, route):
     """A tag has no other editable field; its kind is the route."""
     basename, _, model, _ = route
-    tag = model.objects.create(name="Python")
+    tag = model.objects.create(
+        name_en="Project management", name_fr="Gestion de projet"
+    )
 
     response = staff_api_client.get(detail_url(basename, tag.id))
 
     assert response.status_code == 200
-    assert response.json() == {"id": tag.id, "name": "Python"}
+    assert response.json() == {
+        "id": tag.id,
+        "name": {"en": "Project management", "fr": "Gestion de projet"},
+    }
 
 
 def test_create_sets_the_kind_of_the_route(staff_api_client, route):
@@ -67,12 +72,12 @@ def test_create_sets_the_kind_of_the_route(staff_api_client, route):
     basename, _, model, _ = route
 
     response = staff_api_client.post(
-        list_url(basename), {"name": "Python"}, format="json"
+        list_url(basename), {"name": {"en": "Python", "fr": "Python"}}, format="json"
     )
 
     assert response.status_code == 201
     tag = Tag.objects.get()
-    assert response.json() == {"id": tag.id, "name": "Python"}
+    assert response.json() == {"id": tag.id, "name": {"en": "Python", "fr": "Python"}}
     assert tag.kind == model.KIND
 
 
@@ -81,7 +86,9 @@ def test_create_ignores_a_kind_in_the_payload(staff_api_client, route):
     basename, _, model, other = route
 
     staff_api_client.post(
-        list_url(basename), {"name": "Python", "kind": other.KIND}, format="json"
+        list_url(basename),
+        {"name": {"en": "Python", "fr": "Python"}, "kind": other.KIND},
+        format="json",
     )
 
     assert Tag.objects.get().kind == model.KIND
@@ -100,23 +107,38 @@ def test_create_without_name_is_a_bad_request(staff_api_client, route):
 def test_create_with_duplicate_name_is_a_bad_request(staff_api_client, route):
     """A name is unique within its kind: a 400, not a database error."""
     basename, _, model, _ = route
-    model.objects.create(name="Python")
+    model.objects.create(name_en="Python", name_fr="Python")
 
     response = staff_api_client.post(
-        list_url(basename), {"name": "Python"}, format="json"
+        list_url(basename), {"name": {"en": "Python", "fr": "Python"}}, format="json"
     )
 
     assert response.status_code == 400
     assert list(response.json()) == ["name"]
 
 
+def test_name_taken_in_one_language_is_a_bad_request(staff_api_client, route):
+    """Uniqueness holds per language; the error names the clashing one."""
+    basename, _, model, _ = route
+    model.objects.create(name_en="Project management", name_fr="Gestion de projet")
+
+    response = staff_api_client.post(
+        list_url(basename),
+        {"name": {"en": "Project management", "fr": "Management de projet"}},
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert list(response.json()["name"]) == ["en"]
+
+
 def test_same_name_is_allowed_in_another_kind(staff_api_client, route):
     """Uniqueness is per kind, so a skill and a tool may share a name."""
     basename, _, _, other = route
-    other.objects.create(name="Python")
+    other.objects.create(name_en="Python", name_fr="Python")
 
     response = staff_api_client.post(
-        list_url(basename), {"name": "Python"}, format="json"
+        list_url(basename), {"name": {"en": "Python", "fr": "Python"}}, format="json"
     )
 
     assert response.status_code == 201
@@ -125,29 +147,35 @@ def test_same_name_is_allowed_in_another_kind(staff_api_client, route):
 def test_rename(staff_api_client, route):
     """PATCH renames the tag, and keeping its own name is not a duplicate."""
     basename, _, model, _ = route
-    tag = model.objects.create(name="Pyhton")
+    tag = model.objects.create(name_en="Pyhton", name_fr="Pyhton")
 
     renamed = staff_api_client.patch(
-        detail_url(basename, tag.id), {"name": "Python"}, format="json"
+        detail_url(basename, tag.id),
+        {"name": {"en": "Python", "fr": "Python"}},
+        format="json",
     )
     unchanged = staff_api_client.put(
-        detail_url(basename, tag.id), {"name": "Python"}, format="json"
+        detail_url(basename, tag.id),
+        {"name": {"en": "Python", "fr": "Python"}},
+        format="json",
     )
 
     assert renamed.status_code == 200
     assert unchanged.status_code == 200
     tag.refresh_from_db()
-    assert tag.name == "Python"
+    assert (tag.name_en, tag.name_fr) == ("Python", "Python")
 
 
 def test_rename_to_a_taken_name_is_a_bad_request(staff_api_client, route):
     """Renaming cannot create a duplicate either."""
     basename, _, model, _ = route
-    model.objects.create(name="Python")
-    tag = model.objects.create(name="Go")
+    model.objects.create(name_en="Python", name_fr="Python")
+    tag = model.objects.create(name_en="Go", name_fr="Go")
 
     response = staff_api_client.patch(
-        detail_url(basename, tag.id), {"name": "Python"}, format="json"
+        detail_url(basename, tag.id),
+        {"name": {"en": "Python", "fr": "Python"}},
+        format="json",
     )
 
     assert response.status_code == 400
@@ -157,8 +185,10 @@ def test_rename_to_a_taken_name_is_a_bad_request(staff_api_client, route):
 def test_delete_unlinks_the_tag_from_projects(staff_api_client, route):
     """Deleting a tag keeps the entries that used it."""
     basename, _, model, _ = route
-    tag = model.objects.create(name="Python")
-    project = Project.objects.create(title="Portfolio", start_date=date(2024, 1, 1))
+    tag = model.objects.create(name_en="Python", name_fr="Python")
+    project = Project.objects.create(
+        title_en="Portfolio", title_fr="Portfolio", start_date=date(2024, 1, 1)
+    )
     project.tags.add(tag)
 
     response = staff_api_client.delete(detail_url(basename, tag.id))
@@ -172,11 +202,11 @@ def test_delete_unlinks_the_tag_from_projects(staff_api_client, route):
 def test_tag_of_another_kind_is_not_found(staff_api_client, route, method):
     """Tag ids are shared across kinds, but a route only reaches its own kind."""
     basename, _, _, other = route
-    tag = other.objects.create(name="Python")
+    tag = other.objects.create(name_en="Python", name_fr="Python")
 
     response = getattr(staff_api_client, method)(
-        detail_url(basename, tag.id), {"name": "Go"}, format="json"
+        detail_url(basename, tag.id), {"name": {"en": "Go", "fr": "Go"}}, format="json"
     )
 
     assert response.status_code == 404
-    assert Tag.objects.get().name == "Python"
+    assert Tag.objects.get().name_en == "Python"

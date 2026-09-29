@@ -1,0 +1,3151 @@
+type: collection.insomnia.rest/5.0
+schema_version: '5.1'
+name: Portfolio admin API
+meta:
+  id: wrk_571ab91cefde5c3186a01fe9ddfc9d6d
+  created: 1790700000000
+  modified: 1790700000000
+  description: Manual tests of the admin API. Start the server (`pipenv run python manage.py runserver`), set `password` in the environment, then run the folders in order. Each request name ends with the expected status.
+collection:
+- name: 01. Auth
+  meta:
+    id: fld_6299c274c1c9548aaa7ddfcbfa17cd00
+    created: 1790700000000
+    modified: 1790700000000
+    sortKey: 1
+    description: Login is also sent automatically when the token expires.
+  children:
+  - url: '{{ _.base_url }}/api/v1/auth/jwt/create/'
+    name: Login → 200
+    meta:
+      id: req_bce1a03b784b5f8b81ba7b6e55a27a0c
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: Returns `access` and `refresh`. The environment reads `access` from here.
+      sortKey: 1
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "username": "{{ _.username }}",
+          "password": "{{ _.password }}"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/auth/jwt/create/'
+    name: Login with a wrong password → 401
+    meta:
+      id: req_e25f1a5961d5583cbd0989e32cd7a3fb
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 2
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "username": "{{ _.username }}",
+          "password": "wrong"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/auth/users/me/'
+    name: Current user → 200
+    meta:
+      id: req_8833e1b95d915d9d952d15be1df539d1
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 3
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+- name: 02. Access control
+  meta:
+    id: fld_d7e404c3c82557b1b586f8a0addd80a4
+    created: 1790700000000
+    modified: 1790700000000
+    sortKey: 2
+    description: A non-staff user cannot get a token at all, so the 403 case is only covered by the automated tests.
+  children:
+  - url: '{{ _.base_url }}/api/v1/admin/'
+    name: Admin root → 200
+    meta:
+      id: req_e0f87688cae85f37aad989a44d3326ea
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: Lists the 8 collections.
+      sortKey: 4
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/'
+    name: Admin root without token → 401
+    meta:
+      id: req_63f8685960365bfc87984ac369ad862c
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 5
+    method: GET
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/'
+    name: Admin root with a bad token → 401
+    meta:
+      id: req_f7b1f0383e4252099e573f94dfaea03c
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 6
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: not-a-token
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/education/'
+    name: Create education without token → 401
+    meta:
+      id: req_eb91249b1cb8584cb7ae3b6f57bc2fa6
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 7
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "institution": "X",
+          "degree": {"en": "Y", "fr": "Y"},
+          "start_date": "2024-01-01"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/experience/education/'
+    name: Public API still refuses writes → 405
+    meta:
+      id: req_5f29c396fc1c578ea71555fa7f314fdf
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 8
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "institution": "X"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+- name: 03. Education
+  meta:
+    id: fld_259ef50950a35400b15c8ef5222a4634
+    created: 1790700000000
+    modified: 1790700000000
+    sortKey: 3
+    description: ''
+  children:
+  - url: '{{ _.base_url }}/api/v1/admin/education/'
+    name: List (hidden entries included) → 200
+    meta:
+      id: req_1ca031df2894565493cd64552910d290
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 9
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/education/'
+    name: Create education → 201
+    meta:
+      id: req_0dc40c9b1fff5f988b645c662a35213a
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: Response has every field, including display_order, is_visible and timestamps.
+      sortKey: 10
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "institution": "Université de Rennes",
+          "degree": {"en": "Master", "fr": "Master"},
+          "field_of_study": {"en": "Computer Science", "fr": "Computer Science"},
+          "grade": {"en": "Distinction", "fr": "Distinction"},
+          "location": {"en": "Rennes", "fr": "Rennes"},
+          "start_date": "2015-09-01",
+          "end_date": "2017-06-30",
+          "description": {"en": "Created from Insomnia.", "fr": "Created from Insomnia."},
+          "display_order": 0,
+          "is_visible": true
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/education/'
+    name: Create with required fields only → 201
+    meta:
+      id: req_d931b6106d8b526ca492de363e5e2cb3
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: end_date null, is_current true, is_visible true, display_order 0.
+      sortKey: 11
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "institution": "IUT",
+          "degree": {"en": "DUT", "fr": "DUT"},
+          "start_date": "2012-09-01"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/education/'
+    name: Create with read-only fields → 201, they are ignored
+    meta:
+      id: req_c037e9756fce5039a4a2fb04fee7a93f
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: id is not 999, is_current is false, created_at is now.
+      sortKey: 12
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "id": 999,
+          "institution": "School",
+          "degree": {"en": "BSc", "fr": "BSc"},
+          "start_date": "2012-09-01",
+          "end_date": "2015-06-30",
+          "is_current": true,
+          "created_at": "2000-01-01T00:00:00Z"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/education/'
+    name: Create without required fields → 400
+    meta:
+      id: req_2cb715226c355aea803347471aef4260
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: Errors on institution, degree and start_date.
+      sortKey: 13
+    method: POST
+    body:
+      mimeType: application/json
+      text: '{}'
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/education/'
+    name: Create with a degree missing its French text → 400
+    meta:
+      id: req_f1706bafdd7358a0be9ac68c577f9b93
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'Every language must be filled in; the error names the missing one: {"degree": {"fr": ["This field may not be blank."]}}.'
+      sortKey: 13.5
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "institution": "X",
+          "degree": {"en": "Master's degree", "fr": ""},
+          "start_date": "2024-01-01"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/education/'
+    name: Create ending before it starts → 400
+    meta:
+      id: req_f7f5282a3d4250cfb635f3268691a152
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: Error on end_date.
+      sortKey: 14
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "institution": "X",
+          "degree": {"en": "Y", "fr": "Y"},
+          "start_date": "2024-01-02",
+          "end_date": "2024-01-01"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/education/{% response 'body', 'req_0dc40c9b1fff5f988b645c662a35213a', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Retrieve → 200
+    meta:
+      id: req_fe4981147e5b5bd68304fea1a19c19a2
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 15
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/education/{% response 'body', 'req_0dc40c9b1fff5f988b645c662a35213a', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Update (PUT) → 200
+    meta:
+      id: req_414dbfb8b35a529bb2555589f4e2af8b
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: Omitted optional fields (grade, location...) keep their values.
+      sortKey: 16
+    method: PUT
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "institution": "Université de Rennes 1",
+          "degree": {"en": "Master's degree", "fr": "Master's degree"},
+          "start_date": "2015-09-01",
+          "end_date": "2017-06-30"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/education/{% response 'body', 'req_0dc40c9b1fff5f988b645c662a35213a', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: PUT without required fields → 400
+    meta:
+      id: req_056e0ed9243250029672bc435a68575a
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: Errors on institution and start_date.
+      sortKey: 17
+    method: PUT
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "degree": {"en": "Master", "fr": "Master"}
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/education/{% response 'body', 'req_0dc40c9b1fff5f988b645c662a35213a', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Hide (PATCH is_visible false) → 200
+    meta:
+      id: req_a66b461178805857b57a4d3f3df13bff
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 18
+    method: PATCH
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "is_visible": false,
+          "display_order": 5
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/experience/education/{% response 'body', 'req_0dc40c9b1fff5f988b645c662a35213a', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Public detail of the hidden entry → 404
+    meta:
+      id: req_1e29926da0bd543db354242d047735e3
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 19
+    method: GET
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/education/{% response 'body', 'req_0dc40c9b1fff5f988b645c662a35213a', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Admin retrieve of the hidden entry → 200
+    meta:
+      id: req_8901787eedd05126a6a18a1e7352b487
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: The admin API still reaches it.
+      sortKey: 20
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/education/{% response 'body', 'req_0dc40c9b1fff5f988b645c662a35213a', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Show again → 200
+    meta:
+      id: req_d883b802f47d54b8b44157da13108830
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 21
+    method: PATCH
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "is_visible": true
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/education/{% response 'body', 'req_0dc40c9b1fff5f988b645c662a35213a', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: PATCH only end_date before stored start → 400
+    meta:
+      id: req_117b290e39295e9789cfb40a6aca6f02
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: Checked against the stored start_date (2015-09-01).
+      sortKey: 22
+    method: PATCH
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "end_date": "2010-01-01"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/education/{% response 'body', 'req_0dc40c9b1fff5f988b645c662a35213a', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: PATCH only start_date after stored end → 400
+    meta:
+      id: req_b4507928e9b35682b9936d1fb18f7c0b
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: Error reported on end_date.
+      sortKey: 23
+    method: PATCH
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "start_date": "2020-01-01"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/education/{% response 'body', 'req_0dc40c9b1fff5f988b645c662a35213a', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: PATCH end_date null (ongoing) → 200
+    meta:
+      id: req_4b8b1e6e02fb5c5fa11ee829b5cfa209
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: is_current becomes true.
+      sortKey: 24
+    method: PATCH
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "end_date": null
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/education/999999/'
+    name: Retrieve unknown id → 404
+    meta:
+      id: req_c20c8a9622875f1ea0b55dc876b42d5a
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 25
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+- name: 04. Professional experiences
+  meta:
+    id: fld_fe620fc4d16b5b08a43a8898fab39c55
+    created: 1790700000000
+    modified: 1790700000000
+    sortKey: 4
+    description: ''
+  children:
+  - url: '{{ _.base_url }}/api/v1/admin/professional-experiences/'
+    name: List → 200
+    meta:
+      id: req_2e0d154d2a3b5f36832312d3dbebf533
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 26
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/professional-experiences/'
+    name: Create experience → 201
+    meta:
+      id: req_7b7b13b650de535c85816ef1f8ca3a23
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 27
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "company": "Insomnia Corp",
+          "position": {"en": "Backend developer", "fr": "Backend developer"},
+          "employment_type": "contract",
+          "company_url": "https://insomnia.example",
+          "location": {"en": "Paris", "fr": "Paris"},
+          "start_date": "2021-01-04",
+          "description": {"en": "Created from Insomnia.", "fr": "Created from Insomnia."}
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/professional-experiences/'
+    name: Create with required fields only → 201
+    meta:
+      id: req_39e80d61d3ad58858b2b4182678b1afb
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: employment_type defaults to full_time.
+      sortKey: 28
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "company": "Acme",
+          "position": {"en": "Intern", "fr": "Intern"},
+          "start_date": "2016-01-01"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/professional-experiences/'
+    name: Create with an unknown employment_type → 400
+    meta:
+      id: req_89133c0f15ce5a0582fbb6f6d817b170
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 29
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "company": "Acme",
+          "position": {"en": "Dev", "fr": "Dev"},
+          "start_date": "2020-01-01",
+          "employment_type": "volunteer"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/professional-experiences/'
+    name: Create with an invalid company_url → 400
+    meta:
+      id: req_e771d0f547675d45a6c02059eb96ccb0
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 30
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "company": "Acme",
+          "position": {"en": "Dev", "fr": "Dev"},
+          "start_date": "2020-01-01",
+          "company_url": "not a url"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/professional-experiences/'
+    name: Create ending before it starts → 400
+    meta:
+      id: req_9ec51c6ade0957bf9ba0bf2d537676aa
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 31
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "company": "Acme",
+          "position": {"en": "Dev", "fr": "Dev"},
+          "start_date": "2020-01-02",
+          "end_date": "2020-01-01"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/professional-experiences/{% response 'body', 'req_7b7b13b650de535c85816ef1f8ca3a23', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Retrieve (no nested projects) → 200
+    meta:
+      id: req_b0f6451dfa44545f94cc46d5f9912bb2
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 32
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/professional-experiences/{% response 'body', 'req_7b7b13b650de535c85816ef1f8ca3a23', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: PATCH employment_type and end_date → 200
+    meta:
+      id: req_33223c992d435010895d918af85b9e56
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 33
+    method: PATCH
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "employment_type": "freelance",
+          "end_date": "2023-12-31"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/professional-experiences/{% response 'body', 'req_7b7b13b650de535c85816ef1f8ca3a23', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Update (PUT) → 200
+    meta:
+      id: req_7a42ce722bda5baf887ca08cef61ebe2
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 34
+    method: PUT
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "company": "Insomnia Corp",
+          "position": {"en": "Lead developer", "fr": "Lead developer"},
+          "start_date": "2021-01-04",
+          "end_date": null
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+- name: 05. Tags
+  meta:
+    id: fld_4be19f92d526503b8f29d4dde3822700
+    created: 1790700000000
+    modified: 1790700000000
+    sortKey: 5
+    description: skills/, tools/ and methodologies/ behave the same; the kind comes from the route.
+  children:
+  - url: '{{ _.base_url }}/api/v1/admin/skills/'
+    name: List skills → 200
+    meta:
+      id: req_41d2ddf25e5a57adad2c2e83fafd4ad5
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 35
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/tools/'
+    name: List tools → 200
+    meta:
+      id: req_4194f555271c5ca2961b4c5cebc961e2
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 36
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/methodologies/'
+    name: List methodologies → 200
+    meta:
+      id: req_781d8b13a6685cf2bbc62a9964b41d8d
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 37
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/skills/'
+    name: Create skill → 201
+    meta:
+      id: req_d4465288c9f45c6798c33d03278aeb66
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 38
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "name": {"en": "Insomnia testing", "fr": "Insomnia testing"}
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/tools/'
+    name: Create tool → 201
+    meta:
+      id: req_704cc584d4ec5636a33f692fe02982de
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 39
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "name": {"en": "Insomnia", "fr": "Insomnia"}
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/methodologies/'
+    name: Create methodology → 201
+    meta:
+      id: req_6ebcbb0c7f47590fa2afd13f28e3755b
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 40
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "name": {"en": "Manual testing", "fr": "Manual testing"}
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/skills/'
+    name: Create duplicate skill → 400
+    meta:
+      id: req_0964ea4abaeb5ea0bfedc616b4318ac9
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: Error on name.
+      sortKey: 41
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "name": {"en": "Insomnia testing", "fr": "Insomnia testing"}
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/tools/'
+    name: Same name as a skill, as a tool → 201
+    meta:
+      id: req_c2c7283d46c95598a2e5081a4352f9a5
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: Names are unique per kind only.
+      sortKey: 42
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "name": {"en": "Insomnia testing", "fr": "Insomnia testing"}
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/skills/'
+    name: Kind in the body is ignored → 201
+    meta:
+      id: req_b053c0cec96b5f2cafc304b448dc3039
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: The tag appears under skills/, not tools/.
+      sortKey: 43
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "name": {"en": "Kind ignored", "fr": "Kind ignored"},
+          "kind": "tool"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/skills/'
+    name: Create without name → 400
+    meta:
+      id: req_ee8ae8853d2657c0b3cf1d8df388aa55
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 44
+    method: POST
+    body:
+      mimeType: application/json
+      text: '{}'
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/skills/{% response 'body', 'req_d4465288c9f45c6798c33d03278aeb66', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Retrieve skill → 200
+    meta:
+      id: req_882fd4a7d6f55d8799c528eb56fa8712
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 45
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/skills/{% response 'body', 'req_704cc584d4ec5636a33f692fe02982de', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Retrieve the tool id under skills/ → 404
+    meta:
+      id: req_3154d725500f569691ce838d5199936c
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: Tag ids are shared, but each route only reaches its kind.
+      sortKey: 46
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/skills/{% response 'body', 'req_d4465288c9f45c6798c33d03278aeb66', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Rename skill → 200
+    meta:
+      id: req_a724099d38b65291841ceec864b0f5bc
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 47
+    method: PATCH
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "name": {"en": "Insomnia manual testing", "fr": "Insomnia manual testing"}
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/skills/{% response 'body', 'req_d4465288c9f45c6798c33d03278aeb66', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: PUT the same name → 200
+    meta:
+      id: req_e7504bf0aafb519ba3d5070051dbe316
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: Keeping its own name is not a duplicate.
+      sortKey: 48
+    method: PUT
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "name": {"en": "Insomnia manual testing", "fr": "Insomnia manual testing"}
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/skills/{% response 'body', 'req_b053c0cec96b5f2cafc304b448dc3039', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Rename to a taken name → 400
+    meta:
+      id: req_3452a41154325c2ca4f27af986a748f8
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 49
+    method: PATCH
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "name": {"en": "Insomnia manual testing", "fr": "Insomnia manual testing"}
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/tools/{% response 'body', 'req_c2c7283d46c95598a2e5081a4352f9a5', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Delete the extra tool → 204
+    meta:
+      id: req_f054a36c3f0a5520a6db308bb8f804f6
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 50
+    method: DELETE
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/skills/{% response 'body', 'req_b053c0cec96b5f2cafc304b448dc3039', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Delete the extra skill → 204
+    meta:
+      id: req_d755e367f15a5eb693dce8d81ac109ad
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 51
+    method: DELETE
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+- name: 06. Projects
+  meta:
+    id: fld_46834b6adcae5d698dd124a2b095125a
+    created: 1790700000000
+    modified: 1790700000000
+    sortKey: 6
+    description: Uses the experience and tags created in the previous folders.
+  children:
+  - url: '{{ _.base_url }}/api/v1/admin/projects/'
+    name: List (hidden included) → 200
+    meta:
+      id: req_220d24f5fad557668741358006a5b363
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 52
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/projects/'
+    name: Create work project with tags and missions → 201
+    meta:
+      id: req_052466d4eada530fa8c39039dafa55d6
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 53
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "title": {"en": "Admin API", "fr": "Admin API"},
+          "start_date": "2026-09-01",
+          "experience": {% response 'body', 'req_7b7b13b650de535c85816ef1f8ca3a23', 'b64::JC5pZA==::46b', 'no-history', 60 %},
+          "tags": [
+            {% response 'body', 'req_d4465288c9f45c6798c33d03278aeb66', 'b64::JC5pZA==::46b', 'no-history', 60 %},
+            {% response 'body', 'req_704cc584d4ec5636a33f692fe02982de', 'b64::JC5pZA==::46b', 'no-history', 60 %},
+            {% response 'body', 'req_6ebcbb0c7f47590fa2afd13f28e3755b', 'b64::JC5pZA==::46b', 'no-history', 60 %}
+          ],
+          "missions": [
+            {"en": "Design the endpoints", "fr": "Design the endpoints"},
+            {"en": "Write the tests", "fr": "Write the tests"},
+            {"en": "Document it", "fr": "Document it"}
+          ],
+          "achievements": [
+            {"en": "100% coverage", "fr": "100% coverage"}
+          ],
+          "description": {"en": "Created from Insomnia.", "fr": "Created from Insomnia."}
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/projects/'
+    name: Create side project with required fields only → 201
+    meta:
+      id: req_264d97735b635f4796bc08f099188c1a
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: experience null, tags/missions/achievements empty lists.
+      sortKey: 54
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "title": {"en": "Side project", "fr": "Side project"},
+          "start_date": "2026-01-01"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/projects/'
+    name: Create with an unknown experience → 400
+    meta:
+      id: req_6709d9b567905de1968f04a845cd1174
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 55
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "title": {"en": "X", "fr": "X"},
+          "start_date": "2026-01-01",
+          "experience": 999999
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/projects/'
+    name: Create with an unknown tag → 400
+    meta:
+      id: req_6db8594f4aaa546084565ffd397a449b
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 56
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "title": {"en": "X", "fr": "X"},
+          "start_date": "2026-01-01",
+          "tags": [
+            999999
+          ]
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/projects/'
+    name: Create with a blank mission → 400
+    meta:
+      id: req_8895ab2232b15930b269480fef5d441d
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 57
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "title": {"en": "X", "fr": "X"},
+          "start_date": "2026-01-01",
+          "missions": [
+            {"en": "Ok", "fr": "Ok"},
+            {"en": "", "fr": ""}
+          ]
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/projects/'
+    name: Create with missions not a list → 400
+    meta:
+      id: req_289fd494590950dd8e9be1caa095d940
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 58
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "title": {"en": "X", "fr": "X"},
+          "start_date": "2026-01-01",
+          "missions": "Design"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/projects/'
+    name: Create with an achievement that is not a translated text → 400
+    meta:
+      id: req_9f4a1e3419ee5a49b3cec83c96dbc053
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 59
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "title": {"en": "X", "fr": "X"},
+          "start_date": "2026-01-01",
+          "achievements": [
+            {
+              "award": "Innovation"
+            }
+          ]
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/projects/'
+    name: Create ending before it starts → 400
+    meta:
+      id: req_6fc93312462c5ccdb06dd5925d23f103
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 60
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "title": {"en": "X", "fr": "X"},
+          "start_date": "2026-01-02",
+          "end_date": "2026-01-01"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/projects/{% response 'body', 'req_052466d4eada530fa8c39039dafa55d6', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Retrieve → 200
+    meta:
+      id: req_a7c55516cdc153ee92fb62ee9f89da67
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: experience and tags are ids.
+      sortKey: 61
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/experience/projects/{% response 'body', 'req_052466d4eada530fa8c39039dafa55d6', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Public detail (nested experience, tag kinds) → 200
+    meta:
+      id: req_87d795ac0af2557d8c48c7b75d393c73
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 62
+    method: GET
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/projects/{% response 'body', 'req_052466d4eada530fa8c39039dafa55d6', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Reorder and edit missions → 200
+    meta:
+      id: req_db15670c4ad55ee7b7d375e2fc32e8fa
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: The list replaces every mission, in this order.
+      sortKey: 63
+    method: PATCH
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "missions": [
+            {"en": "Write the tests", "fr": "Write the tests"},
+            {"en": "Design the endpoints", "fr": "Design the endpoints"},
+            {"en": "Review", "fr": "Review"}
+          ]
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/projects/{% response 'body', 'req_052466d4eada530fa8c39039dafa55d6', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: PATCH title only, missions and tags kept → 200
+    meta:
+      id: req_ea99161e2eaa568b94fb71317df630d5
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 64
+    method: PATCH
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "title": {"en": "Admin API v1", "fr": "Admin API v1"}
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/projects/{% response 'body', 'req_052466d4eada530fa8c39039dafa55d6', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Replace tags → 200
+    meta:
+      id: req_63a59654f4a7582a9b07cd478f04c9d9
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 65
+    method: PATCH
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "tags": [
+            {% response 'body', 'req_704cc584d4ec5636a33f692fe02982de', 'b64::JC5pZA==::46b', 'no-history', 60 %}
+          ]
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/projects/{% response 'body', 'req_052466d4eada530fa8c39039dafa55d6', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Invalid PATCH changes nothing → 400
+    meta:
+      id: req_ce1848afbb8154c5943cc163e777b54e
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'Retrieve afterwards: title and missions are unchanged.'
+      sortKey: 66
+    method: PATCH
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "title": {"en": "Should not be saved", "fr": "Should not be saved"},
+          "missions": [
+            {"en": "Ok", "fr": "Ok"},
+            {"en": "", "fr": ""}
+          ]
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/projects/{% response 'body', 'req_052466d4eada530fa8c39039dafa55d6', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Clear missions → 200
+    meta:
+      id: req_9b476fde4fa1557bbc1123d6ebb5efed
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 67
+    method: PATCH
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "missions": []
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/projects/{% response 'body', 'req_264d97735b635f4796bc08f099188c1a', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Detach from experience with PUT → 200
+    meta:
+      id: req_f6f8530e8c2050c5a4bc235489a4354e
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 68
+    method: PUT
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "title": {"en": "Side project", "fr": "Side project"},
+          "start_date": "2026-01-01",
+          "experience": null,
+          "tags": [
+            {% response 'body', 'req_d4465288c9f45c6798c33d03278aeb66', 'b64::JC5pZA==::46b', 'no-history', 60 %}
+          ],
+          "missions": [
+            {"en": "Try the admin API", "fr": "Try the admin API"}
+          ]
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/projects/{% response 'body', 'req_052466d4eada530fa8c39039dafa55d6', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Hide → 200
+    meta:
+      id: req_9e6cb207ca7059aa88e5ed80b04d66d6
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 69
+    method: PATCH
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "is_visible": false
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/experience/projects/{% response 'body', 'req_052466d4eada530fa8c39039dafa55d6', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Public detail of the hidden project → 404
+    meta:
+      id: req_c59413a076135c4da347db5e216890cf
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 70
+    method: GET
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/projects/{% response 'body', 'req_052466d4eada530fa8c39039dafa55d6', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Show again → 200
+    meta:
+      id: req_9a90c6a7b9da58c5b18eaa7896310468
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 71
+    method: PATCH
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "is_visible": true
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/professional-experiences/{% response 'body', 'req_7b7b13b650de535c85816ef1f8ca3a23', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Hide its experience → 200
+    meta:
+      id: req_0bf74ed70c0a5a60977aa52dc0be5795
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 72
+    method: PATCH
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "is_visible": false
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/experience/projects/{% response 'body', 'req_052466d4eada530fa8c39039dafa55d6', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Public detail of a project of a hidden experience → 404
+    meta:
+      id: req_ca64ff321b8151f6b1dfcb881a21c3b0
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 73
+    method: GET
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/projects/{% response 'body', 'req_052466d4eada530fa8c39039dafa55d6', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Admin retrieve still works → 200
+    meta:
+      id: req_524c5a1e77ff5f92a36ae05591d55676
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 74
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/professional-experiences/{% response 'body', 'req_7b7b13b650de535c85816ef1f8ca3a23', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Show the experience again → 200
+    meta:
+      id: req_66f6e9122c55565c870b43d321a439d6
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 75
+    method: PATCH
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "is_visible": true
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+- name: 07. Certifications
+  meta:
+    id: fld_5674d367de6851e0955955b3a7761772
+    created: 1790700000000
+    modified: 1790700000000
+    sortKey: 7
+    description: ''
+  children:
+  - url: '{{ _.base_url }}/api/v1/admin/certifications/'
+    name: List → 200
+    meta:
+      id: req_f1e623fd23da5bfeb81f36b7b6615342
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 76
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/certifications/'
+    name: Create with tags → 201
+    meta:
+      id: req_eed33fb4e0bf57fa91fdfed734ce5e68
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 77
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "name": {"en": "Insomnia Certified Tester", "fr": "Insomnia Certified Tester"},
+          "issuer": "Insomnia",
+          "issue_date": "2026-09-01",
+          "expiration_date": "2028-09-01",
+          "credential_id": "INS-123",
+          "credential_url": "https://insomnia.example/certificates/INS-123",
+          "tags": [
+            {% response 'body', 'req_704cc584d4ec5636a33f692fe02982de', 'b64::JC5pZA==::46b', 'no-history', 60 %},
+            {% response 'body', 'req_6ebcbb0c7f47590fa2afd13f28e3755b', 'b64::JC5pZA==::46b', 'no-history', 60 %}
+          ]
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/certifications/'
+    name: Create a second one → 201
+    meta:
+      id: req_aa00d2e88d90547ab7f2c2814e8059d6
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 78
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "name": {"en": "Insomnia Advanced", "fr": "Insomnia Advanced"},
+          "issuer": "Insomnia",
+          "issue_date": "2026-09-15"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/certifications/'
+    name: Create expiring before issue → 400
+    meta:
+      id: req_6c9d521dc22d556082a47f87089326d0
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: Error on expiration_date.
+      sortKey: 79
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "name": {"en": "X", "fr": "X"},
+          "issuer": "Y",
+          "issue_date": "2026-01-02",
+          "expiration_date": "2026-01-01"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/certifications/'
+    name: Create with an invalid credential_url → 400
+    meta:
+      id: req_b669f3c055275ddcaace57eb28a7e053
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 80
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "name": {"en": "X", "fr": "X"},
+          "issuer": "Y",
+          "issue_date": "2026-01-01",
+          "credential_url": "nope"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/certifications/'
+    name: Create without required fields → 400
+    meta:
+      id: req_f1f0481ea5095f77b3204610a40e5896
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 81
+    method: POST
+    body:
+      mimeType: application/json
+      text: '{}'
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/certifications/{% response 'body', 'req_eed33fb4e0bf57fa91fdfed734ce5e68', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Retrieve → 200
+    meta:
+      id: req_60a754d3b1685b5d8212391a364e9b46
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 82
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/certifications/{% response 'body', 'req_eed33fb4e0bf57fa91fdfed734ce5e68', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Replace tags and hide → 200
+    meta:
+      id: req_f34445e84f675f81ba2482bb73fea8ca
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 83
+    method: PATCH
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "tags": [
+            {% response 'body', 'req_d4465288c9f45c6798c33d03278aeb66', 'b64::JC5pZA==::46b', 'no-history', 60 %}
+          ],
+          "is_visible": false
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/certifications/{% response 'body', 'req_eed33fb4e0bf57fa91fdfed734ce5e68', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Writing specializations is ignored → 200
+    meta:
+      id: req_3f6a0ad4ea21523f9a62b4ee0ba156b1
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: specializations stays unchanged; it is edited on the specialization.
+      sortKey: 84
+    method: PATCH
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "specializations": [
+            1
+          ],
+          "is_visible": true
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/certifications/{% response 'body', 'req_eed33fb4e0bf57fa91fdfed734ce5e68', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: PATCH expiration before stored issue date → 400
+    meta:
+      id: req_98aaaa02b43c59e59db3a27f9e7f56b0
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 85
+    method: PATCH
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "expiration_date": "2020-01-01"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/certifications/{% response 'body', 'req_eed33fb4e0bf57fa91fdfed734ce5e68', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: PATCH never expires → 200
+    meta:
+      id: req_65477ae8164e5bf2a0927901b2940249
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 86
+    method: PATCH
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "expiration_date": null
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+- name: 08. Specializations
+  meta:
+    id: fld_afa4011b157f568586c151fcf0219333
+    created: 1790700000000
+    modified: 1790700000000
+    sortKey: 8
+    description: ''
+  children:
+  - url: '{{ _.base_url }}/api/v1/admin/specializations/'
+    name: List → 200
+    meta:
+      id: req_72633a8171f35d47a6fe3010f7778a6a
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 87
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/specializations/'
+    name: Create with certifications → 201
+    meta:
+      id: req_8671b43165bb5f0ab6bb2252c067c10c
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 88
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "name": {"en": "Insomnia path", "fr": "Insomnia path"},
+          "issuer": "Insomnia",
+          "issue_date": "2026-09-20",
+          "certifications": [
+            {% response 'body', 'req_eed33fb4e0bf57fa91fdfed734ce5e68', 'b64::JC5pZA==::46b', 'no-history', 60 %},
+            {% response 'body', 'req_aa00d2e88d90547ab7f2c2814e8059d6', 'b64::JC5pZA==::46b', 'no-history', 60 %}
+          ]
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/certifications/{% response 'body', 'req_eed33fb4e0bf57fa91fdfed734ce5e68', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Certification now lists the specialization → 200
+    meta:
+      id: req_c30e1ccc215554f192031dedc4f210ed
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: specializations contains the new id.
+      sortKey: 89
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/specializations/'
+    name: Create with an unknown certification → 400
+    meta:
+      id: req_ee841155335553f88272ab954728b4ca
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 90
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "name": {"en": "X", "fr": "X"},
+          "issuer": "Y",
+          "issue_date": "2026-01-01",
+          "certifications": [
+            999999
+          ]
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/specializations/'
+    name: Create expiring before issue → 400
+    meta:
+      id: req_a1c09b250db3552ab29feb5384c3cbed
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 91
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "name": {"en": "X", "fr": "X"},
+          "issuer": "Y",
+          "issue_date": "2026-01-02",
+          "expiration_date": "2026-01-01"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/specializations/{% response 'body', 'req_8671b43165bb5f0ab6bb2252c067c10c', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Retrieve → 200
+    meta:
+      id: req_8eea3b3188d65e0ebeb1677dee589c0f
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 92
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/specializations/{% response 'body', 'req_8671b43165bb5f0ab6bb2252c067c10c', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Keep only one certification → 200
+    meta:
+      id: req_86f82d875e9a5691a15195af7d85563c
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 93
+    method: PATCH
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "certifications": [
+            {% response 'body', 'req_aa00d2e88d90547ab7f2c2814e8059d6', 'b64::JC5pZA==::46b', 'no-history', 60 %}
+          ]
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/experience/specializations/{% response 'body', 'req_8671b43165bb5f0ab6bb2252c067c10c', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Public detail → 200
+    meta:
+      id: req_a19c689371bd5cedba2216f92fc7cef2
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 94
+    method: GET
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+- name: 09. Cleanup (deletes)
+  meta:
+    id: fld_f0b429f1315c54ff8a07f816db612884
+    created: 1790700000000
+    modified: 1790700000000
+    sortKey: 9
+    description: 'Removes what the collection created. After running it, the chained ids point to deleted rows: re-run the Create requests before the other ones.'
+  children:
+  - url: "{{ _.base_url }}/api/v1/admin/specializations/{% response 'body', 'req_8671b43165bb5f0ab6bb2252c067c10c', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Delete specialization → 204
+    meta:
+      id: req_7c5e159c7b655cc99f5541caab39f45d
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 95
+    method: DELETE
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/certifications/{% response 'body', 'req_eed33fb4e0bf57fa91fdfed734ce5e68', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Delete certification → 204
+    meta:
+      id: req_c598055df65852f68234bb26a4c6f148
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 96
+    method: DELETE
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/certifications/{% response 'body', 'req_aa00d2e88d90547ab7f2c2814e8059d6', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Delete second certification → 204
+    meta:
+      id: req_7d7928caeca35bef8c65336f6fb24c61
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 97
+    method: DELETE
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/projects/{% response 'body', 'req_264d97735b635f4796bc08f099188c1a', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Delete side project → 204
+    meta:
+      id: req_d8ef4f563d6450ca8c2a1d7d89aaa0ee
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 98
+    method: DELETE
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/professional-experiences/{% response 'body', 'req_7b7b13b650de535c85816ef1f8ca3a23', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Delete experience (cascades to its project) → 204
+    meta:
+      id: req_6b9395395df95f83aec7e8b95bd7cd01
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 99
+    method: DELETE
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/projects/{% response 'body', 'req_052466d4eada530fa8c39039dafa55d6', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Its project is gone → 404
+    meta:
+      id: req_a80802bd4558583eb84de8a859b0ccb1
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: Deleting an experience deletes its projects and their missions.
+      sortKey: 100
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/skills/{% response 'body', 'req_d4465288c9f45c6798c33d03278aeb66', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Delete skill → 204
+    meta:
+      id: req_1fb211b7d6ab5f37b66ee2aeb528a0d0
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 101
+    method: DELETE
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/tools/{% response 'body', 'req_704cc584d4ec5636a33f692fe02982de', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Delete tool → 204
+    meta:
+      id: req_65a25062da52590d8accfe70fa50c579
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 102
+    method: DELETE
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/methodologies/{% response 'body', 'req_6ebcbb0c7f47590fa2afd13f28e3755b', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Delete methodology → 204
+    meta:
+      id: req_499c398421d751cfab4882aed6692c0a
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 103
+    method: DELETE
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/education/{% response 'body', 'req_0dc40c9b1fff5f988b645c662a35213a', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Delete education → 204
+    meta:
+      id: req_e9f393a20c55585292f4c393ce0625b0
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 104
+    method: DELETE
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.base_url }}/api/v1/admin/education/{% response 'body', 'req_0dc40c9b1fff5f988b645c662a35213a', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"
+    name: Deleted education → 404
+    meta:
+      id: req_c4ea2b4051e6589888fc65b1149c7d4f
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 105
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/auth/jwt/blacklist/'
+    name: Logout (blacklist refresh token) → 200
+    meta:
+      id: req_887645c5f27852a5a811b744e699aab7
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: The access token keeps working until it expires.
+      sortKey: 106
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "refresh": "{% response 'body', 'req_bce1a03b784b5f8b81ba7b6e55a27a0c', 'b64::JC5yZWZyZXNo::46b', 'never', 60 %}"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_911884c9e241e00528fa7501ce52f4b81b46daa6
+    created: 1790700000000
+    modified: 1790700000000
+environments:
+  name: Base Environment
+  meta:
+    id: env_a6ede6c09eb15edabf607d3b55424350
+    created: 1790700000000
+    modified: 1790700000000
+    isPrivate: false
+  data:
+    base_url: http://localhost:8000
+    username: admin
+    password: ''
+    access: "{% response 'body', 'req_bce1a03b784b5f8b81ba7b6e55a27a0c', 'b64::JC5hY2Nlc3M=::46b', 'when-expired', 840 %}"
+  subEnvironments:
+  - name: Production (writes real data)
+    meta:
+      id: env_f0efbb63a8b5589bb30f3d2aa22d2ce0
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      sortKey: 1
+    data:
+      base_url: https://api.example.com

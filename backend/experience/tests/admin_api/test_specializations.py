@@ -25,7 +25,8 @@ LIST_URL = list_url("specialization")
 def make_specialization(**kwargs):
     """Create a specialization; only pass the fields the test cares about."""
     fields = {
-        "name": "Python Path",
+        "name_en": "Python Path",
+        "name_fr": "Python Path",
         "issuer": "Python Institute",
         "issue_date": date(2024, 1, 1),
     }
@@ -36,7 +37,8 @@ def make_specialization(**kwargs):
 def make_certification(**kwargs):
     """Create a certification; only pass the fields the test cares about."""
     fields = {
-        "name": "PCAP",
+        "name_en": "PCAP",
+        "name_fr": "PCAP",
         "issuer": "Python Institute",
         "issue_date": date(2024, 1, 1),
     }
@@ -65,12 +67,14 @@ def test_list_includes_hidden_entries_in_display_order(staff_api_client):
 def test_detail_returns_every_field(staff_api_client):
     """Certifications come back as ids, hidden ones included."""
     specialization = make_specialization(
-        name="Agile path",
+        name_en="Agile path",
+        name_fr="Parcours agile",
         issuer="Scrum.org",
         issue_date=date(2024, 1, 15),
         credential_id="ABC",
         credential_url="https://www.scrum.org/path/ABC",
-        description="All Scrum certifications.",
+        description_en="All Scrum certifications.",
+        description_fr="Toutes les certifications Scrum.",
         display_order=2,
         is_visible=False,
     )
@@ -82,13 +86,16 @@ def test_detail_returns_every_field(staff_api_client):
     assert response.status_code == 200
     assert response.json() == {
         "id": specialization.id,
-        "name": "Agile path",
+        "name": {"en": "Agile path", "fr": "Parcours agile"},
         "issuer": "Scrum.org",
         "issue_date": "2024-01-15",
         "expiration_date": None,
         "credential_id": "ABC",
         "credential_url": "https://www.scrum.org/path/ABC",
-        "description": "All Scrum certifications.",
+        "description": {
+            "en": "All Scrum certifications.",
+            "fr": "Toutes les certifications Scrum.",
+        },
         "certifications": [certification.id],
         "display_order": 2,
         "is_visible": False,
@@ -98,13 +105,13 @@ def test_detail_returns_every_field(staff_api_client):
 
 def test_create_with_certifications(staff_api_client):
     """A specialization is created with its path of certifications."""
-    first = make_certification(name="PCEP")
-    second = make_certification(name="PCAP")
+    first = make_certification(name_en="PCEP", name_fr="PCEP")
+    second = make_certification(name_en="PCAP", name_fr="PCAP")
 
     response = staff_api_client.post(
         LIST_URL,
         {
-            "name": "Python Path",
+            "name": {"en": "Python Path", "fr": "Python Path"},
             "issuer": "Python Institute",
             "issue_date": "2024-01-01",
             "certifications": [first.id, second.id],
@@ -130,7 +137,7 @@ def test_create_with_unknown_certification_is_a_bad_request(staff_api_client):
     response = staff_api_client.post(
         LIST_URL,
         {
-            "name": "Python Path",
+            "name": {"en": "Python Path", "fr": "Python Path"},
             "issuer": "Python Institute",
             "issue_date": "2024-01-01",
             "certifications": [999],
@@ -145,8 +152,8 @@ def test_create_with_unknown_certification_is_a_bad_request(staff_api_client):
 def test_partial_update_replaces_certifications(staff_api_client):
     """Sending certifications sets them to exactly the sent ids."""
     specialization = make_specialization()
-    old = make_certification(name="PCEP")
-    new = make_certification(name="PCAP")
+    old = make_certification(name_en="PCEP", name_fr="PCEP")
+    new = make_certification(name_en="PCAP", name_fr="PCAP")
     specialization.certifications.add(old)
 
     response = staff_api_client.patch(

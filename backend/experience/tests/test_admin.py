@@ -36,12 +36,28 @@ MODELS = [
 def make(model):
     """Create one row of `model` with the minimum required fields."""
     required = {
-        Education: {"institution": "University", "degree": "MSc"},
-        ProfessionalExperience: {"company": "Acme", "position": "Developer"},
-        Project: {"title": "Portfolio"},
-        Certification: {"name": "PCAP", "issuer": "Python Institute"},
-        Specialization: {"name": "Python Path", "issuer": "Python Institute"},
-        Tag: {"name": "Python", "kind": Tag.Kind.SKILL},
+        Education: {
+            "institution": "University",
+            "degree_en": "MSc",
+            "degree_fr": "Master",
+        },
+        ProfessionalExperience: {
+            "company": "Acme",
+            "position_en": "Developer",
+            "position_fr": "Développeur",
+        },
+        Project: {"title_en": "Portfolio", "title_fr": "Portfolio"},
+        Certification: {
+            "name_en": "PCAP",
+            "name_fr": "PCAP",
+            "issuer": "Python Institute",
+        },
+        Specialization: {
+            "name_en": "Python Path",
+            "name_fr": "Parcours Python",
+            "issuer": "Python Institute",
+        },
+        Tag: {"name_en": "Python", "name_fr": "Python", "kind": Tag.Kind.SKILL},
     }[model]
     if model in (Education, ProfessionalExperience, Project):
         required["start_date"] = date(2024, 1, 1)
@@ -107,10 +123,10 @@ def test_project_page_edits_its_missions_inline(admin_client):
 def test_changelist_filters_tags_by_kind(admin_client):
     """Tools, methodologies and skills share one page, filtered by kind."""
     make(Tag)
-    Tag.objects.create(name="Docker", kind=Tag.Kind.TOOL)
+    Tag.objects.create(name_en="Docker", name_fr="Docker", kind=Tag.Kind.TOOL)
 
     response = admin_client.get(admin_url(Tag, "changelist"), {"kind__exact": "tool"})
 
     changelist = response.context["cl"]
     assert [spec.field_path for spec in changelist.filter_specs] == ["kind"]
-    assert [tag.name for tag in changelist.result_list] == ["Docker"]
+    assert [tag.name_en for tag in changelist.result_list] == ["Docker"]
