@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import type { Education } from '@/domain/education/Education'
 import type { Locale } from '@/domain/i18n/Locale'
 import { doctorate, masters } from '@/test/fakeEducationRepository'
@@ -11,6 +12,11 @@ function renderTile(education: Education, locale: Locale = 'en') {
       <EducationTile education={education} />
     </LocaleProvider>,
   )
+}
+
+/** Clicks the tile's title to show its details. */
+async function expand(degree: string) {
+  await userEvent.setup().click(screen.getByRole('button', { name: degree }))
 }
 
 describe('EducationTile', () => {
@@ -36,12 +42,14 @@ describe('EducationTile', () => {
       expect(screen.getByText('Sep 2015 – Jun 2017 · Brittany')).toBeInTheDocument()
     })
 
-    it('shows the field of study, the grade and the description', () => {
+    it('shows the field of study, the grade and the description once expanded', async () => {
       renderTile(masters)
 
-      expect(screen.getByText('Computer Science')).toBeInTheDocument()
-      expect(screen.getByText('With honours')).toBeInTheDocument()
-      expect(screen.getByText('Thesis on compilers.')).toBeInTheDocument()
+      await expand('Master’s degree')
+
+      expect(screen.getByText('Computer Science')).toBeVisible()
+      expect(screen.getByText('With honours')).toBeVisible()
+      expect(screen.getByText('Thesis on compilers.')).toBeVisible()
     })
 
     it('shows an ongoing degree as lasting until now', () => {
@@ -64,12 +72,14 @@ describe('EducationTile', () => {
       expect(screen.getByText('sept. 2015 – juin 2017 · Bretagne')).toBeInTheDocument()
     })
 
-    it('shows the field of study, the grade and the description', () => {
+    it('shows the field of study, the grade and the description once expanded', async () => {
       renderTile(masters, 'fr')
 
-      expect(screen.getByText('Informatique')).toBeInTheDocument()
-      expect(screen.getByText('Mention bien')).toBeInTheDocument()
-      expect(screen.getByText('Mémoire sur les compilateurs.')).toBeInTheDocument()
+      await expand('Master')
+
+      expect(screen.getByText('Informatique')).toBeVisible()
+      expect(screen.getByText('Mention bien')).toBeVisible()
+      expect(screen.getByText('Mémoire sur les compilateurs.')).toBeVisible()
     })
 
     it('shows an ongoing degree as lasting until now', () => {
@@ -87,13 +97,15 @@ describe('EducationTile', () => {
     )
   })
 
-  it('shows each paragraph of the description apart', () => {
+  it('shows each paragraph of the description apart', async () => {
     renderTile({
       ...masters,
       description: { en: 'First paragraph.\n\nSecond paragraph.', fr: '' },
     })
 
-    expect(screen.getByText('First paragraph.')).toBeInTheDocument()
-    expect(screen.getByText('Second paragraph.')).toBeInTheDocument()
+    await expand('Master’s degree')
+
+    expect(screen.getByText('First paragraph.')).toBeVisible()
+    expect(screen.getByText('Second paragraph.')).toBeVisible()
   })
 })

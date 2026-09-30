@@ -125,4 +125,18 @@ describe('AppRoutes', () => {
     expect(screen.getByRole('article', { name: 'Master' })).toBeInTheDocument()
     expect(education.list).toHaveBeenCalledTimes(1)
   })
+
+  it('keeps an expanded tile open when switching the language', async () => {
+    const user = userEvent.setup()
+    renderAt('/resume')
+
+    await user.click(await screen.findByRole('button', { name: 'Master’s degree' }))
+    await user.click(screen.getByRole('button', { name: 'Français' }))
+
+    expect(screen.getByRole('button', { name: 'Master' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    )
+    expect(screen.getByText('Mémoire sur les compilateurs.')).toBeVisible()
+  })
 })

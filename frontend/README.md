@@ -16,7 +16,8 @@ Domain-driven layers under `src/`:
 The resume is made of reusable pieces, so each kind of entry only maps itself
 onto them:
 
-- `components/Tile`: a card for one entry (title, subtitle, meta line, body),
+- `components/Tile`: a card for one entry (title, subtitle, meta line), whose
+  title expands its details,
   and `components/TileList` to lay tiles out in a grid
 - `resume/ResumeSection`: a titled section that loads its entries with
   `async/useAsync` and shows the loading, error, empty or tile states

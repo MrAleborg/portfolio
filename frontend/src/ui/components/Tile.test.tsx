@@ -1,5 +1,14 @@
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { Tile } from '@/ui/components/Tile'
+
+function renderTileWithContent() {
+  return render(
+    <Tile title="Master’s degree">
+      <p>Thesis on compilers.</p>
+    </Tile>,
+  )
+}
 
 describe('Tile', () => {
   it('is an article named by its title', () => {
@@ -44,14 +53,62 @@ describe('Tile', () => {
     expect(screen.getByText('Sep 2015 – Jun 2017')).toBeInTheDocument()
   })
 
-  it('shows its content', () => {
-    render(
-      <Tile title="Master’s degree">
-        <p>Thesis on compilers.</p>
-      </Tile>,
-    )
+  it('hides its content until the title is clicked', () => {
+    renderTileWithContent()
 
-    expect(screen.getByText('Thesis on compilers.')).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Master’s degree' }),
+    ).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.getByText('Thesis on compilers.')).not.toBeVisible()
+  })
+
+  it('shows its content when the title is clicked', async () => {
+    const user = userEvent.setup()
+    renderTileWithContent()
+
+    await user.click(screen.getByRole('button', { name: 'Master’s degree' }))
+
+    expect(
+      screen.getByRole('button', { name: 'Master’s degree' }),
+    ).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByText('Thesis on compilers.')).toBeVisible()
+  })
+
+  it('hides its content again when the title is clicked twice', async () => {
+    const user = userEvent.setup()
+    renderTileWithContent()
+
+    await user.click(screen.getByRole('button', { name: 'Master’s degree' }))
+    await user.click(screen.getByRole('button', { name: 'Master’s degree' }))
+
+    expect(
+      screen.getByRole('button', { name: 'Master’s degree' }),
+    ).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.getByText('Thesis on compilers.')).not.toBeVisible()
+  })
+
+  it('tells which content its title expands', () => {
+    renderTileWithContent()
+
+    const content = screen.getByText('Thesis on compilers.').parentElement!
+    expect(
+      screen.getByRole('button', { name: 'Master’s degree' }),
+    ).toHaveAttribute('aria-controls', content.id)
+  })
+
+  it('keeps its title the heading of the tile when it can expand', () => {
+    renderTileWithContent()
+
+    expect(
+      screen.getByRole('heading', { level: 3, name: 'Master’s degree' }),
+    ).toContainElement(screen.getByRole('button', { name: 'Master’s degree' }))
+    expect(screen.getByRole('article')).toHaveAccessibleName('Master’s degree')
+  })
+
+  it('has no button when it has no content to expand', () => {
+    render(<Tile title="Master’s degree" subtitle="Université de Rennes" />)
+
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
 
   it('shows nothing but its title when it has nothing else', () => {

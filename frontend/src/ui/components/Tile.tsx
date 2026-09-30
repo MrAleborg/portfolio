@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from 'react'
+import { useId, useState, type ReactNode } from 'react'
 import './Tile.css'
 
 interface TileProps {
@@ -8,6 +8,7 @@ interface TileProps {
   meta?: string[]
   /** Level of the title in the page outline. */
   headingLevel?: 2 | 3 | 4
+  /** Details hidden until the title is clicked. */
   children?: ReactNode
 }
 
@@ -20,17 +21,36 @@ export function Tile({
   children,
 }: TileProps) {
   const titleId = useId()
+  const bodyId = useId()
+  const [expanded, setExpanded] = useState(false)
   const Heading = `h${headingLevel}` as const
   const metaLine = meta.filter(Boolean).join(' · ')
 
   return (
     <article className="tile" aria-labelledby={titleId}>
       <Heading id={titleId} className="tile__title">
-        {title}
+        {children ? (
+          <button
+            type="button"
+            className="tile__toggle"
+            aria-expanded={expanded}
+            aria-controls={bodyId}
+            onClick={() => setExpanded(!expanded)}
+          >
+            {title}
+            <span className="tile__chevron" aria-hidden="true" />
+          </button>
+        ) : (
+          title
+        )}
       </Heading>
       {subtitle && <p className="tile__subtitle">{subtitle}</p>}
       {metaLine && <p className="tile__meta">{metaLine}</p>}
-      {children && <div className="tile__body">{children}</div>}
+      {children && (
+        <div id={bodyId} className="tile__body" hidden={!expanded}>
+          {children}
+        </div>
+      )}
     </article>
   )
 }

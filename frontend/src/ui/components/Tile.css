@@ -1,5 +1,4 @@
 .tile {
-  height: 100%;
   padding: 1.25rem 1.5rem;
   text-align: left;
   background: var(--surface);
@@ -14,6 +13,54 @@
   font-size: 1.15rem;
   line-height: 1.3;
   color: var(--text-strong);
+}
+
+.tile__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.tile__toggle:hover {
+  color: var(--accent);
+}
+
+.tile__toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+/* A chevron that points down when closed and up when open. */
+.tile__chevron {
+  flex: none;
+  width: 0.5em;
+  height: 0.5em;
+  margin-top: -0.25em;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 0.2s ease, margin-top 0.2s ease;
+}
+
+.tile__toggle[aria-expanded='true'] .tile__chevron {
+  margin-top: 0.25em;
+  transform: rotate(-135deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile__chevron {
+    transition: none;
+  }
 }
 
 .tile__subtitle {
