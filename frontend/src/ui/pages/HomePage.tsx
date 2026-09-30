@@ -16,7 +16,7 @@ export function HomePage({ profileRepository }: HomePageProps) {
   const state = useAsync(profileRepository.get)
 
   if (state.status === 'loading') {
-    return <p role="status">{messages[locale].loadingProfile}</p>
+    return <p role="status">{messages[locale].loading}</p>
   }
 
   if (state.status === 'error') {

@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import type { Locale } from '@/domain/i18n/Locale'
+import { fakeEducationRepository } from '@/test/fakeEducationRepository'
 import { fakeProfileRepository } from '@/test/fakeProfileRepository'
 import { fakeRepositories } from '@/test/fakeRepositories'
 import { AppRoutes } from '@/ui/AppRoutes'
@@ -53,7 +54,7 @@ describe('AppRoutes', () => {
     )
   })
 
-  it('shows the resume page at /resume', () => {
+  it('shows the resume page at /resume', async () => {
     renderAt('/resume')
 
     expect(
@@ -63,6 +64,9 @@ describe('AppRoutes', () => {
       'aria-current',
       'page',
     )
+    expect(
+      await screen.findByRole('article', { name: 'Master’s degree' }),
+    ).toBeInTheDocument()
   })
 
   it('goes to the resume page from the navigation', async () => {
@@ -108,5 +112,17 @@ describe('AppRoutes', () => {
       navigation('Principale').getByRole('link', { name: 'Accueil' }),
     ).toBeInTheDocument()
     expect(profile.get).toHaveBeenCalledTimes(1)
+  })
+
+  it('switches the language of the resume without loading the education again', async () => {
+    const user = userEvent.setup()
+    const education = fakeEducationRepository()
+    renderAt('/resume', { repositories: fakeRepositories({ education }) })
+    await screen.findByRole('article', { name: 'Master’s degree' })
+
+    await user.click(screen.getByRole('button', { name: 'Français' }))
+
+    expect(screen.getByRole('article', { name: 'Master' })).toBeInTheDocument()
+    expect(education.list).toHaveBeenCalledTimes(1)
   })
 })
