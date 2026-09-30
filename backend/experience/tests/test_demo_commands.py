@@ -1,8 +1,9 @@
 """Tests for the demo data management commands.
 
 - ``seed_demo`` fills an empty database with demo content for manual testing:
-  every resource, plus hidden entries (an invisible project, an invisible
-  experience with a project) to check that the API leaves them out. It refuses
+  every resource and the owner's profile, plus hidden entries (an invisible
+  project, an invisible experience with a project) to check that the API
+  leaves them out. It refuses
   to run on a database that already has content.
 - ``flush_demo`` deletes all portfolio content and keeps users.
 - ``reset_demo`` flushes, then seeds again.
@@ -24,6 +25,7 @@ from experience.models import (
     Specialization,
     Tag,
 )
+from owner.models import Profile
 
 pytestmark = pytest.mark.django_db
 
@@ -46,6 +48,7 @@ CONTENT_MODELS = [
     Certification,
     Specialization,
     Tag,
+    Profile,
 ]
 
 
@@ -66,6 +69,15 @@ def test_seed_fills_every_list(api_client, basename):
 
     assert response.status_code == 200
     assert response.json()
+
+
+def test_seed_creates_the_profile(api_client):
+    """The profile endpoint has something to show."""
+    run("seed_demo")
+
+    response = api_client.get(reverse("owner:profile"))
+
+    assert response.status_code == 200
 
 
 def test_seed_creates_a_side_project(api_client):
