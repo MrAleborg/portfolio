@@ -65,28 +65,42 @@ pipenv run python manage.py reset_demo
 See [demo_data.md](demo_data.md) for the three commands (`seed_demo`,
 `flush_demo`, `reset_demo`), the data they create and what to check.
 
-## Manual testing of the admin API
+## Testing the admin API over HTTP
 
 [`portfolio_admin_api.insomnia.yaml`](portfolio_admin_api.insomnia.yaml) is an
 [Insomnia](https://insomnia.rest/) collection (format
 `collection.insomnia.rest/5.0`) that exercises every admin API
 route over real HTTP, one folder per resource. Each request name ends with the
-expected status (e.g. `Create ending before it starts → 400`).
+expected status (e.g. `Create ending before it starts → 400`), and each request
+has an after-response script that checks it: the status, then what the request
+is about (the fields of a `400`, a default value, a hidden entry...).
 
 1. Start the server (`pipenv run python manage.py runserver`) with a staff
    account (`createsuperuser`).
 2. Import the file in Insomnia and set `password` (and `username` or
    `base_url` if needed) in the Base Environment.
-3. Run the folders in order.
+3. Run the whole collection with the Collection Runner: the folders depend on
+   each other, in order. The results show each test.
 
-Requests are chained: the access token is read from the Login response (and
-Login is sent again once the token is 14 minutes old), and detail requests
-take their id from the matching Create request. The chaining tags reference
-requests by id (`{% response 'body', 'req_…', … %}`), so keep the ids when
-editing the file by hand. The collection writes to the
-local database; its last folder deletes what it created. After running it,
-send the Create requests again before the others, since the chained ids then
-point to deleted rows.
+Or from the command line, with
+[`inso`](https://docs.insomnia.rest/inso-cli/introduction) 10 or later. Set
+`password` (and `base_url`) in the file's environment first: `--env-var` does
+not reach the Login request sent for the token.
+
+```bash
+inso run collection wrk_571ab91cefde5c3186a01fe9ddfc9d6d \
+  -w docs/portfolio_admin_api.insomnia.yaml -e env_a6ede6c09eb15edabf607d3b55424350
+```
+
+It exits with `1` if a test fails.
+
+Requests are chained. The access token is read from the Login response (and
+Login is sent again once the token is 14 minutes old). Each Create request
+saves the id it gets in an environment variable (`education_id`,
+`project_id`...), which the next requests use in their URL or body. The
+collection writes to the database the server uses; its last folder deletes what
+it created, so it can be run again. The Profile folder replaces the stored
+profile: don't run it against real content.
 
 ## Layout
 

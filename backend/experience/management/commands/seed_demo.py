@@ -15,6 +15,7 @@ from experience.models import (
     Specialization,
     Tool,
 )
+from owner.models import Profile
 
 
 class Command(BaseCommand):
@@ -31,12 +32,22 @@ class Command(BaseCommand):
                 "Use reset_demo to replace it with the demo content."
             )
 
+        self.create_profile()
         tags = self.create_tags()
         self.create_education()
         self.create_experiences(tags)
         self.create_credentials(tags)
 
         self.stdout.write(self.style.SUCCESS("Demo content created."))
+
+    def create_profile(self):
+        Profile.objects.create(
+            full_name="Demo Owner",
+            headline_en="Software engineer",
+            headline_fr="Ingénieur logiciel",
+            bio_en="Fictional owner of the demo portfolio.",
+            bio_fr="Propriétaire fictif du portfolio de démonstration.",
+        )
 
     def create_tags(self):
         return {

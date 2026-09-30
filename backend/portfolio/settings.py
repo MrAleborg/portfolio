@@ -82,6 +82,7 @@ INSTALLED_APPS = [
     # Local
     "experience",
     "accounts",
+    "owner",
 ]
 
 MIDDLEWARE = [

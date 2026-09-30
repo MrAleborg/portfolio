@@ -90,6 +90,7 @@ Entries are listed by their English text.
 
 | Resource | Id | Entry | Notes |
 |---|---|---|---|
+| Profile | 1 | Demo Owner, Software engineer | With a bio |
 | Education | 1 | Master's degree, Demo University (2015–2017) | French: Master |
 | | 2 | Bachelor's degree, Demo Institute of Technology (2012–2015) | French: Licence |
 | Experience | 1 | Backend developer @ Acme Corp | Ongoing (`end_date` null) |
@@ -137,6 +138,7 @@ relative to `http://localhost:8000/api/v1/experience/`; see
 | `certifications/?tag=6` | Certifications 2, 1 |
 | `certifications/1/` | `specializations: [{"id": 1, "name": {"en": "Agile path", "fr": "Parcours agile"}}]` |
 | `specializations/1/` | Certifications 2, 1, not the hidden one |
+| `/api/v1/profile/` (absolute path) | Demo Owner, with headline and bio in both languages |
 
 No response should contain `is_visible`, `display_order`, `created_at` or
 `updated_at`.

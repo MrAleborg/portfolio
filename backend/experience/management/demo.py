@@ -13,6 +13,7 @@ from experience.models import (
     Specialization,
     Tag,
 )
+from owner.models import Profile
 
 # Every portfolio model. Users are not content and are never touched.
 CONTENT_MODELS = [
@@ -23,6 +24,7 @@ CONTENT_MODELS = [
     Certification,
     Specialization,
     Tag,
+    Profile,
 ]
 
 
