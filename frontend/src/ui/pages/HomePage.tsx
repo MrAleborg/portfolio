@@ -4,18 +4,11 @@ import { Avatar } from '@/ui/components/Avatar'
 import { messages } from '@/ui/i18n/messages'
 import { useLocale } from '@/ui/i18n/useLocale'
 import { useProfile } from '@/ui/profile/useProfile'
+import { paragraphs } from '@/ui/text/paragraphs'
 import './HomePage.css'
 
 interface HomePageProps {
   profileRepository: ProfileRepository
-}
-
-/** Splits a text on blank lines; an empty text has no paragraph. */
-function paragraphs(text: string): string[] {
-  return text
-    .split(/\n\s*\n/)
-    .map((paragraph) => paragraph.trim())
-    .filter(Boolean)
 }
 
 export function HomePage({ profileRepository }: HomePageProps) {
