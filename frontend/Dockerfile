@@ -6,8 +6,6 @@ WORKDIR /build
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
-# Base URL of the backend API, baked into the bundle at build time.
-ARG VITE_API_URL
 RUN npm run build
 
 

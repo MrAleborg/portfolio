@@ -11,6 +11,12 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  server: {
+    // Like Caddy in production: the API is on the site's own domain.
+    proxy: {
+      '/api': 'http://localhost:8000',
+    },
+  },
   test: {
     environment: 'jsdom',
     globals: true,

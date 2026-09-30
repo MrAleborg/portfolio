@@ -85,9 +85,6 @@ jobs:
         with:
           context: ${{ matrix.service }}
           push: true
-          # Only the frontend reads it: the site calls the API from the browser.
-          build-args: |
-            VITE_API_URL=https://${{ vars.API_DOMAIN }}
           tags: |
             ghcr.io/mraleborg/portfolio-${{ matrix.service }}:${{ needs.check.outputs.tag }}
             ghcr.io/mraleborg/portfolio-${{ matrix.service }}:latest
