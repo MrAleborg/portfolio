@@ -1,5 +1,6 @@
 import type { Localized } from '@/domain/i18n/Locale'
 import type { ProfileRepository } from '@/domain/profile/ProfileRepository'
+import { getJson } from '@/infrastructure/http/getJson'
 
 interface ProfileDto {
   full_name: string
@@ -13,13 +14,7 @@ export function createHttpProfileRepository(
 ): ProfileRepository {
   return {
     async get() {
-      const response = await fetchFn(
-        `${apiUrl.replace(/\/$/, '')}/api/v1/profile/`,
-      )
-      if (!response.ok) {
-        throw new Error(`The profile request failed with status ${response.status}`)
-      }
-      const dto: ProfileDto = await response.json()
+      const dto = await getJson<ProfileDto>(apiUrl, '/api/v1/profile/', fetchFn)
       return { fullName: dto.full_name, headline: dto.headline, bio: dto.bio }
     },
   }
