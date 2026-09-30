@@ -1,0 +1,15 @@
+.language-switch {
+  padding: 0.4rem 0.9rem;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text-strong);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.language-switch:hover,
+.language-switch:focus-visible {
+  border-color: var(--accent);
+}

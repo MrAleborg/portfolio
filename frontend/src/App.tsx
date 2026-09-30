@@ -1,11 +1,18 @@
-import { owner } from '@/infrastructure/profile/staticProfile'
+import { BrowserRouter } from 'react-router'
+import type { ProfileRepository } from '@/domain/profile/ProfileRepository'
+import { AppRoutes } from '@/ui/AppRoutes'
 import { LocaleProvider } from '@/ui/i18n/LocaleProvider'
-import { WelcomePage } from '@/ui/pages/WelcomePage'
 
-function App() {
+interface AppProps {
+  profileRepository: ProfileRepository
+}
+
+function App({ profileRepository }: AppProps) {
   return (
     <LocaleProvider>
-      <WelcomePage profile={owner} />
+      <BrowserRouter>
+        <AppRoutes profileRepository={profileRepository} />
+      </BrowserRouter>
     </LocaleProvider>
   )
 }
