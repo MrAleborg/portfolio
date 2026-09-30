@@ -34,6 +34,14 @@ describe('httpProfileRepository', () => {
     expect(fetchFn).toHaveBeenCalledWith('https://api.example.com/api/v1/profile/')
   })
 
+  it('requests the endpoint on the same domain without an API URL', async () => {
+    const fetchFn = respondWith(200)
+
+    await createHttpProfileRepository(undefined, fetchFn).get()
+
+    expect(fetchFn).toHaveBeenCalledWith('/api/v1/profile/')
+  })
+
   it('turns the response into a profile', async () => {
     const repository = createHttpProfileRepository('https://api.example.com', respondWith(200))
 
