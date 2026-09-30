@@ -2844,12 +2844,178 @@ collection:
         send: true
         store: true
       rebuildPath: true
-- name: 09. Cleanup (deletes)
+- name: 09. Profile
+  meta:
+    id: fld_e0c7a1243b3e409482d1e3a05fb355e2
+    created: 1790700000000
+    modified: 1790700000000
+    sortKey: 9
+    description: 'The owner''s profile, a single row: no id in the path. PUT replaces the stored profile.'
+  children:
+  - url: '{{ _.base_url }}/api/v1/admin/profile/'
+    name: Read profile → 200
+    meta:
+      id: req_8de2a816b11348afb641fbb753dff407
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 404 before the profile is created (e.g. on an empty database).
+      sortKey: 107
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/profile/'
+    name: Create or replace profile → 201 or 200
+    meta:
+      id: req_489c465846154c168fe1110b9f1258b4
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 201 when there was no profile, 200 when it replaces it.
+      sortKey: 108
+    method: PUT
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "full_name": "Alexandre Le Borgne",
+          "headline": {"en": "Senior Software Engineer, PhD", "fr": "Ingénieur logiciel senior, PhD"},
+          "bio": {"en": "Created from Insomnia.", "fr": "Créé depuis Insomnia."}
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/profile/'
+    name: Update the bio only → 200
+    meta:
+      id: req_ad0d320860cb496c80db880c4106974a
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: The other fields keep their value.
+      sortKey: 109
+    method: PATCH
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "bio": {"en": "Updated from Insomnia.", "fr": "Modifié depuis Insomnia."}
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/profile/'
+    name: Replace with a headline missing its French text → 400
+    meta:
+      id: req_991eebf4b48947a3b4a3da3de2495b2f
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'The error names the language: {"headline": {"fr": [...]}}.'
+      sortKey: 110
+    method: PUT
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "full_name": "Alexandre Le Borgne",
+          "headline": {"en": "Senior Software Engineer, PhD", "fr": ""}
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/admin/profile/'
+    name: Delete profile → 405
+    meta:
+      id: req_2dd29a533e9545c3a103f5723aa2aefb
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: The profile can be emptied, not removed.
+      sortKey: 111
+    method: DELETE
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: '{{ _.base_url }}/api/v1/profile/'
+    name: Public profile → 200
+    meta:
+      id: req_95a48d10ed7942f596446755c1a1e4fc
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: No token needed; no timestamps in the response.
+      sortKey: 112
+    method: GET
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+- name: 10. Cleanup (deletes)
   meta:
     id: fld_f0b429f1315c54ff8a07f816db612884
     created: 1790700000000
     modified: 1790700000000
-    sortKey: 9
+    sortKey: 10
     description: 'Removes what the collection created. After running it, the chained ids point to deleted rows: re-run the Create requests before the other ones.'
   children:
   - url: "{{ _.base_url }}/api/v1/admin/specializations/{% response 'body', 'req_8671b43165bb5f0ab6bb2252c067c10c', 'b64::JC5pZA==::46b', 'no-history', 60 %}/"

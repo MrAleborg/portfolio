@@ -1,7 +1,9 @@
 # Database
 
-All models live in the `experience` app ([`experience/models.py`](../experience/models.py)).
-Django prefixes table names with the app label (e.g. `experience_project`).
+The portfolio content lives in the `experience` app
+([`experience/models.py`](../experience/models.py)), and the owner's profile
+in the `owner` app ([`owner/models.py`](../owner/models.py)). Django prefixes
+table names with the app label (e.g. `experience_project`, `owner_profile`).
 
 ## Entity-relationship diagram
 
@@ -117,7 +119,20 @@ erDiagram
         datetime created_at
         datetime updated_at
     }
+
+    Profile {
+        smallint id PK "always 1"
+        varchar full_name
+        varchar headline_en
+        varchar headline_fr
+        text bio_en
+        text bio_fr
+        datetime created_at
+        datetime updated_at
+    }
 ```
+
+`Profile` stands alone: it describes the owner of the portfolio, not an entry.
 
 Many-to-many relationships are stored in join tables that Django creates
 automatically (`experience_project_tags`, `experience_certification_tags`,
@@ -159,7 +174,8 @@ stored in both languages, as one column per language: `title_en` and
 - **Every language is filled in.** A required text (`degree`, `position`,
   `title`, `name`) is required in each language. An optional text
   (`field_of_study`, `grade`, `location`, `description`) is either filled in
-  every language or empty in all of them: a check constraint per field
+  every language or empty in all of them (the profile's `bio` too): a check
+  constraint per field
   (`translated_together()` in [`models.py`](../experience/models.py)) refuses
   anything else, so the rule holds for every writer.
 - **List items are translated one by one.** A project's `achievements` is a
@@ -219,3 +235,7 @@ plain input, and the database can check each column.
   field.
 - **`display_order` and `is_visible`** control what the frontend shows and in
   which order without deleting data.
+- **The profile is a single row.** There is one owner, so `Profile` has a
+  fixed id (`1`) and a check constraint refusing any other: a second profile
+  is refused by the database. It has no `is_visible` or `display_order`, and
+  its own `owner` app, as it is not a portfolio entry.

@@ -7,7 +7,8 @@ The API is public and read-only. It is built with Django REST Framework in the
 managed through the [admin API](admin_api.md) (`/api/v1/admin/`, for the
 frontend) or the Django admin (`/admin/`).
 
-Every path below is relative to the base URL `/api/v1/experience/`.
+Every path below is relative to the base URL `/api/v1/experience/`, except the
+owner's [profile](#profile-apiv1profile), which is in the `owner` app.
 
 ## Endpoints
 
@@ -236,3 +237,24 @@ Tag ids are shared across kinds (they are rows of one `Tag` table, see
 [database.md](database.md#tags-tools-methodologies-and-skills)), so the id
 returned by `tools/` can be passed as `?tag=` to `projects/` or
 `certifications/`. Requesting a tool's id under `skills/` is a `404`.
+
+## Profile: `/api/v1/profile/`
+
+Who the portfolio belongs to, from the `owner` app
+([`owner/urls.py`](../owner/urls.py), [`owner/views.py`](../owner/views.py),
+[`owner/serializers.py`](../owner/serializers.py)). There is a single profile,
+so the route has no id, and no list.
+
+```json
+{
+  "full_name": "Ada Lovelace",
+  "headline": {"en": "Analyst", "fr": "Analyste"},
+  "bio": {"en": "I write programs.", "fr": "J’écris des programmes."}
+}
+```
+
+- `headline` and `bio` are translated; `full_name` is not. `bio` may be empty
+  in every language.
+- `404` until the profile is created through the
+  [admin API](admin_api.md#profile-apiv1adminprofile). Write methods are
+  `405`.

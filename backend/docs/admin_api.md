@@ -3,7 +3,9 @@
 The admin API lets the site admin create, edit and delete all portfolio
 content from the frontend. It lives in
 [`experience/admin_api/`](../experience/admin_api/), next to the public API
-([api.md](api.md)), which stays read-only.
+([api.md](api.md)), which stays read-only. The owner's profile has its own
+route, in [`owner/admin_api/`](../owner/admin_api/) (see
+[Profile](#profile-apiv1adminprofile)).
 
 Every path below is relative to the base URL `/api/v1/admin/`.
 
@@ -247,3 +249,31 @@ A tag only has a `name` (required); its kind is the route it is created on.
 - Tag ids are shared across kinds, but each route only reaches its own kind:
   a tool's id under `skills/` is a `404`.
 - Deleting a tag removes it from the projects and certifications that used it.
+
+## Profile: `/api/v1/admin/profile/`
+
+The owner's profile, from the `owner` app. There is a single profile, so the
+route has no id; it is not a collection and is not listed at the root. Access
+is the same as for the other routes: staff token, else `401` or `403`.
+
+| Method | Body | Response |
+|---|---|---|
+| `GET` | | `200` with the profile, `404` before it is created |
+| `PUT` | The profile | `201` when it creates the profile, `200` when it replaces it |
+| `PATCH` | Only the fields to change | `200`, `404` before the profile is created |
+| `DELETE` | | `405`: the profile can be emptied, not removed |
+
+```json
+{
+  "full_name": "Ada Lovelace",
+  "headline": {"en": "Analyst", "fr": "Analyste"},
+  "bio": {"en": "I write programs.", "fr": "J’écris des programmes."},
+  "created_at": "2026-09-30T10:00:00.000000Z",
+  "updated_at": "2026-09-30T10:00:00.000000Z"
+}
+```
+
+- `full_name` and `headline` are required; `bio` is optional (empty in every
+  language when left out on creation).
+- The [writing rules](#writing-rules) above apply: translated texts in every
+  language, per-language errors, read-only timestamps.
