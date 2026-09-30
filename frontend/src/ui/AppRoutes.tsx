@@ -1,20 +1,20 @@
 import { Navigate, Route, Routes } from 'react-router'
-import type { ProfileRepository } from '@/domain/profile/ProfileRepository'
 import { Layout } from '@/ui/layout/Layout'
 import { HomePage } from '@/ui/pages/HomePage'
 import { ResumePage } from '@/ui/pages/ResumePage'
+import type { Repositories } from '@/ui/Repositories'
 
 interface AppRoutesProps {
-  profileRepository: ProfileRepository
+  repositories: Repositories
 }
 
-export function AppRoutes({ profileRepository }: AppRoutesProps) {
+export function AppRoutes({ repositories }: AppRoutesProps) {
   return (
     <Routes>
       <Route element={<Layout />}>
         <Route
           index
-          element={<HomePage profileRepository={profileRepository} />}
+          element={<HomePage profileRepository={repositories.profile} />}
         />
         <Route path="resume" element={<ResumePage />} />
         <Route path="*" element={<Navigate to="/" replace />} />

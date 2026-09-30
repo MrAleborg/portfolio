@@ -2,24 +2,25 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import type { Locale } from '@/domain/i18n/Locale'
-import type { ProfileRepository } from '@/domain/profile/ProfileRepository'
 import { fakeProfileRepository } from '@/test/fakeProfileRepository'
+import { fakeRepositories } from '@/test/fakeRepositories'
 import { AppRoutes } from '@/ui/AppRoutes'
 import { LocaleProvider } from '@/ui/i18n/LocaleProvider'
+import type { Repositories } from '@/ui/Repositories'
 
 interface Options {
   locale?: Locale
-  repository?: ProfileRepository
+  repositories?: Repositories
 }
 
 function renderAt(
   path: string,
-  { locale = 'en', repository = fakeProfileRepository() }: Options = {},
+  { locale = 'en', repositories = fakeRepositories() }: Options = {},
 ) {
   return render(
     <LocaleProvider initialLocale={locale}>
       <MemoryRouter initialEntries={[path]}>
-        <AppRoutes profileRepository={repository} />
+        <AppRoutes repositories={repositories} />
       </MemoryRouter>
     </LocaleProvider>,
   )
@@ -96,8 +97,8 @@ describe('AppRoutes', () => {
 
   it('switches the language from the navigation without loading the profile again', async () => {
     const user = userEvent.setup()
-    const repository = fakeProfileRepository()
-    renderAt('/', { repository })
+    const profile = fakeProfileRepository()
+    renderAt('/', { repositories: fakeRepositories({ profile }) })
     await screen.findByText('Analyst')
 
     await user.click(screen.getByRole('button', { name: 'Français' }))
@@ -106,6 +107,6 @@ describe('AppRoutes', () => {
     expect(
       navigation('Principale').getByRole('link', { name: 'Accueil' }),
     ).toBeInTheDocument()
-    expect(repository.get).toHaveBeenCalledTimes(1)
+    expect(profile.get).toHaveBeenCalledTimes(1)
   })
 })
