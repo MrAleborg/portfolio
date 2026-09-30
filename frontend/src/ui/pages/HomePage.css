@@ -1,0 +1,8 @@
+.home__headline {
+  font-size: 1.25rem;
+  color: var(--accent);
+}
+
+.home__bio {
+  max-width: 40rem;
+}
