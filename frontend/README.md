@@ -24,11 +24,11 @@ npm run build
 
 ## Configuration
 
-`VITE_API_URL` is the base URL of the backend (no path). `.env.development`
-sets it to `http://localhost:8000` for `npm run dev`; the backend must allow
-`http://localhost:5173` in `CORS_ALLOWED_ORIGINS`. The Docker image takes it as
-the build argument `VITE_API_URL`, because Vite bakes it into the bundle:
+The site calls the API on its own domain (`/api/...`). In production the
+server's Caddy sends `/api/` to the backend; with `npm run dev`, Vite proxies
+`/api` to the backend on `http://localhost:8000` (see `vite.config.ts`), which
+must be running.
 
-```sh
-docker build --build-arg VITE_API_URL=https://api.example.com .
-```
+`VITE_API_URL` can point the site at a backend on another domain instead (e.g.
+`VITE_API_URL=https://api.example.com npm run dev`); that backend must then
+allow the site's origin in `CORS_ALLOWED_ORIGINS`.

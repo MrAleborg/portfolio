@@ -7,8 +7,9 @@ sites, takes the HTTPS traffic and passes it to the containers, which listen on
 
 - `api.example.com` goes to the backend: gunicorn running Django. The
   database is a SQLite file on a Docker volume.
-- `example.com` goes to the frontend: nginx serving the React build.
-  `www.example.com` redirects there.
+- `example.com` goes to the frontend: nginx serving the React build. Its
+  `/api/` paths go to the backend, so the site calls the API on its own
+  domain. `www.example.com` redirects there.
 
 Every push to `main` that passes CI is deployed by GitHub Actions: the backend
 when `backend/` or `deploy/` changes, the frontend when `frontend/` changes.
@@ -19,6 +20,7 @@ flowchart LR
     subgraph VPS
         Caddy -- "api.example.com<br>HTTP 127.0.0.1:8000" --> Backend
         Caddy -- "example.com<br>HTTP 127.0.0.1:8080" --> Frontend
+        Caddy -- "example.com/api/<br>HTTP 127.0.0.1:8000" --> Backend
         subgraph Compose [Docker Compose]
             Backend["backend<br>gunicorn + Django"] --> DB[("db-data volume<br>/data/db.sqlite3")]
             Frontend["frontend<br>nginx + React build"]
@@ -55,7 +57,7 @@ Django reads its settings from the environment
 | `FRONTEND_PORT` | `8080` | Read by Compose: host port of the frontend on `127.0.0.1`. Change it if 8080 is taken |
 | `SECRET_KEY` | long random string | `python3 -c "import secrets; print(secrets.token_urlsafe(50))"` |
 | `DEBUG` | `False` | Also turns on the HTTPS settings below |
-| `ALLOWED_HOSTS` | `api.example.com,localhost` | `localhost` is for the container health check |
+| `ALLOWED_HOSTS` | `api.example.com,example.com,localhost` | `example.com` is for the site's API calls on `/api/`; `localhost` is for the container health check |
 | `CSRF_TRUSTED_ORIGINS` | `https://api.example.com` | Needed to log into `/admin/` |
 | `CORS_ALLOWED_ORIGINS` | `https://example.com` | Where the frontend runs |
 | `DATABASE_URL` | `sqlite:////data/db.sqlite3` | Four slashes: absolute path |
@@ -169,7 +171,8 @@ Add the site blocks from
 and 8080):
 
 - `api.example.com` proxies to the backend.
-- `example.com` proxies to the frontend.
+- `example.com` proxies `/api/*` to the backend and everything else to the
+  frontend.
 - `www.example.com` redirects to `example.com`.
 
 Then check and reload:

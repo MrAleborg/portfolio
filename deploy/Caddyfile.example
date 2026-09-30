@@ -9,9 +9,15 @@ api.example.com {
 }
 
 # Frontend. The port is FRONTEND_PORT from .env (default 8080).
+# /api/ goes to the backend, so the site calls the API on its own domain.
 example.com {
 	encode zstd gzip
-	reverse_proxy 127.0.0.1:8080
+	handle /api/* {
+		reverse_proxy 127.0.0.1:8000
+	}
+	handle {
+		reverse_proxy 127.0.0.1:8080
+	}
 }
 
 # www redirects to the bare domain.

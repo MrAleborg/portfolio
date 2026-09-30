@@ -8,7 +8,7 @@ interface ProfileDto {
 }
 
 export function createHttpProfileRepository(
-  apiUrl: string,
+  apiUrl = '',
   fetchFn: typeof fetch = fetch,
 ): ProfileRepository {
   return {
