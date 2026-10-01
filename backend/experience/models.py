@@ -133,6 +133,36 @@ class ProfessionalExperience(DateRangeEntry):
         return f"{self.position_en} @ {self.company}"
 
 
+class TagCategory(models.Model):
+    """Groups tags in a two-level tree: domains (no parent) hold categories."""
+
+    name_en = models.CharField(max_length=100)
+    name_fr = models.CharField(max_length=100)
+    parent = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="children",
+    )
+    position = models.PositiveIntegerField(
+        default=0, help_text="Lower values are shown first."
+    )
+
+    class Meta:
+        ordering = ["position", "name_en"]
+        verbose_name_plural = "tag categories"
+
+    def clean(self):
+        if self.parent and self.parent.parent_id is not None:
+            raise ValidationError({"parent": "The parent must be a domain."})
+        if self.parent and self.pk and self.children.exists():
+            raise ValidationError({"parent": "A domain with categories is top-level."})
+
+    def __str__(self):
+        return self.name_en
+
+
 class Tag(models.Model):
     """Reusable label shared by projects and certifications."""
 
@@ -147,16 +177,28 @@ class Tag(models.Model):
     name_en = models.CharField(max_length=100)
     name_fr = models.CharField(max_length=100)
     kind = models.CharField(max_length=20, choices=Kind.choices)
+    # Tags attach to categories (second level), never to domains.
+    categories = models.ManyToManyField(
+        TagCategory,
+        related_name="tags",
+        blank=True,
+        limit_choices_to={"parent__isnull": False},
+    )
+    note_en = models.CharField(max_length=255, blank=True)
+    note_fr = models.CharField(max_length=255, blank=True)
 
     class Meta:
         ordering = ["kind", "name_en"]
-        # A name is unique within its kind, in each language.
         constraints = [
-            models.UniqueConstraint(
-                fields=[f"name_{language}", "kind"],
-                name=f"unique_tag_name_{language}_per_kind",
-            )
-            for language in LANGUAGES
+            # A name is unique within its kind, in each language.
+            *(
+                models.UniqueConstraint(
+                    fields=[f"name_{language}", "kind"],
+                    name=f"unique_tag_name_{language}_per_kind",
+                )
+                for language in LANGUAGES
+            ),
+            translated_together("note"),
         ]
 
     def save(self, *args, **kwargs):

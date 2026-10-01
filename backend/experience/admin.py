@@ -11,6 +11,7 @@ from experience.models import (
     ScientificCommunication,
     Specialization,
     Tag,
+    TagCategory,
 )
 
 
@@ -38,3 +39,11 @@ admin.site.register(ScientificCommunication)
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
     list_filter = ["kind"]
+    filter_horizontal = ["categories"]
+
+
+@admin.register(TagCategory)
+class TagCategoryAdmin(admin.ModelAdmin):
+    list_display = ["name_en", "parent", "position"]
+    # The parent column shows the parent's name.
+    list_select_related = ["parent"]
