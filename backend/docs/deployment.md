@@ -308,6 +308,14 @@ workflow ignores a run started from another branch).
 
 The backend container applies migrations when it starts, before gunicorn.
 
+**One-time step on a server that already runs the stack**, before merging the
+change that introduced `TAG`: add `TAG=sha-<running commit>` to
+`/opt/portfolio/.env`. Until a deploy has succeeded, `.env` has no `TAG`, so a
+failed first deploy would leave `docker compose` (and `backup.sh`, from cron)
+unable to start, and the deploy would have no tag to fall back to. Find the
+running one with `docker compose ps --format '{{.Image}}'`; if it shows
+`:latest`, use the `sha-` tag of the commit that was last deployed.
+
 In the frontend container, nginx serves `index.html` for unknown paths, so
 client-side routes survive a reload. Files under `assets/` have a content hash
 in their name and are cached for a year; everything else is checked again on
