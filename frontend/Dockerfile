@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Build the static site.
-FROM node:24.21.0-alpine3.24 AS build
+FROM node:26.10.0-alpine3.24 AS build
 WORKDIR /build
 COPY package.json package-lock.json ./
 RUN npm ci
