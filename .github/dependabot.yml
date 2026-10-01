@@ -31,15 +31,19 @@ updates:
     directory: /backend
     schedule:
       interval: weekly
-    # One pull request per week for all of them.
+    # One pull request per week for the minor and patch updates. A major
+    # update comes as its own pull request, so it can't block the others.
     groups:
       all:
         patterns: ["*"]
+        update-types: ["minor", "patch"]
   - package-ecosystem: npm
     directory: /frontend
     schedule:
       interval: weekly
-    # One pull request per week for all of them.
+    # One pull request per week for the minor and patch updates. A major
+    # update comes as its own pull request, so it can't block the others.
     groups:
       all:
         patterns: ["*"]
+        update-types: ["minor", "patch"]
