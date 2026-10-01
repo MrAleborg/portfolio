@@ -60,6 +60,8 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool(
     "SECURE_HSTS_INCLUDE_SUBDOMAINS", default=False
 )
 SILENCED_SYSTEM_CHECKS = [
+    # HSTS for subdomains is opt-in: the server also hosts other sites.
+    "security.W005",
     # HSTS preload means submitting the domain to the browsers' preload list,
     # which takes months to undo. Not needed for a portfolio.
     "security.W021",
