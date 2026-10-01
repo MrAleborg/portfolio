@@ -18,7 +18,7 @@ export function AppRoutes({ repositories }: AppRoutesProps) {
         />
         <Route
           path="resume"
-          element={<ResumePage educationRepository={repositories.education} />}
+          element={<ResumePage repositories={repositories} />}
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
