@@ -92,15 +92,57 @@ def test_list_only_returns_tags_of_its_kind_ordered_by_name(api_client, route):
     basename, _, model = route
     b = model.objects.create(name_en="B", name_fr="B")
     a = model.objects.create(name_en="A", name_fr="A")
+    project = make_project()
+    project.tags.add(a, b)
     for other in (Skill, Tool, Methodology):
         if other is not model:
-            other.objects.create(name_en="Other", name_fr="Other")
+            project.tags.add(other.objects.create(name_en="Other", name_fr="Other"))
 
     response = api_client.get(list_url(basename))
 
     assert response.json() == [
         {"id": a.id, "name": {"en": "A", "fr": "A"}},
         {"id": b.id, "name": {"en": "B", "fr": "B"}},
+    ]
+
+
+def test_list_only_returns_tags_used_by_a_visible_project_or_certification(
+    api_client, route
+):
+    """Tags that only tag hidden entries, or nothing, stay out of the list.
+
+    A project of a hidden experience is hidden, and a tag used by several
+    visible entries is listed once.
+    """
+    basename, _, model = route
+    hidden_experience = ProfessionalExperience.objects.create(
+        company="Secret Corp",
+        position_en="Developer",
+        position_fr="Développeur",
+        start_date=date(2020, 1, 1),
+        is_visible=False,
+    )
+    used = {
+        name: model.objects.create(name_en=name, name_fr=name)
+        for name in ("project", "certification", "both")
+    }
+    unused = {
+        name: model.objects.create(name_en=name, name_fr=name)
+        for name in ("untagged", "hidden project", "hidden job", "hidden cert")
+    }
+    make_project().tags.add(used["project"], used["both"])
+    make_project().tags.add(used["both"])
+    make_certification().tags.add(used["certification"], used["both"])
+    make_project(is_visible=False).tags.add(unused["hidden project"])
+    make_project(experience=hidden_experience).tags.add(unused["hidden job"])
+    make_certification(is_visible=False).tags.add(unused["hidden cert"])
+
+    response = api_client.get(list_url(basename))
+
+    assert [tag["name"]["en"] for tag in response.json()] == [
+        "both",
+        "certification",
+        "project",
     ]
 
 
@@ -163,6 +205,24 @@ def test_detail_hides_projects_of_invisible_experiences(api_client, route):
     assert response.json()["projects"] == [
         {"id": side_project.id, "title": {"en": "Side", "fr": "Side"}}
     ]
+
+
+def test_detail_of_tag_used_only_by_hidden_entries_is_not_found(api_client, route):
+    """As in the list, a tag that only tags hidden entries (or nothing) does
+    not exist for visitors, so its name cannot be read by guessing ids."""
+    basename, _, model = route
+    hidden_project_tag = model.objects.create(name_en="Secret", name_fr="Secret")
+    hidden_certification_tag = model.objects.create(name_en="Old", name_fr="Old")
+    unused_tag = model.objects.create(name_en="Unused", name_fr="Unused")
+    make_project(is_visible=False).tags.add(hidden_project_tag)
+    make_certification(is_visible=False).tags.add(hidden_certification_tag)
+
+    responses = [
+        api_client.get(detail_url(basename, tag.id))
+        for tag in (hidden_project_tag, hidden_certification_tag, unused_tag)
+    ]
+
+    assert [response.status_code for response in responses] == [404, 404, 404]
 
 
 def test_detail_of_tag_of_another_kind_is_not_found(api_client, route):

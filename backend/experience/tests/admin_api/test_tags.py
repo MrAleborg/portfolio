@@ -11,6 +11,7 @@ from datetime import date
 
 import pytest
 
+from experience.languages import LANGUAGES
 from experience.models import Methodology, Project, Skill, Tag, Tool
 from experience.tests.admin_api.helpers import detail_url, list_url, listed_ids
 
@@ -130,6 +131,21 @@ def test_name_taken_in_one_language_is_a_bad_request(staff_api_client, route):
 
     assert response.status_code == 400
     assert list(response.json()["name"]) == ["en"]
+
+
+@pytest.mark.parametrize("language", LANGUAGES)
+def test_name_longer_than_the_column_is_a_bad_request(
+    staff_api_client, route, language
+):
+    """The name columns hold 100 characters; the error names the language."""
+    basename, _, _, _ = route
+    name = {"en": "Python", "fr": "Python", language: "x" * 101}
+
+    response = staff_api_client.post(list_url(basename), {"name": name}, format="json")
+
+    assert response.status_code == 400
+    assert list(response.json()["name"]) == [language]
+    assert not Tag.objects.exists()
 
 
 def test_same_name_is_allowed_in_another_kind(staff_api_client, route):

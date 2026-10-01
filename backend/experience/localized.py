@@ -18,8 +18,9 @@ class LocalizedText(serializers.Field):
         "partly_blank": "Fill in every language, or leave them all empty.",
     }
 
-    def __init__(self, allow_blank=False, **kwargs):
+    def __init__(self, allow_blank=False, max_length=None, **kwargs):
         self.allow_blank = allow_blank
+        self.max_length = max_length
         super().__init__(**kwargs)
 
     def to_representation(self, texts):
@@ -40,7 +41,9 @@ class LocalizedText(serializers.Field):
         )
         if errors:
             raise serializers.ValidationError(errors)
-        text_field = serializers.CharField(allow_blank=self.allow_blank)
+        text_field = serializers.CharField(
+            allow_blank=self.allow_blank, max_length=self.max_length
+        )
         texts = {}
         for language in LANGUAGES:
             try:
@@ -63,10 +66,19 @@ class LocalizedField(LocalizedText):
     title_fr.
 
     The columns are named after the field, so source is the whole instance.
+    On a model serializer, max_length defaults to that of the first language's
+    column.
     """
 
     def __init__(self, **kwargs):
         super().__init__(source="*", **kwargs)
+
+    def bind(self, field_name, parent):
+        super().bind(field_name, parent)
+        model = getattr(getattr(parent, "Meta", None), "model", None)
+        if model is not None and self.max_length is None:
+            column = model._meta.get_field(f"{field_name}_{LANGUAGES[0]}")
+            self.max_length = column.max_length
 
     def to_representation(self, instance):
         return {

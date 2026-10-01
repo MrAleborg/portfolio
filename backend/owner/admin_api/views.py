@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import generics, mixins, status
+from rest_framework import generics, status
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 
@@ -7,9 +7,7 @@ from owner.admin_api.serializers import ProfileSerializer
 from owner.models import Profile
 
 
-class ProfileView(
-    mixins.RetrieveModelMixin, mixins.UpdateModelMixin, generics.GenericAPIView
-):
+class ProfileView(generics.RetrieveUpdateAPIView):
     """The single profile. PUT creates it when there is none yet."""
 
     permission_classes = [IsAdminUser]
@@ -20,9 +18,6 @@ class ProfileView(
         self.check_object_permissions(self.request, profile)
         return profile
 
-    def get(self, request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
-
     def put(self, request, *args, **kwargs):
         profile = Profile.objects.first()
         serializer = self.get_serializer(profile, data=request.data)
@@ -32,6 +27,3 @@ class ProfileView(
             serializer.data,
             status=status.HTTP_200_OK if profile else status.HTTP_201_CREATED,
         )
-
-    def patch(self, request, *args, **kwargs):
-        return self.partial_update(request, *args, **kwargs)

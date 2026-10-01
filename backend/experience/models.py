@@ -1,6 +1,7 @@
 from functools import reduce
 from operator import and_
 
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import F, Q
 
@@ -20,6 +21,21 @@ def translated_together(field):
         name=f"%(app_label)s_%(class)s_{field}_translated",
         violation_error_message="Fill in every language, or leave them all empty.",
     )
+
+
+def validate_achievements(value):
+    """Validator: a list of texts, each filled in every language and no other."""
+    if not isinstance(value, list) or not all(
+        isinstance(item, dict)
+        and item.keys() == set(LANGUAGES)
+        and all(isinstance(text, str) and text.strip() for text in item.values())
+        for item in value
+    ):
+        raise ValidationError(
+            "Expected a list of texts, each one filled in every language: "
+            + ", ".join(LANGUAGES)
+            + "."
+        )
 
 
 class BaseEntry(models.Model):
@@ -199,6 +215,7 @@ class Project(DateRangeEntry):
     achievements = models.JSONField(
         default=list,
         blank=True,
+        validators=[validate_achievements],
         help_text=(
             "Valorization elements, each in every language, e.g. "
             '[{"en": "Won an award", "fr": "A remporté un prix"}].'

@@ -42,8 +42,8 @@ owner's [profile](#profile-apiv1profile), which is in the `owner` app.
 - **Internal fields are never returned**: `is_visible`, `display_order`,
   `created_at`, `updated_at`.
 - **Ordering**: `display_order`, then newest first (`start_date` or
-  `issue_date`). Tags are ordered by English name. Nested lists follow the
-  same order.
+  `issue_date`). Tags are ordered by kind, then English name. Nested lists
+  follow the same order.
 - **Dates** are ISO 8601 strings (`"2024-03-01"`). A null `end_date` means the
   entry is ongoing, and `is_current` is then `true`.
 - **Translated texts** are returned in every language at once, so the
@@ -210,7 +210,9 @@ path.
 ### `skills/`, `tools/`, `methodologies/`
 
 The three tag kinds behave the same way; each only returns tags of its kind.
-The list returns `id` and `name`:
+Only tags used by at least one visible project or certification exist here: a
+tag that only tags hidden entries (or nothing) is left out of the list, and its
+detail is a `404`. The list returns `id` and `name`:
 
 ```json
 [

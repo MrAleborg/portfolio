@@ -179,7 +179,8 @@ stored in both languages, as one column per language: `title_en` and
   (`translated_together()` in [`models.py`](../experience/models.py)) refuses
   anything else, so the rule holds for every writer.
 - **List items are translated one by one.** A project's `achievements` is a
-  JSON list of `{"en": ..., "fr": ...}` objects, and each `Mission` has a
+  JSON list of `{"en": ..., "fr": ...}` objects (a model validator refuses any
+  other shape, in the Django admin too), and each `Mission` has a
   `description_en` and a `description_fr`.
 - **Tag names are unique within their kind, in each language**: one unique
   constraint on `(name_en, kind)`, another on `(name_fr, kind)`.

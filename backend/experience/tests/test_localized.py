@@ -12,6 +12,7 @@ from types import SimpleNamespace
 from rest_framework import serializers
 
 from experience.localized import LocalizedField
+from experience.models import Tag
 
 
 class EntrySerializer(serializers.Serializer):
@@ -110,3 +111,18 @@ def test_trims_whitespace():
     serializer = validate({"title": {"en": " Master ", "fr": "Master 2\n"}})
 
     assert serializer.validated_data == {"title_en": "Master", "title_fr": "Master 2"}
+
+
+def test_explicit_max_length_wins_over_the_model_column():
+    """On a model serializer the column's limit is only the default."""
+
+    class TagSerializer(serializers.ModelSerializer):
+        name = LocalizedField(max_length=200)
+
+        class Meta:
+            model = Tag
+            fields = ["name"]
+
+    serializer = TagSerializer(data={"name": {"en": "x" * 150, "fr": "y"}})
+
+    assert serializer.is_valid(), serializer.errors

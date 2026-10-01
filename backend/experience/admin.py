@@ -19,6 +19,8 @@ class MissionInline(admin.TabularInline):
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
     inlines = [MissionInline]
+    # Project.__str__ shows the experience.
+    list_select_related = ["experience"]
 
 
 admin.site.register(Education)
