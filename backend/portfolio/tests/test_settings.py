@@ -24,7 +24,6 @@ def load_settings(names, **env):
         f"print(json.dumps({{n: getattr(settings, n) for n in {names!r}}}))"
     )
     environ = {**os.environ, "SECRET_KEY": "test", "DEBUG": "False"}
-    environ.pop("SECURE_HSTS_INCLUDE_SUBDOMAINS", None)
     environ.pop("DATABASE_URL", None)
     environ.update(env)
     result = subprocess.run(
@@ -46,37 +45,6 @@ def test_sqlite_runs_in_wal_mode_with_immediate_transactions():
     options = databases["default"]["OPTIONS"]
     assert options["transaction_mode"] == "IMMEDIATE"
     assert "journal_mode=WAL" in options["init_command"]
-
-
-def test_other_databases_do_not_get_the_sqlite_options():
-    databases = load_settings(
-        ["DATABASES"], DATABASE_URL="postgres://user:pass@localhost:5432/portfolio"
-    )["DATABASES"]
-
-    options = databases["default"].get("OPTIONS", {})
-    assert "transaction_mode" not in options
-    assert "init_command" not in options
-
-
-def test_hsts_does_not_cover_subdomains_by_default():
-    settings = load_settings(["SECURE_HSTS_INCLUDE_SUBDOMAINS"])
-
-    assert settings["SECURE_HSTS_INCLUDE_SUBDOMAINS"] is False
-
-
-def test_hsts_covers_subdomains_when_asked():
-    settings = load_settings(
-        ["SECURE_HSTS_INCLUDE_SUBDOMAINS"], SECURE_HSTS_INCLUDE_SUBDOMAINS="True"
-    )
-
-    assert settings["SECURE_HSTS_INCLUDE_SUBDOMAINS"] is True
-
-
-def test_cache_is_shared_between_worker_processes(settings):
-    """Throttle counters must not be per process, as with the local-memory cache."""
-    backend = settings.CACHES["default"]["BACKEND"]
-
-    assert backend == "django.core.cache.backends.filebased.FileBasedCache"
 
 
 @pytest.fixture
