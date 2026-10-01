@@ -17,7 +17,15 @@ updates:
     directory: /backend
     schedule:
       interval: weekly
+    # One pull request per week for all of them.
+    groups:
+      all:
+        patterns: ["*"]
   - package-ecosystem: npm
     directory: /frontend
     schedule:
       interval: weekly
+    # One pull request per week for all of them.
+    groups:
+      all:
+        patterns: ["*"]
