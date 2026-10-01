@@ -5,7 +5,7 @@ export type Localized<T> = Record<Locale, T>
 const SUPPORTED_LOCALES: readonly string[] = ['en', 'fr'] satisfies Locale[]
 const DEFAULT_LOCALE: Locale = 'en'
 
-function isLocale(language: string): language is Locale {
+export function isLocale(language: string): language is Locale {
   return SUPPORTED_LOCALES.includes(language)
 }
 
