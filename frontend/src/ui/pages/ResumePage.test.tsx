@@ -105,30 +105,60 @@ describe('ResumePage', () => {
     expect(await section.findByRole('article', { name: firstInFrench })).toBeInTheDocument()
   })
 
-  it('shows the tags of the expertise section grouped by kind', async () => {
+  it('shows the expertise as domains, then categories, then tags, in API order', async () => {
     renderPage()
 
     const expertise = within(screen.getByRole('region', { name: 'Expertise' }))
-    const skills = await expertise.findByRole('list', { name: 'Skills' })
-    expect(within(skills).getAllByRole('listitem').map((chip) => chip.textContent)).toEqual([
+    expect(await expertise.findByRole('heading', { level: 3, name: 'Engineering' })).toBeInTheDocument()
+    const lists = expertise.getAllByRole('list').map((list) => list.getAttribute('aria-labelledby'))
+    expect(lists.map((id) => document.getElementById(id ?? '')?.textContent)).toEqual([
+      'Languages',
+      'Tooling',
+    ])
+    const languages = within(expertise.getByRole('list', { name: 'Languages' }))
+    expect(languages.getAllByRole('listitem').map((chip) => chip.textContent)).toEqual([
       'Python',
       'Testing',
     ])
-    expect(within(expertise.getByRole('list', { name: 'Tools' })).getByRole('listitem')).toHaveTextContent('Git')
-    expect(
-      within(expertise.getByRole('list', { name: 'Methodologies' })).getByRole('listitem'),
-    ).toHaveTextContent('Agile')
+    const tooling = within(expertise.getByRole('list', { name: 'Tooling' }))
+    expect(tooling.getAllByRole('listitem')[0]).toHaveTextContent('Git')
   })
 
-  it('shows the tags of the expertise section in French', async () => {
+  it('shows the note of a tag after its name when it has one', async () => {
+    renderPage()
+
+    const expertise = within(screen.getByRole('region', { name: 'Expertise' }))
+    const tooling = within(await expertise.findByRole('list', { name: 'Tooling' }))
+    expect(tooling.getAllByRole('listitem').map((chip) => chip.textContent)).toEqual([
+      'Git',
+      'Claude Code · used daily for agentic coding',
+    ])
+  })
+
+  it('shows the domains, categories, tags and notes of the expertise in French', async () => {
     renderPage({}, 'fr')
 
     const expertise = within(screen.getByRole('region', { name: 'Expertise' }))
-    const skills = await expertise.findByRole('list', { name: 'Compétences' })
-    expect(within(skills).getAllByRole('listitem').map((chip) => chip.textContent)).toEqual([
+    expect(await expertise.findByRole('heading', { level: 3, name: 'Ingénierie' })).toBeInTheDocument()
+    const languages = within(expertise.getByRole('list', { name: 'Langages' }))
+    expect(languages.getAllByRole('listitem').map((chip) => chip.textContent)).toEqual([
       'Python',
       'Tests',
     ])
+    const tooling = within(expertise.getByRole('list', { name: 'Outillage' }))
+    expect(tooling.getAllByRole('listitem')[1]).toHaveTextContent(
+      'Claude Code · utilisé au quotidien pour le code agentique',
+    )
+  })
+
+  it('hides the categories without tags and the domains without categories', async () => {
+    renderPage()
+
+    const expertise = within(screen.getByRole('region', { name: 'Expertise' }))
+    await expertise.findByRole('heading', { level: 3, name: 'Engineering' })
+    expect(expertise.getAllByRole('heading', { level: 3 })).toHaveLength(1)
+    expect(expertise.queryByText('Unused')).not.toBeInTheDocument()
+    expect(expertise.queryByRole('heading', { name: 'Management' })).not.toBeInTheDocument()
   })
 
   it('says the education is loading', () => {

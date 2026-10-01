@@ -1,7 +1,7 @@
-import type { Tag } from '@/domain/tag/Tag'
+import type { Domain } from '@/domain/tag/TagCategory'
 
 /** Where the owner's tags come from. */
 export interface TagRepository {
-  /** Every tag: the skills, then the tools, then the methodologies, each in display order. */
-  list(): Promise<Tag[]>
+  /** The tag tree: the domains in display order, each with its categories, each with its tags. */
+  list(): Promise<Domain[]>
 }
