@@ -35,14 +35,20 @@ current password is a `400`.
 
 `jwt/create/` accepts 5 attempts a minute per client address; the 6th is a
 `429`. The rate is `DEFAULT_THROTTLE_RATES` in
-[`portfolio/settings.py`](../portfolio/settings.py). Counters live in a
-file-based cache so that all gunicorn workers share them, and `NUM_PROXIES = 1`
-makes DRF read the client address Caddy appends to `X-Forwarded-For`, not the
-value the client sent. If the app is ever served without exactly one proxy in
-front, change `NUM_PROXIES`, or the throttle can be bypassed.
+[`portfolio/settings.py`](../portfolio/settings.py). The Django admin login
+(`/admin/login/`, POST only) shares the same limit and the same counter
+([`accounts/views.py`](../accounts/views.py)), so the admin form is no way
+around it.
 
-The Django admin login (`/admin/login/`) is not throttled: it is not a DRF
-view, and the admin account is a single staff user. Keep its password long.
+Counters live in a file-based cache (`CACHE_DIR`, `backend/.cache` by default,
+`/tmp/portfolio-cache` in the image) so that all gunicorn workers share them.
+`NUM_PROXIES = 1` makes DRF read the client address Caddy appends to
+`X-Forwarded-For`, not the value the client sent. If the app is ever served
+without exactly one proxy in front, change `NUM_PROXIES`, or the throttle can
+be bypassed.
+
+Clients are told apart by their full IPv6 address, so an attacker with a whole
+`/64` can rotate addresses past the limit; this is accepted.
 
 ## Using the tokens
 
