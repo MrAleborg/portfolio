@@ -16,6 +16,9 @@ KEEP_DAYS="${KEEP_DAYS:-180}"
 
 cd "$(dirname "$0")"
 mkdir -p "$BACKUP_DIR"
+# umask doesn't cover a folder that already exists, nor the mode docker compose
+# cp keeps from the container.
+chmod 700 "$BACKUP_DIR"
 copy="$BACKUP_DIR/.new.sqlite3"
 
 # SQLite's backup API gives a consistent copy while the app is running.
@@ -27,6 +30,7 @@ source.backup(backup)
 backup.close()
 "
 docker compose cp backend:/data/backup.sqlite3 "$copy"
+chmod 600 "$copy"
 docker compose exec -T backend rm /data/backup.sqlite3
 
 # The time is in the name, so a backup before a deploy doesn't replace the
