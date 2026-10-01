@@ -26,6 +26,12 @@ const sections = [
     firstInFrench: 'Master, Informatique',
   },
   {
+    en: 'Commitments',
+    fr: 'Engagements',
+    tiles: ['Treasurer', 'Mentor'],
+    firstInFrench: 'Trésorier',
+  },
+  {
     en: 'Hobbies',
     fr: 'Loisirs',
     tiles: ['Climbing', 'Chess'],

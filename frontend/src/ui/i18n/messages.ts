@@ -1,3 +1,4 @@
+import type { CommitmentKind } from '@/domain/commitment/Commitment'
 import type { TagKind } from '@/domain/tag/Tag'
 import type { Localized } from '@/domain/i18n/Locale'
 
@@ -10,7 +11,10 @@ interface Messages {
   navResume: string
   resumeTitle: string
   educationTitle: string
+  commitmentsTitle: string
   hobbiesTitle: string
+  commitmentKinds: Record<CommitmentKind, string>
+  websiteLink: string
   /** Said after the name of a link that opens in a new tab. */
   opensInNewTab: string
   /** What goes between a link's text and the colon that introduces what it is about. */
@@ -35,7 +39,14 @@ export const messages: Localized<Messages> = {
     navResume: 'Resume',
     resumeTitle: 'Resume',
     educationTitle: 'Education',
+    commitmentsTitle: 'Commitments',
     hobbiesTitle: 'Hobbies',
+    commitmentKinds: {
+      association: 'Association',
+      conference_organization: 'Conference organization',
+      other_event: 'Event',
+    },
+    websiteLink: 'Website',
     opensInNewTab: '(opens in a new tab)',
     spaceBeforeColon: '',
     tagKinds: { skill: 'Skills', tool: 'Tools', methodology: 'Methodologies' },
@@ -56,7 +67,14 @@ export const messages: Localized<Messages> = {
     navResume: 'CV',
     resumeTitle: 'CV',
     educationTitle: 'Formation',
+    commitmentsTitle: 'Engagements',
     hobbiesTitle: 'Loisirs',
+    commitmentKinds: {
+      association: 'Association',
+      conference_organization: 'Organisation de conférence',
+      other_event: 'Événement',
+    },
+    websiteLink: 'Site web',
     opensInNewTab: '(s’ouvre dans un nouvel onglet)',
     spaceBeforeColon: ' ',
     tagKinds: { skill: 'Compétences', tool: 'Outils', methodology: 'Méthodologies' },

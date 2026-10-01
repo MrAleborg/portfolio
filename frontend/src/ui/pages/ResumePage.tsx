@@ -1,5 +1,6 @@
 import { messages } from '@/ui/i18n/messages'
 import { useLocale } from '@/ui/i18n/useLocale'
+import { CommitmentSection } from '@/ui/resume/CommitmentSection'
 import { EducationSection } from '@/ui/resume/EducationSection'
 import { HobbySection } from '@/ui/resume/HobbySection'
 import type { Repositories } from '@/ui/Repositories'
@@ -16,6 +17,7 @@ export function ResumePage({ repositories }: ResumePageProps) {
     <div className="resume">
       <h1>{text.resumeTitle}</h1>
       <EducationSection repository={repositories.education} />
+      <CommitmentSection repository={repositories.commitment} />
       <HobbySection repository={repositories.hobby} />
     </div>
   )
