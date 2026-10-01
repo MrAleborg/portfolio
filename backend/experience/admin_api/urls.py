@@ -1,20 +1,11 @@
-from rest_framework.permissions import IsAdminUser
-from rest_framework.routers import APIRootView, DefaultRouter
+from rest_framework.routers import DefaultRouter
 
 from experience.admin_api import views
 
 app_name = "experience-admin"
 
 
-class AdminAPIRootView(APIRootView):
-    permission_classes = [IsAdminUser]
-
-
-class AdminRouter(DefaultRouter):
-    APIRootView = AdminAPIRootView
-
-
-router = AdminRouter()
+router = DefaultRouter()
 router.register("education", views.EducationViewSet, basename="education")
 router.register(
     "professional-experiences",
