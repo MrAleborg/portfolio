@@ -24,6 +24,7 @@ from experience.models import (
     ScientificCommunication,
     Specialization,
     Tag,
+    TagCategory,
 )
 
 pytestmark = pytest.mark.django_db
@@ -35,6 +36,7 @@ MODELS = [
     Certification,
     Specialization,
     Tag,
+    TagCategory,
     Hobby,
     Commitment,
     ScientificCommunication,
@@ -66,6 +68,7 @@ def make(model):
             "issuer": "Python Institute",
         },
         Tag: {"name_en": "Python", "name_fr": "Python", "kind": Tag.Kind.SKILL},
+        TagCategory: {"name_en": "GenAI", "name_fr": "IA générative"},
         Hobby: {"name_en": "Chess", "name_fr": "Échecs"},
         Commitment: {
             "organization": "Red Cross",

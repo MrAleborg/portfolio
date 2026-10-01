@@ -12,6 +12,7 @@ from experience.models import (
     ScientificCommunication,
     Specialization,
     Tag,
+    TagCategory,
 )
 
 # Public fields shared by every CredentialEntry (certifications, specializations).
@@ -56,6 +57,33 @@ class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = ["id", "name"]
+
+
+class NotedTagSerializer(TagSerializer):
+    note = LocalizedField()
+
+    class Meta(TagSerializer.Meta):
+        fields = [*TagSerializer.Meta.fields, "note"]
+
+
+class TagSubcategorySerializer(serializers.ModelSerializer):
+    name = LocalizedField()
+    tags = NotedTagSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = TagCategory
+        fields = ["id", "name", "tags"]
+
+
+class TagCategorySerializer(serializers.ModelSerializer):
+    """A domain. The view must prefetch children, and their tags by name."""
+
+    name = LocalizedField()
+    children = TagSubcategorySerializer(many=True, read_only=True)
+
+    class Meta:
+        model = TagCategory
+        fields = ["id", "name", "children"]
 
 
 class TagWithKindSerializer(TagSerializer):

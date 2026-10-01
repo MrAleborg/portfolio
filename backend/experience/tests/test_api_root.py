@@ -21,6 +21,7 @@ COLLECTIONS = [
     "hobbies",
     "commitments",
     "scientific-communications",
+    "tag-categories",
 ]
 
 

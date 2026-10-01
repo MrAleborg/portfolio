@@ -23,6 +23,7 @@ owner's [profile](#profile-apiv1profile), which is in the `owner` app.
 | `skills/`, `skills/{id}/` | Skill tags | |
 | `tools/`, `tools/{id}/` | Tool tags | |
 | `methodologies/`, `methodologies/{id}/` | Methodology tags | |
+| `tag-categories/`, `tag-categories/{id}/` | Domains, with their categories and tags nested | |
 | `hobbies/`, `hobbies/{id}/` | Hobbies and interests | |
 | `commitments/`, `commitments/{id}/` | Associations and events the owner took part in | |
 | `scientific-communications/`, `scientific-communications/{id}/` | Talks, posters, papers and articles | |
@@ -41,7 +42,8 @@ owner's [profile](#profile-apiv1profile), which is in the `owner` app.
 
 - **Hidden entries never appear.** Entries with `is_visible=False` are left out
   of lists and nested lists. A project whose professional experience is hidden
-  is hidden too, wherever projects appear.
+  is hidden too, wherever projects appear. Tags have no visibility of their
+  own; see each tag endpoint for when they are listed.
 - **Internal fields are never returned**: `is_visible`, `display_order`,
   `created_at`, `updated_at`.
 - **Ordering**: `display_order`, then newest first (`start_date`,
@@ -68,7 +70,8 @@ owner's [profile](#profile-apiv1profile), which is in the `owner` app.
   | Professional experience | `position`, `location`, `description` |
   | Project | `title`, `description`, each item of `achievements` and `missions` |
   | Certification, specialization | `name`, `description` |
-  | Tag | `name` |
+  | Tag | `name`, `note` (in `tag-categories/`) |
+  | Tag category | `name` |
   | Hobby | `name`, `description` |
   | Commitment | `role`, `location`, `description` |
   | Scientific communication | `title` |
@@ -246,6 +249,43 @@ Tag ids are shared across kinds (they are rows of one `Tag` table, see
 [database.md](database.md#tags-tools-methodologies-and-skills)), so the id
 returned by `tools/` can be passed as `?tag=` to `projects/` or
 `certifications/`. Requesting a tool's id under `skills/` is a `404`.
+
+### `tag-categories/`
+
+The tag tree for the resume's Expertise section (see
+[database.md](database.md#tag-categories-domains-and-categories)). The list
+returns the domains, each with its categories under `children`, each with its
+tags. Domains and categories are ordered by position, then English name; tags
+by English name. A tag in several categories appears under each of them, with
+its `note` (empty in every language when unset):
+
+```json
+[
+  {
+    "id": 1,
+    "name": {"en": "Artificial Intelligence & Data Science", "fr": "Intelligence artificielle et science des données"},
+    "children": [
+      {
+        "id": 3,
+        "name": {"en": "GenAI & LLMs", "fr": "IA générative et LLM"},
+        "tags": [
+          {
+            "id": 7,
+            "name": {"en": "Claude Code", "fr": "Claude Code"},
+            "note": {"en": "used daily for agentic coding", "fr": "utilisé au quotidien pour le développement agentique"}
+          }
+        ]
+      }
+    ]
+  }
+]
+```
+
+Unlike `skills/`, `tools/` and `methodologies/`, every categorized tag is
+listed, even one that only tags hidden entries: putting a tag in a category is
+the choice to show it. Domains and categories without tags are listed too
+(the frontend hides them). The detail returns one domain in the same shape; a
+category's id is a `404`. The whole list takes 3 queries.
 
 ### `hobbies/`
 

@@ -14,6 +14,8 @@ erDiagram
     Project }o--o{ Tag : "is tagged with"
     Certification }o--o{ Tag : "is tagged with"
     Specialization }o--o{ Certification : "is earned by completing"
+    TagCategory |o--o{ TagCategory : "domain holds categories"
+    TagCategory }o--o{ Tag : "groups"
 
     Education {
         bigint id PK
@@ -84,6 +86,16 @@ erDiagram
         varchar name_en "unique per kind"
         varchar name_fr "unique per kind"
         varchar kind "tool | methodology | skill"
+        varchar note_en "optional"
+        varchar note_fr "optional"
+    }
+
+    TagCategory {
+        bigint id PK
+        varchar name_en
+        varchar name_fr
+        bigint parent_id FK "null = domain"
+        int position
     }
 
     Certification {
@@ -185,7 +197,7 @@ erDiagram
 
 Many-to-many relationships are stored in join tables that Django creates
 automatically (`experience_project_tags`, `experience_certification_tags`,
-`experience_specialization_certifications`).
+`experience_specialization_certifications`, `experience_tag_categories`).
 
 ## Tags: tools, methodologies and skills
 
@@ -200,6 +212,35 @@ Tool.objects.create(name_en="Docker", name_fr="Docker")  # stored with kind="too
 Tool.objects.all()                                       # tools only
 project.tags.filter(kind=Tag.Kind.SKILL)                 # a project's skills
 Tag.objects.get(name_en="Scrum").certifications.all()    # certifications about Scrum
+```
+
+## Tag categories: domains and categories
+
+`TagCategory` arranges tags in a two-level tree for the resume's Expertise
+section: **domains** (no `parent`, e.g. "Artificial Intelligence & Data
+Science") hold **categories** (e.g. "GenAI & LLMs"), and categories hold tags.
+Both levels are ordered by `position`, then English name.
+
+- **Tags attach to categories only**, never to domains
+  (`limit_choices_to` on `Tag.categories`, checked by the Django admin and the
+  admin API). A tag can sit in several categories, and `kind` is independent
+  of them: a category may mix skills, tools and methodologies.
+- **The tree stays two levels deep.** `TagCategory.clean()` refuses, on
+  `parent`: a parent that is not a domain, a parent on a domain that has
+  categories, and removing the parent of a category that holds tags. These are model validation rules, so the Django
+  admin and the admin API enforce them; code that saves without `full_clean()`
+  bypasses them.
+- **Deleting a domain deletes its categories**; deleting a category only
+  removes its links, the tags stay.
+- **A tag may carry a note** (`note_en`, `note_fr`), free text shown next to
+  it, e.g. "used daily for agentic coding".
+
+```python
+ai = TagCategory.objects.create(name_en="AI & Data Science", name_fr="IA et science des données")
+llms = TagCategory.objects.create(name_en="GenAI & LLMs", name_fr="IA générative et LLM", parent=ai)
+Tool.objects.get(name_en="Claude Code").categories.add(llms)
+ai.children.all()                                        # a domain's categories
+llms.tags.all()                                          # a category's tags
 ```
 
 ## Abstract base classes
@@ -222,7 +263,7 @@ stored in both languages, as one column per language: `title_en` and
 
 - **Every language is filled in.** A required text (`degree`, `position`,
   `title`, `name`, `role`) is required in each language. An optional text
-  (`field_of_study`, `grade`, `location`, `description`) is either filled in
+  (`field_of_study`, `grade`, `location`, `description`, a tag's `note`) is either filled in
   every language or empty in all of them (the profile's `bio` too): a check
   constraint per field
   (`translated_together()` in [`models.py`](../experience/models.py)) refuses
@@ -266,6 +307,11 @@ plain input, and the database can check each column.
   only need a single `tags` relation, and everything related to a given tag can
   be queried. The same name may exist under two kinds (e.g. "Python" as a tool
   and as a skill).
+- **Tag categories are one self-referencing table.** Domains and categories
+  have the same fields, so a nullable `parent` tells them apart instead of a
+  second table; the two-level limit is a validation rule. Categories are a
+  many-to-many on tags rather than a replacement for `kind`, which still
+  groups a project's tags.
 - **A project without a professional experience is a side project** (e.g. this
   portfolio). Side projects use the same fields, tags and missions as work
   projects; query them with `Project.objects.filter(experience__isnull=True)`.
