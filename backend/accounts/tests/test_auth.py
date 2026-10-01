@@ -337,3 +337,14 @@ def test_tokens_issued_after_a_password_change_work(api_client):
 
     assert me.status_code == 200
     assert refreshed.status_code == 200
+
+
+def test_refresh_token_of_a_deleted_user_is_rejected(api_client):
+    """A token outliving its account is a 401, not a server error."""
+    user = make_user()
+    refresh = login(api_client).json()["refresh"]
+    user.delete()
+
+    response = api_client.post(REFRESH_URL, {"refresh": refresh}, format="json")
+
+    assert response.status_code == 401

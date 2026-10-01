@@ -25,17 +25,25 @@ class StaffTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 
 class RefreshSerializer(TokenRefreshSerializer):
-    """Refuses a refresh token issued before the user's last password change.
+    """Refuses refresh tokens of deleted users and from before a password change.
 
-    Simple JWT only checks that claim on access tokens, so a stolen refresh
-    token would keep working after a password change.
+    Simple JWT does not catch a deleted user, and only checks the password claim
+    on access tokens, so a stolen refresh token would keep working after a
+    password change.
     """
 
     def validate(self, attrs):
         refresh = self.token_class(attrs["refresh"])
-        user = get_user_model().objects.get(
-            **{api_settings.USER_ID_FIELD: refresh[api_settings.USER_ID_CLAIM]}
-        )
+        user_model = get_user_model()
+        try:
+            user = user_model.objects.get(
+                **{api_settings.USER_ID_FIELD: refresh[api_settings.USER_ID_CLAIM]}
+            )
+        except user_model.DoesNotExist:
+            # Simple JWT lets this one escape as a 500.
+            raise exceptions.AuthenticationFailed(
+                self.error_messages["no_active_account"], "no_active_account"
+            ) from None
         if refresh.get(api_settings.REVOKE_TOKEN_CLAIM) != get_md5_hash_password(
             user.password
         ):
