@@ -39,15 +39,14 @@ class RefreshSerializer(TokenRefreshSerializer):
             user = user_model.objects.get(
                 **{api_settings.USER_ID_FIELD: refresh[api_settings.USER_ID_CLAIM]}
             )
+            if refresh.get(api_settings.REVOKE_TOKEN_CLAIM) != get_md5_hash_password(
+                user.password
+            ):
+                raise exceptions.AuthenticationFailed(
+                    "The user's password has been changed.", "password_changed"
+                )
+            return super().validate(attrs)
         except user_model.DoesNotExist:
-            # Simple JWT lets this one escape as a 500.
             raise exceptions.AuthenticationFailed(
                 self.error_messages["no_active_account"], "no_active_account"
             ) from None
-        if refresh.get(api_settings.REVOKE_TOKEN_CLAIM) != get_md5_hash_password(
-            user.password
-        ):
-            raise exceptions.AuthenticationFailed(
-                "The user's password has been changed.", "password_changed"
-            )
-        return super().validate(attrs)
