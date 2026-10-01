@@ -23,6 +23,7 @@ owner's [profile](#profile-apiv1profile), which is in the `owner` app.
 | `skills/`, `skills/{id}/` | Skill tags | |
 | `tools/`, `tools/{id}/` | Tool tags | |
 | `methodologies/`, `methodologies/{id}/` | Methodology tags | |
+| `hobbies/`, `hobbies/{id}/` | Hobbies and interests | |
 
 ## Common behavior
 
@@ -42,8 +43,8 @@ owner's [profile](#profile-apiv1profile), which is in the `owner` app.
 - **Internal fields are never returned**: `is_visible`, `display_order`,
   `created_at`, `updated_at`.
 - **Ordering**: `display_order`, then newest first (`start_date` or
-  `issue_date`). Tags are ordered by kind, then English name. Nested lists
-  follow the same order.
+  `issue_date`). Tags are ordered by kind, then English name, and hobbies by
+  `display_order`, then English name. Nested lists follow the same order.
 - **Dates** are ISO 8601 strings (`"2024-03-01"`). A null `end_date` means the
   entry is ongoing, and `is_current` is then `true`.
 - **Translated texts** are returned in every language at once, so the
@@ -65,6 +66,7 @@ owner's [profile](#profile-apiv1profile), which is in the `owner` app.
   | Project | `title`, `description`, each item of `achievements` and `missions` |
   | Certification, specialization | `name`, `description` |
   | Tag | `name` |
+  | Hobby | `name`, `description` |
 
 These rules are pinned down by the test suite; see
 [testing.md](testing.md#rules-every-endpoint-is-tested-against).
@@ -239,6 +241,18 @@ Tag ids are shared across kinds (they are rows of one `Tag` table, see
 [database.md](database.md#tags-tools-methodologies-and-skills)), so the id
 returned by `tools/` can be passed as `?tag=` to `projects/` or
 `certifications/`. Requesting a tool's id under `skills/` is a `404`.
+
+### `hobbies/`
+
+Hobbies are listed in `display_order`, then by English name.
+
+```json
+{
+  "id": 1,
+  "name": {"en": "Climbing", "fr": "Escalade"},
+  "description": {"en": "", "fr": ""}
+}
+```
 
 ## Profile: `/api/v1/profile/`
 

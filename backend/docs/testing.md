@@ -125,6 +125,7 @@ and timestamp helpers in
 | [`test_certifications.py`](../experience/tests/test_certifications.py) | `certifications/` (with `?tag=` filter) |
 | [`test_specializations.py`](../experience/tests/test_specializations.py) | `specializations/` |
 | [`test_tags.py`](../experience/tests/test_tags.py) | `skills/`, `tools/`, `methodologies/` |
+| [`test_hobbies.py`](../experience/tests/test_hobbies.py) | `hobbies/` |
 | [`test_query_counts.py`](../experience/tests/test_query_counts.py) | The number of queries of every public list and detail, so a dropped `prefetch_related` fails |
 | [`test_demo_commands.py`](../experience/tests/test_demo_commands.py) | The `seed_demo`, `flush_demo` and `reset_demo` management commands |
 | [`test_date_constraints.py`](../experience/tests/test_date_constraints.py) | The database rules on date order |
@@ -165,7 +166,7 @@ Django admin.
 | List filters on a detail route (e.g. `projects/5/?tag=999`) | Ignored |
 | `POST` on a list, `PUT`/`PATCH`/`DELETE` on a detail | `405` |
 | Internal fields (`is_visible`, `display_order`, `created_at`, `updated_at`) | Never returned |
-| Ordering | `display_order`, then newest date (`start_date` or `issue_date`) |
+| Ordering | `display_order`, then newest date (`start_date` or `issue_date`); hobbies: then English name |
 
 The admin API (`api/v1/admin/`, see [admin_api.md](admin_api.md)) is tested
 against these rules instead:

@@ -39,6 +39,7 @@ same answers.
 | `certifications/` | Certifications |
 | `specializations/` | Specializations (paths of certifications) |
 | `skills/`, `tools/`, `methodologies/` | Tags of each kind |
+| `hobbies/` | Hobbies and interests |
 
 Each collection supports:
 
@@ -62,7 +63,8 @@ Send bodies as JSON (`Content-Type: application/json`).
 - **Relations are ids**, in reads and writes alike: `"experience": 3`,
   `"tags": [2, 9]`. Nothing is nested.
 - **No list filters.** Lists have the same order as on the public site:
-  `display_order`, then newest date. Tags are ordered by kind, then English name.
+  `display_order`, then newest date. Tags are ordered by kind, then English name,
+  and hobbies by `display_order`, then English name.
 
 ## Writing rules
 
@@ -249,6 +251,18 @@ A tag only has a `name` (required); its kind is the route it is created on.
 - Tag ids are shared across kinds, but each route only reaches its own kind:
   a tool's id under `skills/` is a `404`.
 - Deleting a tag removes it from the projects and certifications that used it.
+
+### `hobbies/`
+
+Required: `name`. `description` is optional.
+
+```json
+{
+  "id": 1,
+  "name": {"en": "Climbing", "fr": "Escalade"},
+  "description": {"en": "", "fr": ""}
+}
+```
 
 ## Profile: `/api/v1/admin/profile/`
 

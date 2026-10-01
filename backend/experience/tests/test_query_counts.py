@@ -13,6 +13,7 @@ from django.urls import reverse
 from experience.models import (
     Certification,
     Education,
+    Hobby,
     Methodology,
     Mission,
     ProfessionalExperience,
@@ -42,6 +43,8 @@ CASES = [
     ("tool", "detail", 3),
     ("methodology", "list", 1),
     ("methodology", "detail", 3),
+    ("hobby", "list", 1),
+    ("hobby", "detail", 1),
 ]
 
 
@@ -54,6 +57,7 @@ def portfolio():
         for model in (Skill, Tool, Methodology)
     ]
     for number in range(3):
+        Hobby.objects.create(name_en="Climbing", name_fr="Escalade")
         Education.objects.create(
             institution="University",
             degree_en="MSc",
@@ -107,6 +111,7 @@ def portfolio():
         "skill": tags[0].pk,
         "tool": tags[1].pk,
         "methodology": tags[2].pk,
+        "hobby": Hobby.objects.first().pk,
     }
 
 

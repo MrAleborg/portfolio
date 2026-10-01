@@ -5,6 +5,7 @@ from experience.localized import LocalizedField, LocalizedText
 from experience.models import (
     Certification,
     Education,
+    Hobby,
     ProfessionalExperience,
     Project,
     Specialization,
@@ -205,3 +206,12 @@ class ProfessionalExperienceSerializer(serializers.ModelSerializer):
             "description",
             "projects",
         ]
+
+
+class HobbySerializer(serializers.ModelSerializer):
+    name = LocalizedField()
+    description = LocalizedField()
+
+    class Meta:
+        model = Hobby
+        fields = ["id", "name", "description"]
