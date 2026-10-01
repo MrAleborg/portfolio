@@ -110,6 +110,9 @@ Entries are listed by their English text.
 | Skill | 1, 2 | Python, API design | |
 | Tool | 3, 4, 5 | Django, React, Docker | |
 | Methodology | 6, 7 | Scrum, TDD | |
+| Hobby | 1 | Climbing | With a description |
+| | 2 | Chess | |
+| | 3 | Hidden hobby | **Hidden** |
 
 ## What to check
 
@@ -138,6 +141,8 @@ relative to `http://localhost:8000/api/v1/experience/`; see
 | `certifications/?tag=6` | Certifications 2, 1 |
 | `certifications/1/` | `specializations: [{"id": 1, "name": {"en": "Agile path", "fr": "Parcours agile"}}]` |
 | `specializations/1/` | Certifications 2, 1, not the hidden one |
+| `hobbies/` | Chess, then Climbing (same `display_order`, so by English name). Not 3 |
+| `hobbies/3/` | `404` |
 | `/api/v1/profile/` (absolute path) | Demo Owner, with headline and bio in both languages |
 
 No response should contain `is_visible`, `display_order`, `created_at` or

@@ -7,6 +7,7 @@ from experience.management.demo import has_content
 from experience.models import (
     Certification,
     Education,
+    Hobby,
     Methodology,
     Mission,
     ProfessionalExperience,
@@ -37,6 +38,7 @@ class Command(BaseCommand):
         self.create_education()
         self.create_experiences(tags)
         self.create_credentials(tags)
+        self.create_hobbies()
 
         self.stdout.write(self.style.SUCCESS("Demo content created."))
 
@@ -253,3 +255,19 @@ class Command(BaseCommand):
             issue_date=date(2024, 3, 1),
         )
         agile.certifications.set([psm, pspo, hidden])
+
+    def create_hobbies(self):
+        Hobby.objects.create(
+            name_en="Climbing",
+            name_fr="Escalade",
+            description_en="Bouldering on weekends.",
+            description_fr="De l'escalade de bloc le week-end.",
+        )
+        Hobby.objects.create(name_en="Chess", name_fr="Échecs")
+        Hobby.objects.create(
+            name_en="Hidden hobby",
+            name_fr="Loisir masqué",
+            description_en="is_visible=False: must never appear in the API.",
+            description_fr="is_visible=False : ne doit jamais apparaître dans l'API.",
+            is_visible=False,
+        )
