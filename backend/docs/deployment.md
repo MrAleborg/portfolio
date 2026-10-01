@@ -11,8 +11,9 @@ sites, takes the HTTPS traffic and passes it to the containers, which listen on
   `/api/` paths go to the backend, so the site calls the API on its own
   domain. `www.example.com` redirects there.
 
-Every push to `main` that passes CI is deployed by GitHub Actions: the backend
-when `backend/` or `deploy/` changes, the frontend when `frontend/` changes.
+Every push to `main` that passes CI is deployed by GitHub Actions. CI runs per
+part (`backend/` and `deploy/`, or `frontend/`), but each deploy redeploys the
+whole stack.
 
 ```mermaid
 flowchart LR
@@ -101,7 +102,7 @@ Use both layers:
   ```
 
 Docker writes its own iptables rules, so **a port published by a container
-bypasses ufw**. That is why the backend is published on `127.0.0.1` only:
+bypasses ufw**. That is why the containers are published on `127.0.0.1` only:
 Caddy on the host can reach it, the internet can't. Keep the `127.0.0.1:` prefix
 in `compose.yml`, and do the same for any other container on the server.
 
@@ -174,6 +175,12 @@ and 8080):
 - `example.com` proxies `/api/*` to the backend and everything else to the
   frontend.
 - `www.example.com` redirects to `example.com`.
+- Both sites get the `security_headers` snippet: `X-Content-Type-Options`,
+  `Referrer-Policy`, `X-Frame-Options` and HSTS (without `includeSubDomains`:
+  the server hosts other sites). Each is added only when the response doesn't
+  have it already, so Django's own headers on the backend's responses are not
+  doubled. HSTS starts at one hour: raise it to `31536000` in the snippet when
+  you raise `SECURE_HSTS_SECONDS`. The frontend's CSP is set by its nginx.
 
 Then check and reload:
 
@@ -189,9 +196,12 @@ the containers aren't running yet.
 
 In the repository settings:
 
-1. **Environments** → create `Portfolio production` (the name the workflow uses) (optionally require a review before
-   each deploy).
-2. **Secrets** (repository or `Portfolio production` environment):
+1. **Environments** → create `Portfolio production` (the name the workflow
+   uses). Under *Deployment branches and tags*, restrict it to the `main`
+   branch, so no other branch can use its secrets. Optionally require a review
+   before each deploy.
+2. **Secrets** of the `Portfolio production` environment (not repository
+   secrets: any workflow in the repository can read those):
 
    | Secret | Value |
    |---|---|
@@ -200,7 +210,7 @@ In the repository settings:
    | `VPS_SSH_KEY` | Private key used by Actions (see below) |
    | `VPS_KNOWN_HOSTS` | Output of `ssh-keyscan -H <server>` |
 
-3. **Variables** → `API_DOMAIN` = `api.example.com` and `FRONTEND_DOMAIN` =
+3. **Variables** (repository level) → `API_DOMAIN` = `api.example.com` and `FRONTEND_DOMAIN` =
    `example.com` (used for the smoke tests).
 
 Generate a key used only for deploys, and authorize it on the server:
@@ -240,13 +250,18 @@ Docker. In another user's crontab it fails without a trace:
 
 ```bash
 sudo crontab -u deploy -e
-# 0 3 * * * /opt/portfolio/backup.sh >> /opt/portfolio/backup.log 2>&1
+# MAILTO=you@example.com
+# 0 3 * * * /opt/portfolio/backup.sh >> /opt/portfolio/backup.log
 ```
 
+`MAILTO` makes cron email the job's error output, so a failed backup doesn't go
+unnoticed. Only stdout goes to the log, since cron mails what is left on
+stderr; the server needs a mail transfer agent for that (e.g. `msmtp-mta`).
+
 `backup.sh` writes a compressed, consistent copy of the database to
-`/opt/portfolio/backups/`, unless the database hasn't changed since the latest
-backup (logging into the admin counts as a change). It then deletes backups
-older than 180 days, but always keeps the latest one, however old.
+`/opt/portfolio/backups/`, as `db-<date>-<time>.sqlite3.gz` (readable by
+`deploy` only), once per night and before each deploy. It then deletes backups
+older than 180 days; the one it just wrote is never deleted.
 `BACKUP_DIR` and `KEEP_DAYS` change the folder and the retention, at the start
 of the cron line (`0 3 * * * KEEP_DAYS=365 /opt/portfolio/backup.sh ...`).
 
@@ -259,23 +274,53 @@ machine).
 [`deploy.yml`](../../.github/workflows/deploy.yml) deploys the whole stack for
 one commit. It runs when [Backend CI](testing.md#continuous-integration)
 (`backend/` or `deploy/` changed) or Frontend CI (`frontend/` changed) passes
-on a push to `main`, or by hand from the Actions tab.
+on a push to `main`, or by hand from the Actions tab (`main` only: the
+workflow ignores a run started from another branch).
 
 1. **check**: a push that touches both parts runs both CIs. The deploy goes
    on only once every CI run for the commit has passed. While the other one
    is still running, this run stops and the other one's completion triggers
-   the deploy. If one failed, nothing is deployed.
+   the deploy. If one failed, nothing is deployed. A run started by hand goes
+   through the same check, and also needs the latest completed run of each CI
+   on `main` to have passed (a commit can have no CI run at all, since CI only
+   runs when its paths change).
 2. **build**: builds the `backend` and `frontend` images and pushes them to
-   GHCR, both tagged `sha-<commit>` and `latest`.
-3. **deploy**: copies `compose.yml` and `backup.sh` to `/opt/portfolio/`,
-   then over SSH runs `docker compose pull` and `docker compose up -d --wait`
-   with `TAG=sha-<commit>`. `--wait` fails the job if a new container doesn't
-   pass its health check. A container whose image didn't change isn't
-   restarted.
+   GHCR, tagged `sha-<commit>`. There is no `latest` tag: a bad build can't be
+   pulled by accident.
+3. **deploy** (15 minutes at most): copies `compose.yml` and `backup.sh` to
+   `/opt/portfolio/`, then over SSH, with `TAG=sha-<commit>`:
+   - runs `./backup.sh`, unless there is no backend container yet (first
+     deploy): the new backend applies migrations when it starts. If the backend
+     exists but is stopped, the backup fails and so does the deploy;
+   - runs `docker compose pull` and `docker compose up -d --wait
+     --wait-timeout 180`. `--wait` fails the job if a new container doesn't
+     pass its health check within 3 minutes. A container whose image didn't
+     change isn't restarted. On failure, the deploy starts the tag still in
+     `.env` (the last successful deploy) again, then fails. That does not undo
+     migrations the new backend may already have applied: if the old version
+     can't work with them, restore the backup taken just before the deploy
+     (see [Restore a backup](#restore-a-backup)). The first deploy has no
+     earlier tag, so it leaves the new containers as they are;
+   - writes `TAG=sha-<commit>` in `/opt/portfolio/.env`, so every later
+     `docker compose` command on the server uses the deployed images
+     (`compose.yml` refuses to run without a `TAG`);
+   - deletes this repo's images that no container uses (found through the
+     `org.opencontainers.image.source` label the build adds, so the server's
+     other images are safe). A rollback pulls its image from GHCR again. Images
+     built before that label was added are never removed by it: delete them once
+     by hand with `docker image rm`.
 4. **Smoke test**: `curl` on `https://$API_DOMAIN/api/v1/experience/` and
    `https://$FRONTEND_DOMAIN/`.
 
 The backend container applies migrations when it starts, before gunicorn.
+
+**One-time step on a server that already runs the stack**, before merging the
+change that introduced `TAG`: add `TAG=sha-<running commit>` to
+`/opt/portfolio/.env`. Until a deploy has succeeded, `.env` has no `TAG`, so a
+failed first deploy would leave `docker compose` (and `backup.sh`, from cron)
+unable to start, and the deploy would have no tag to fall back to. Find the
+running one with `docker compose ps --format '{{.Image}}'`; if it shows
+`:latest`, use the `sha-` tag of the commit that was last deployed.
 
 In the frontend container, nginx serves `index.html` for unknown paths, so
 client-side routes survive a reload. Files under `assets/` have a content hash
@@ -289,17 +334,21 @@ All from `/opt/portfolio` on the server.
 | Task | Command |
 |---|---|
 | Status | `docker compose ps` |
-| Logs | `docker compose logs -f backend` (or `frontend`); Caddy: `journalctl -u caddy -f` |
+| Logs | `docker compose logs -f backend` (or `frontend`); Caddy: `journalctl -u caddy -f`. Docker keeps the last 3 × 10 MB per container |
 | Django shell | `docker compose exec backend python manage.py shell` |
 | Restart | `docker compose restart backend` (or `frontend`) |
-| Change a setting | edit `.env`, then `docker compose up -d` |
+| Change a setting | edit `.env` (keep its `TAG=` line), then `docker compose up -d` |
 
 ### Rollback
 
-Every deploy keeps its image tags in GHCR. To go back to an earlier commit:
+Every deploy keeps its image tags in GHCR. To go back to an earlier commit,
+change the `TAG` in `.env`, which is what a plain `docker compose up -d` uses
+from then on:
 
 ```bash
-TAG=sha-<commit> docker compose up -d --wait
+sed -i 's/^TAG=.*/TAG=sha-<commit>/' .env
+docker compose pull
+docker compose up -d --wait
 ```
 
 The next deploy from `main` replaces it. If the bad backend version had

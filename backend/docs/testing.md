@@ -35,7 +35,8 @@ first step that fails:
 | Django system check | `pipenv run python manage.py check` |
 | Missing migrations | `pipenv run python manage.py makemigrations --check --dry-run` |
 | Deployment check | see below |
-| Tests with coverage | `pipenv run pytest --cov --cov-report=term-missing` |
+| Tests with coverage (100% required) | `pipenv run pytest --cov --cov-report=term-missing --cov-fail-under=100` |
+| Image build (not pushed) | `docker build backend/` |
 
 Dependencies are installed with `pipenv install --dev --deploy`, so CI also
 fails if `Pipfile.lock` is out of date. There is no `.env` in CI: the workflow

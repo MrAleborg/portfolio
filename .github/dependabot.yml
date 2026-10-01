@@ -1,0 +1,31 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: /backend
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: /frontend
+    schedule:
+      interval: weekly
+  # Reads backend/Pipfile and Pipfile.lock.
+  - package-ecosystem: pip
+    directory: /backend
+    schedule:
+      interval: weekly
+    # One pull request per week for all of them.
+    groups:
+      all:
+        patterns: ["*"]
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+    # One pull request per week for all of them.
+    groups:
+      all:
+        patterns: ["*"]
