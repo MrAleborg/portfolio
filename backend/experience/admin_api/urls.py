@@ -22,5 +22,10 @@ router.register("tools", views.ToolViewSet, basename="tool")
 router.register("methodologies", views.MethodologyViewSet, basename="methodology")
 router.register("hobbies", views.HobbyViewSet, basename="hobby")
 router.register("commitments", views.CommitmentViewSet, basename="commitment")
+router.register(
+    "scientific-communications",
+    views.ScientificCommunicationViewSet,
+    basename="scientific-communication",
+)
 
 urlpatterns = router.urls

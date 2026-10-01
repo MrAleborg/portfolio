@@ -12,6 +12,7 @@ from experience.models import (
     Mission,
     ProfessionalExperience,
     Project,
+    ScientificCommunication,
     Specialization,
     Tag,
 )
@@ -28,6 +29,7 @@ CONTENT_MODELS = [
     Tag,
     Hobby,
     Commitment,
+    ScientificCommunication,
     Profile,
 ]
 

@@ -13,6 +13,7 @@ from experience.models import (
     Mission,
     ProfessionalExperience,
     Project,
+    ScientificCommunication,
     Skill,
     Specialization,
     Tool,
@@ -41,6 +42,7 @@ class Command(BaseCommand):
         self.create_credentials(tags)
         self.create_hobbies()
         self.create_commitments()
+        self.create_scientific_communications()
 
         self.stdout.write(self.style.SUCCESS("Demo content created."))
 
@@ -312,6 +314,57 @@ class Command(BaseCommand):
             role_fr="Rôle masqué",
             start_date=date(2018, 1, 1),
             end_date=date(2018, 12, 31),
+            description_en="is_visible=False: must never appear in the API.",
+            description_fr="is_visible=False : ne doit jamais apparaître dans l'API.",
+            is_visible=False,
+        )
+
+    def create_scientific_communications(self):
+        Kind = ScientificCommunication.Kind
+        ScientificCommunication.objects.create(
+            kind=Kind.TALK,
+            title_en="Static analysis for Python services",
+            title_fr="Analyse statique pour les services Python",
+            authors="Demo Owner",
+            venue="Demo Python Conference",
+            date=date(2024, 5, 14),
+            url="https://example.com/talks/static-analysis",
+        )
+        ScientificCommunication.objects.create(
+            kind=Kind.POSTER,
+            title_en="Type inference at scale",
+            title_fr="Inférence de types à grande échelle",
+            authors="Demo Owner, Ada Example",
+            venue="Demo Software Engineering Symposium",
+            date=date(2023, 9, 20),
+            display_order=1,
+        )
+        ScientificCommunication.objects.create(
+            kind=Kind.PAPER,
+            title_en="Testing REST APIs from their specification",
+            title_fr="Tester des API REST à partir de leur spécification",
+            authors="Ada Example, Demo Owner, Alan Sample",
+            venue="Demo International Conference on Testing",
+            date=date(2022, 4, 5),
+            url="https://example.com/papers/rest-testing",
+            display_order=2,
+        )
+        ScientificCommunication.objects.create(
+            kind=Kind.ARTICLE,
+            title_en="Lessons from migrating a monolith",
+            title_fr="Enseignements d'une migration de monolithe",
+            authors="Demo Owner",
+            venue="Demo Engineering Review",
+            date=date(2025, 1, 15),
+            display_order=3,
+        )
+        ScientificCommunication.objects.create(
+            kind=Kind.TALK,
+            title_en="Hidden communication",
+            title_fr="Communication masquée",
+            authors="Demo Owner",
+            venue="Demo Meetup",
+            date=date(2020, 3, 1),
             description_en="is_visible=False: must never appear in the API.",
             description_fr="is_visible=False : ne doit jamais apparaître dans l'API.",
             is_visible=False,

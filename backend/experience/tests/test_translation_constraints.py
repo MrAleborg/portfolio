@@ -20,6 +20,7 @@ from experience.models import (
     Hobby,
     ProfessionalExperience,
     Project,
+    ScientificCommunication,
     Skill,
     Specialization,
     Tool,
@@ -64,6 +65,14 @@ ROWS = {
         "role_en": "Volunteer",
         "role_fr": "Bénévole",
         "start_date": date(2020, 1, 1),
+    },
+    ScientificCommunication: {
+        "title_en": "Static analysis",
+        "title_fr": "Analyse statique",
+        "authors": "A. Lovelace",
+        "kind": "talk",
+        "venue": "PyCon",
+        "date": date(2024, 5, 1),
     },
 }
 OPTIONAL_TRANSLATIONS = [

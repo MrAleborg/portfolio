@@ -10,6 +10,7 @@ from experience.models import (
     Methodology,
     ProfessionalExperience,
     Project,
+    ScientificCommunication,
     Skill,
     Specialization,
     Tool,
@@ -70,3 +71,8 @@ class HobbyViewSet(AdminViewSet):
 class CommitmentViewSet(AdminViewSet):
     queryset = Commitment.objects.all()
     serializer_class = serializers.CommitmentSerializer
+
+
+class ScientificCommunicationViewSet(AdminViewSet):
+    queryset = ScientificCommunication.objects.all()
+    serializer_class = serializers.ScientificCommunicationSerializer

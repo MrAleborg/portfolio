@@ -41,6 +41,7 @@ same answers.
 | `skills/`, `tools/`, `methodologies/` | Tags of each kind |
 | `hobbies/` | Hobbies and interests |
 | `commitments/` | Associations and events the owner took part in |
+| `scientific-communications/` | Talks, posters, papers and articles |
 
 Each collection supports:
 
@@ -282,6 +283,27 @@ value is a `400` on `kind`. `location`, `url` and `description` are optional.
   "start_date": "2019-09-01",
   "end_date": null,
   "is_current": true,
+  "description": {"en": "", "fr": ""}
+}
+```
+
+### `scientific-communications/`
+
+Required: `title`, `authors`, `kind`, `venue`, `date`. `kind` is one of `talk`,
+`poster`, `paper`, `article`, with no default: a missing or unknown value is a
+`400` on `kind`. `authors` and `venue` are plain texts, not translated. `url`
+and `description` are optional; unlike the public API, the admin API returns
+and writes the `description`.
+
+```json
+{
+  "id": 1,
+  "kind": "talk",
+  "title": {"en": "Static analysis for Python services", "fr": "Analyse statique pour les services Python"},
+  "authors": "Demo Owner",
+  "venue": "Demo Python Conference",
+  "date": "2024-05-14",
+  "url": "https://example.com/talks/static-analysis",
   "description": {"en": "", "fr": ""}
 }
 ```

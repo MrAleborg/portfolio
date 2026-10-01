@@ -19,6 +19,7 @@ from experience.models import (
     Mission,
     ProfessionalExperience,
     Project,
+    ScientificCommunication,
     Skill,
     Specialization,
     Tool,
@@ -48,6 +49,8 @@ CASES = [
     ("hobby", "detail", 1),
     ("commitment", "list", 1),
     ("commitment", "detail", 1),
+    ("scientific-communication", "list", 1),
+    ("scientific-communication", "detail", 1),
 ]
 
 
@@ -61,6 +64,14 @@ def portfolio():
     ]
     for number in range(3):
         Hobby.objects.create(name_en="Climbing", name_fr="Escalade")
+        ScientificCommunication.objects.create(
+            title_en="Static analysis",
+            title_fr="Analyse statique",
+            authors="A. Lovelace",
+            kind="talk",
+            venue="PyCon",
+            date=date(2024, 5, 1),
+        )
         Commitment.objects.create(
             organization="Red Cross",
             role_en="Volunteer",
@@ -122,6 +133,7 @@ def portfolio():
         "methodology": tags[2].pk,
         "hobby": Hobby.objects.first().pk,
         "commitment": Commitment.objects.first().pk,
+        "scientific-communication": ScientificCommunication.objects.first().pk,
     }
 
 

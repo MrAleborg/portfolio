@@ -330,3 +330,26 @@ class Commitment(DateRangeEntry):
 
     def __str__(self):
         return f"{self.role_en} — {self.organization}"
+
+
+class ScientificCommunication(BaseEntry):
+    class Kind(models.TextChoices):
+        TALK = "talk", "Talk"
+        POSTER = "poster", "Poster"
+        PAPER = "paper", "Paper"
+        ARTICLE = "article", "Article"
+
+    kind = models.CharField(max_length=20, choices=Kind.choices)
+    title_en = models.CharField(max_length=255)
+    title_fr = models.CharField(max_length=255)
+    authors = models.CharField(max_length=500)
+    venue = models.CharField(max_length=255)
+    date = models.DateField()
+    url = models.URLField(blank=True)
+
+    class Meta:
+        ordering = ["display_order", "-date"]
+        constraints = [translated_together("description")]
+
+    def __str__(self):
+        return self.title_en

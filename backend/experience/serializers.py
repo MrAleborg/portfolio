@@ -9,6 +9,7 @@ from experience.models import (
     Hobby,
     ProfessionalExperience,
     Project,
+    ScientificCommunication,
     Specialization,
     Tag,
 )
@@ -237,3 +238,11 @@ class CommitmentSerializer(serializers.ModelSerializer):
             "is_current",
             "description",
         ]
+
+
+class ScientificCommunicationSerializer(serializers.ModelSerializer):
+    title = LocalizedField()
+
+    class Meta:
+        model = ScientificCommunication
+        fields = ["id", "kind", "title", "authors", "venue", "date", "url"]

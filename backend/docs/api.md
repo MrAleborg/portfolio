@@ -25,6 +25,7 @@ owner's [profile](#profile-apiv1profile), which is in the `owner` app.
 | `methodologies/`, `methodologies/{id}/` | Methodology tags | |
 | `hobbies/`, `hobbies/{id}/` | Hobbies and interests | |
 | `commitments/`, `commitments/{id}/` | Associations and events the owner took part in | |
+| `scientific-communications/`, `scientific-communications/{id}/` | Talks, posters, papers and articles | |
 
 ## Common behavior
 
@@ -43,9 +44,10 @@ owner's [profile](#profile-apiv1profile), which is in the `owner` app.
   is hidden too, wherever projects appear.
 - **Internal fields are never returned**: `is_visible`, `display_order`,
   `created_at`, `updated_at`.
-- **Ordering**: `display_order`, then newest first (`start_date` or
-  `issue_date`). Tags are ordered by kind, then English name, and hobbies by
-  `display_order`, then English name. Nested lists follow the same order.
+- **Ordering**: `display_order`, then newest first (`start_date`,
+  `issue_date` or `date`). Tags are ordered by kind, then English name, and
+  hobbies by `display_order`, then English name. Nested lists follow the same
+  order.
 - **Dates** are ISO 8601 strings (`"2024-03-01"`). A null `end_date` means the
   entry is ongoing, and `is_current` is then `true`.
 - **Translated texts** are returned in every language at once, so the
@@ -57,7 +59,7 @@ owner's [profile](#profile-apiv1profile), which is in the `owner` app.
 
   The languages are `en` and `fr`. A text is filled in every language, or
   empty (`""`) in every language. Proper nouns, codes, URLs and dates are not
-  translated: `institution`, `company`, `organization`, `issuer`, `credential_id`, the URLs,
+  translated: `institution`, `company`, `organization`, `issuer`, `authors`, `venue`, `credential_id`, the URLs,
   `employment_type` (a code the frontend labels) and `kind`.
 
   | Resource | Translated fields |
@@ -69,6 +71,7 @@ owner's [profile](#profile-apiv1profile), which is in the `owner` app.
   | Tag | `name` |
   | Hobby | `name`, `description` |
   | Commitment | `role`, `location`, `description` |
+  | Scientific communication | `title` |
 
 These rules are pinned down by the test suite; see
 [testing.md](testing.md#rules-every-endpoint-is-tested-against).
@@ -275,6 +278,25 @@ while the commitment is ongoing.
   "end_date": null,
   "is_current": true,
   "description": {"en": "", "fr": ""}
+}
+```
+
+### `scientific-communications/`
+
+Talks, posters, papers and articles, listed in `display_order`, then newest
+`date`. `kind` is one of `talk`, `poster`, `paper`, `article`. `authors` and
+`venue` are plain texts, not translated. The entry has a `description` in the
+database, but it is **not public**: the API does not return it.
+
+```json
+{
+  "id": 1,
+  "kind": "talk",
+  "title": {"en": "Static analysis for Python services", "fr": "Analyse statique pour les services Python"},
+  "authors": "Demo Owner",
+  "venue": "Demo Python Conference",
+  "date": "2024-05-14",
+  "url": "https://example.com/talks/static-analysis"
 }
 ```
 

@@ -24,6 +24,7 @@ from experience.models import (
     Mission,
     ProfessionalExperience,
     Project,
+    ScientificCommunication,
     Specialization,
     Tag,
 )
@@ -42,6 +43,7 @@ LIST_ROUTES = [
     "methodology",
     "hobby",
     "commitment",
+    "scientific-communication",
 ]
 
 CONTENT_MODELS = [
@@ -54,6 +56,7 @@ CONTENT_MODELS = [
     Tag,
     Hobby,
     Commitment,
+    ScientificCommunication,
     Profile,
 ]
 
@@ -148,6 +151,35 @@ def test_seed_creates_a_hidden_commitment_that_is_not_exposed(api_client):
     hidden = Commitment.objects.filter(is_visible=False)
     exposed = {
         c["id"] for c in api_client.get(reverse("experience:commitment-list")).json()
+    }
+
+    assert hidden.exists()
+    assert not exposed & set(hidden.values_list("id", flat=True))
+
+
+def test_seed_creates_a_visible_communication_of_each_kind():
+    """Every kind of scientific communication has an entry to look at."""
+    run("seed_demo")
+
+    kinds = set(
+        ScientificCommunication.objects.filter(is_visible=True).values_list(
+            "kind", flat=True
+        )
+    )
+
+    assert kinds == {"talk", "poster", "paper", "article"}
+
+
+def test_seed_creates_a_hidden_communication_that_is_not_exposed(api_client):
+    """The demo data includes a hidden communication, so visibility can be checked."""
+    run("seed_demo")
+
+    hidden = ScientificCommunication.objects.filter(is_visible=False)
+    exposed = {
+        c["id"]
+        for c in api_client.get(
+            reverse("experience:scientific-communication-list")
+        ).json()
     }
 
     assert hidden.exists()

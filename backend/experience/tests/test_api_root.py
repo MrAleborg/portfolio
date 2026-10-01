@@ -20,6 +20,7 @@ COLLECTIONS = [
     "methodologies",
     "hobbies",
     "commitments",
+    "scientific-communications",
 ]
 
 
