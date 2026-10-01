@@ -220,8 +220,8 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# Claude Code configuration
-.claude/
+# Claude Code configuration (shared config is tracked, personal settings are not)
+.claude/settings.local.json
 .mcp.json
-CLAUDE.md
 graphify-out/
+.claude/skills/graphify/

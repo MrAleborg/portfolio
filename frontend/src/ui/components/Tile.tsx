@@ -1,13 +1,11 @@
-import { useId, useState, type ReactNode } from 'react'
+import { Children, Fragment, useId, useState, type ReactNode } from 'react'
 import './Tile.css'
 
 interface TileProps {
   title: string
   subtitle?: string
-  /** Short facts shown on one line, e.g. a period and a place; empty ones are left out. */
-  meta?: string[]
-  /** Level of the title in the page outline. */
-  headingLevel?: 2 | 3 | 4
+  /** Short facts shown side by side, e.g. a period and a place; empty ones are left out. */
+  meta?: ReactNode[]
   /** Details hidden until the title is clicked. */
   children?: ReactNode
 }
@@ -17,19 +15,18 @@ export function Tile({
   title,
   subtitle,
   meta = [],
-  headingLevel = 3,
   children,
 }: TileProps) {
   const titleId = useId()
   const bodyId = useId()
   const [expanded, setExpanded] = useState(false)
-  const Heading = `h${headingLevel}` as const
-  const metaLine = meta.filter(Boolean).join(' · ')
+  const metaItems = meta.filter(Boolean)
+  const hasDetails = Children.toArray(children).length > 0
 
   return (
     <article className="tile" aria-labelledby={titleId}>
-      <Heading id={titleId} className="tile__title">
-        {children ? (
+      <h3 id={titleId} className="tile__title">
+        {hasDetails ? (
           <button
             type="button"
             className="tile__toggle"
@@ -43,10 +40,19 @@ export function Tile({
         ) : (
           title
         )}
-      </Heading>
+      </h3>
       {subtitle && <p className="tile__subtitle">{subtitle}</p>}
-      {metaLine && <p className="tile__meta">{metaLine}</p>}
-      {children && (
+      {metaItems.length > 0 && (
+        <p className="tile__meta">
+          {metaItems.map((item, index) => (
+            <Fragment key={index}>
+              {index > 0 && ' '}
+              <span>{item}</span>
+            </Fragment>
+          ))}
+        </p>
+      )}
+      {hasDetails && (
         <div id={bodyId} className="tile__body" hidden={!expanded}>
           {children}
         </div>

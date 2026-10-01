@@ -19,19 +19,11 @@ describe('Tile', () => {
     ).toBeInTheDocument()
   })
 
-  it('shows its title as a level 3 heading by default', () => {
+  it('shows its title as a level 3 heading', () => {
     render(<Tile title="Master’s degree" />)
 
     expect(
       screen.getByRole('heading', { level: 3, name: 'Master’s degree' }),
-    ).toBeInTheDocument()
-  })
-
-  it('can show its title at another heading level', () => {
-    render(<Tile title="Master’s degree" headingLevel={4} />)
-
-    expect(
-      screen.getByRole('heading', { level: 4, name: 'Master’s degree' }),
     ).toBeInTheDocument()
   })
 
@@ -41,10 +33,18 @@ describe('Tile', () => {
     expect(screen.getByText('Université de Rennes')).toBeInTheDocument()
   })
 
-  it('joins its meta items with a middle dot', () => {
+  it('shows each meta item as its own element, without a separator', () => {
     render(<Tile title="Master’s degree" meta={['Sep 2015 – Jun 2017', 'Brittany']} />)
 
-    expect(screen.getByText('Sep 2015 – Jun 2017 · Brittany')).toBeInTheDocument()
+    expect(screen.getByText('Sep 2015 – Jun 2017')).toBeInTheDocument()
+    expect(screen.getByText('Brittany')).toBeInTheDocument()
+    expect(screen.getByRole('article')).not.toHaveTextContent('·')
+  })
+
+  it('keeps its meta items apart in its text', () => {
+    render(<Tile title="Master’s degree" meta={['Sep 2015 – Jun 2017', 'Brittany']} />)
+
+    expect(screen.getByRole('article')).toHaveTextContent('Sep 2015 – Jun 2017 Brittany')
   })
 
   it('leaves out empty meta items', () => {
@@ -90,10 +90,9 @@ describe('Tile', () => {
   it('tells which content its title expands', () => {
     renderTileWithContent()
 
-    const content = screen.getByText('Thesis on compilers.').parentElement!
-    expect(
-      screen.getByRole('button', { name: 'Master’s degree' }),
-    ).toHaveAttribute('aria-controls', content.id)
+    const button = screen.getByRole('button', { name: 'Master’s degree' })
+    const content = document.getElementById(button.getAttribute('aria-controls')!)
+    expect(content).toContainElement(screen.getByText('Thesis on compilers.'))
   })
 
   it('keeps its title the heading of the tile when it can expand', () => {
@@ -107,6 +106,12 @@ describe('Tile', () => {
 
   it('has no button when it has no content to expand', () => {
     render(<Tile title="Master’s degree" subtitle="Université de Rennes" />)
+
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+  })
+
+  it('has no button when its content is an empty list', () => {
+    render(<Tile title="Master’s degree">{[]}</Tile>)
 
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })

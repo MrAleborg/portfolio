@@ -6,21 +6,24 @@ export type AsyncState<T> =
   | { status: 'error' }
 
 /**
- * Runs `load` once and follows its result.
+ * Runs `load` once and follows its result; a different `load` starts over.
  *
- * `load` must be stable across renders (e.g. a repository method), or it runs again.
+ * `load` must be stable across renders (e.g. a repository method), or it reloads forever and never leaves `loading`.
  */
 export function useAsync<T>(load: () => Promise<T>): AsyncState<T> {
-  const [state, setState] = useState<AsyncState<T>>({ status: 'loading' })
+  const [settled, setSettled] = useState<{
+    load: () => Promise<T>
+    state: AsyncState<T>
+  }>()
 
   useEffect(() => {
     let active = true
     load().then(
       (value) => {
-        if (active) setState({ status: 'loaded', value })
+        if (active) setSettled({ load, state: { status: 'loaded', value } })
       },
       () => {
-        if (active) setState({ status: 'error' })
+        if (active) setSettled({ load, state: { status: 'error' } })
       },
     )
     return () => {
@@ -28,5 +31,5 @@ export function useAsync<T>(load: () => Promise<T>): AsyncState<T> {
     }
   }, [load])
 
-  return state
+  return settled?.load === load ? settled.state : { status: 'loading' }
 }

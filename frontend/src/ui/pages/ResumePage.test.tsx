@@ -33,7 +33,7 @@ describe('ResumePage', () => {
     const tiles = await education.findAllByRole('article')
     expect(tiles).toHaveLength(2)
     const [first, second] = tiles
-    expect(first).toHaveAccessibleName('Master’s degree')
+    expect(first).toHaveAccessibleName('Master’s degree, Computer Science')
     expect(second).toHaveAccessibleName('PhD')
   })
 
@@ -57,6 +57,6 @@ describe('ResumePage', () => {
     renderPage(fakeEducationRepository(), 'fr')
 
     const education = within(screen.getByRole('region', { name: 'Formation' }))
-    expect(await education.findByRole('article', { name: 'Master' })).toBeInTheDocument()
+    expect(await education.findByRole('article', { name: 'Master, Informatique' })).toBeInTheDocument()
   })
 })

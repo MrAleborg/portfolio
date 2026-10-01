@@ -21,13 +21,24 @@ async function expand(degree: string) {
 
 describe('EducationTile', () => {
   describe('in English', () => {
-    it('is a tile named by the degree', () => {
+    it('is a tile named by the degree and the field of study', () => {
       renderTile(masters)
 
       expect(
-        screen.getByRole('heading', { level: 3, name: 'Master’s degree' }),
+        screen.getByRole('heading', {
+          level: 3,
+          name: 'Master’s degree, Computer Science',
+        }),
       ).toBeInTheDocument()
-      expect(screen.getByRole('article')).toHaveAccessibleName('Master’s degree')
+      expect(screen.getByRole('article')).toHaveAccessibleName(
+        'Master’s degree, Computer Science',
+      )
+    })
+
+    it('is named by the degree alone when it has no field of study', () => {
+      renderTile(doctorate)
+
+      expect(screen.getByRole('heading', { level: 3, name: 'PhD' })).toBeInTheDocument()
     })
 
     it('shows the institution', () => {
@@ -36,48 +47,63 @@ describe('EducationTile', () => {
       expect(screen.getByText('Université de Rennes')).toBeInTheDocument()
     })
 
-    it('shows the period and the location', () => {
+    it('shows the period in time elements and the location', () => {
       renderTile(masters)
 
-      expect(screen.getByText('Sep 2015 – Jun 2017 · Brittany')).toBeInTheDocument()
+      const [start, end] = screen.getAllByRole('time')
+      expect(start).toHaveTextContent('Sep 2015')
+      expect(end).toHaveTextContent('Jun 2017')
+      expect(screen.getByText('Brittany')).toBeInTheDocument()
     })
 
-    it('shows the field of study, the grade and the description once expanded', async () => {
+    it('shows the grade and the description once expanded', async () => {
       renderTile(masters)
 
-      await expand('Master’s degree')
+      await expand('Master’s degree, Computer Science')
 
-      expect(screen.getByText('Computer Science')).toBeVisible()
       expect(screen.getByText('With honours')).toBeVisible()
       expect(screen.getByText('Thesis on compilers.')).toBeVisible()
+    })
+
+    it('does not repeat the field of study in the details', async () => {
+      renderTile(masters)
+
+      await expand('Master’s degree, Computer Science')
+
+      const button = screen.getByRole('button')
+      const details = document.getElementById(button.getAttribute('aria-controls')!)
+      expect(details).toHaveTextContent('With honours')
+      expect(details).not.toHaveTextContent(/Computer Science/)
     })
 
     it('shows an ongoing degree as lasting until now', () => {
       renderTile(doctorate)
 
-      expect(screen.getByText('Oct 2021 – Present')).toBeInTheDocument()
+      expect(screen.getByRole('article')).toHaveTextContent('Oct 2021 – Present')
     })
   })
 
   describe('in French', () => {
-    it('is a tile named by the degree', () => {
+    it('is a tile named by the degree and the field of study', () => {
       renderTile(masters, 'fr')
 
-      expect(screen.getByRole('article')).toHaveAccessibleName('Master')
+      expect(screen.getByRole('article')).toHaveAccessibleName('Master, Informatique')
     })
 
-    it('shows the period and the location', () => {
+    it('shows the period in time elements and the location', () => {
       renderTile(masters, 'fr')
 
-      expect(screen.getByText('sept. 2015 – juin 2017 · Bretagne')).toBeInTheDocument()
+      const [start, end] = screen.getAllByRole('time')
+      expect(start).toHaveTextContent('sept. 2015')
+      expect(end).toHaveTextContent('juin 2017')
+      expect(screen.getByText('Bretagne')).toBeInTheDocument()
     })
 
-    it('shows the field of study, the grade and the description once expanded', async () => {
+    it('shows the grade and the description once expanded', async () => {
       renderTile(masters, 'fr')
 
-      await expand('Master')
+      await expand('Master, Informatique')
 
-      expect(screen.getByText('Informatique')).toBeVisible()
       expect(screen.getByText('Mention bien')).toBeVisible()
       expect(screen.getByText('Mémoire sur les compilateurs.')).toBeVisible()
     })
@@ -85,7 +111,7 @@ describe('EducationTile', () => {
     it('shows an ongoing degree as lasting until now', () => {
       renderTile(doctorate, 'fr')
 
-      expect(screen.getByText('oct. 2021 – aujourd’hui')).toBeInTheDocument()
+      expect(screen.getByRole('article')).toHaveTextContent('oct. 2021 – aujourd’hui')
     })
   })
 
@@ -103,7 +129,7 @@ describe('EducationTile', () => {
       description: { en: 'First paragraph.\n\nSecond paragraph.', fr: '' },
     })
 
-    await expand('Master’s degree')
+    await expand('Master’s degree, Computer Science')
 
     expect(screen.getByText('First paragraph.')).toBeVisible()
     expect(screen.getByText('Second paragraph.')).toBeVisible()
