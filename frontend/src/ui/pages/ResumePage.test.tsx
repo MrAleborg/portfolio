@@ -26,6 +26,12 @@ const sections = [
     firstInFrench: 'Master, Informatique',
   },
   {
+    en: 'Scientific communications',
+    fr: 'Communications scientifiques',
+    tiles: ['Fast compilers', 'Slow compilers'],
+    firstInFrench: 'Compilateurs rapides',
+  },
+  {
     en: 'Commitments',
     fr: 'Engagements',
     tiles: ['Treasurer', 'Mentor'],
