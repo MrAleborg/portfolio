@@ -26,6 +26,6 @@ Tests:
 
 When a test fails for an unexpected reason, find the root cause (debugging-and-error-recovery) before changing code.
 
-Commands (from `backend/`, inside the Pipenv env): `pytest`, `ruff check .`.
+Commands (from `backend/`, inside the Pipenv env): `pytest`, `ruff check .`, `ruff format --check .`, `python manage.py check`, `python manage.py makemigrations --check --dry-run` (CI runs them all).
 
 After changing code, run `graphify update .` from the repo root.
