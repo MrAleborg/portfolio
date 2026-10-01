@@ -130,3 +130,46 @@ def test_tag_name_may_be_shared_by_another_kind():
     Skill.objects.create(name_en="Python", name_fr="Python")
 
     Tool.objects.create(name_en="Python", name_fr="Python")
+
+
+@pytest.mark.parametrize(
+    "achievements",
+    [[], [{"en": "Won an award", "fr": "A remporté un prix"}]],
+    ids=["none", "one"],
+)
+def test_project_achievements_in_every_language_are_valid(achievements):
+    """The shape the API serves: a list of {en, fr} texts, possibly empty."""
+    project = Project(**ROWS[Project], achievements=achievements)
+
+    project.full_clean()
+
+
+@pytest.mark.parametrize(
+    "achievements",
+    [
+        "Won an award",
+        {"en": "Won an award", "fr": "A remporté un prix"},
+        ["Won an award"],
+        [{"en": "Won an award"}],
+        [{"en": "Won an award", "fr": ""}],
+        [{"en": "Won an award", "fr": 1}],
+        [{"en": "Won an award", "fr": "A remporté un prix", "de": "Preis"}],
+    ],
+    ids=[
+        "text",
+        "object",
+        "plain text item",
+        "missing language",
+        "blank language",
+        "not a text",
+        "unknown language",
+    ],
+)
+def test_full_clean_refuses_achievements_not_in_every_language(achievements):
+    """The Django admin edits the JSON by hand; the API's shape must still hold."""
+    project = Project(**ROWS[Project], achievements=achievements)
+
+    with pytest.raises(ValidationError) as error:
+        project.full_clean()
+
+    assert list(error.value.message_dict) == ["achievements"]
