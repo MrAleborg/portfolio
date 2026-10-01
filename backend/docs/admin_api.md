@@ -62,7 +62,7 @@ Send bodies as JSON (`Content-Type: application/json`).
 - **Relations are ids**, in reads and writes alike: `"experience": 3`,
   `"tags": [2, 9]`. Nothing is nested.
 - **No list filters.** Lists have the same order as on the public site:
-  `display_order`, then newest date. Tags are ordered by English name.
+  `display_order`, then newest date. Tags are ordered by kind, then English name.
 
 ## Writing rules
 

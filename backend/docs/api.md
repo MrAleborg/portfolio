@@ -42,8 +42,8 @@ owner's [profile](#profile-apiv1profile), which is in the `owner` app.
 - **Internal fields are never returned**: `is_visible`, `display_order`,
   `created_at`, `updated_at`.
 - **Ordering**: `display_order`, then newest first (`start_date` or
-  `issue_date`). Tags are ordered by English name. Nested lists follow the
-  same order.
+  `issue_date`). Tags are ordered by kind, then English name. Nested lists
+  follow the same order.
 - **Dates** are ISO 8601 strings (`"2024-03-01"`). A null `end_date` means the
   entry is ongoing, and `is_current` is then `true`.
 - **Translated texts** are returned in every language at once, so the
