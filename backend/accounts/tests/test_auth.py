@@ -348,3 +348,22 @@ def test_refresh_token_of_a_deleted_user_is_rejected(api_client):
     response = api_client.post(REFRESH_URL, {"refresh": refresh}, format="json")
 
     assert response.status_code == 401
+
+
+def test_login_throttle_counts_each_client_address_apart(api_client):
+    """Clients behind the proxy don't share an attempts counter."""
+    make_user()
+
+    def attempt(client_address):
+        return api_client.post(
+            CREATE_URL,
+            {"username": "admin", "password": "wrong"},
+            format="json",
+            HTTP_X_FORWARDED_FOR=f"x, {client_address}",
+        ).status_code
+
+    for _ in range(5):
+        attempt("198.51.100.1")
+
+    assert attempt("198.51.100.1") == 429
+    assert attempt("198.51.100.2") == 401
