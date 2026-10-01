@@ -48,6 +48,9 @@ interface Messages {
   avatarAlt: (fullName: string) => string
   /** Label of the button that switches to the other language, written in that language. */
   switchLanguage: string
+  /** Labels of the theme button, which name the theme it switches to. */
+  switchToDark: string
+  switchToLight: string
 }
 
 export const messages: Localized<Messages> = {
@@ -106,6 +109,8 @@ export const messages: Localized<Messages> = {
     ongoing: 'Present',
     avatarAlt: (fullName) => `Portrait of ${fullName}`,
     switchLanguage: 'Français',
+    switchToDark: 'Switch to dark mode',
+    switchToLight: 'Switch to light mode',
   },
   fr: {
     navLabel: 'Principale',
@@ -162,5 +167,7 @@ export const messages: Localized<Messages> = {
     avatarAlt: (fullName) =>
       `Portrait ${STARTS_WITH_VOWEL.test(fullName) ? 'd’' : 'de '}${fullName}`,
     switchLanguage: 'English',
+    switchToDark: 'Passer en mode sombre',
+    switchToLight: 'Passer en mode clair',
   },
 }
