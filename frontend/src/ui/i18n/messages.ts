@@ -34,7 +34,7 @@ export const messages: Localized<Messages> = {
     sectionUnavailable:
       'This section could not be loaded. Please try again later.',
     sectionEmpty: 'Nothing to show yet.',
-    pageError: 'Something went wrong. Please reload the page.',
+    pageError: 'This page could not be displayed. Reload to try again.',
     ongoing: 'Present',
     avatarAlt: (fullName) => `Portrait of ${fullName}`,
     switchLanguage: 'Français',
@@ -50,7 +50,7 @@ export const messages: Localized<Messages> = {
     sectionUnavailable:
       'Cette section n’a pas pu être chargée. Réessayez plus tard.',
     sectionEmpty: 'Rien à afficher pour le moment.',
-    pageError: 'Une erreur est survenue. Rechargez la page.',
+    pageError: 'Cette page n’a pas pu s’afficher. Rechargez pour réessayer.',
     ongoing: 'aujourd’hui',
     avatarAlt: (fullName) =>
       `Portrait ${STARTS_WITH_VOWEL.test(fullName) ? 'd’' : 'de '}${fullName}`,

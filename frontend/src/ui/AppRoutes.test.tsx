@@ -159,7 +159,7 @@ describe('AppRoutes', () => {
       })
 
       expect(await screen.findByRole('alert')).toHaveTextContent(
-        'Something went wrong. Please reload the page.',
+        'This page could not be displayed. Reload to try again.',
       )
       expect(navigation().getByRole('link', { name: 'Home' })).toBeInTheDocument()
     })
@@ -171,7 +171,7 @@ describe('AppRoutes', () => {
       })
 
       expect(await screen.findByRole('alert')).toHaveTextContent(
-        'Une erreur est survenue. Rechargez la page.',
+        'Cette page n’a pas pu s’afficher. Rechargez pour réessayer.',
       )
     })
 
