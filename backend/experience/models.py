@@ -28,7 +28,7 @@ def validate_achievements(value):
     if not isinstance(value, list) or not all(
         isinstance(item, dict)
         and item.keys() == set(LANGUAGES)
-        and all(isinstance(text, str) and text for text in item.values())
+        and all(isinstance(text, str) and text.strip() for text in item.values())
         for item in value
     ):
         raise ValidationError(
