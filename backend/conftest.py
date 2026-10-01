@@ -4,8 +4,11 @@ from rest_framework.test import APIClient
 
 
 @pytest.fixture(autouse=True)
-def clear_cache():
-    """Start every test with fresh throttle counters."""
+def fresh_cache(settings):
+    """Keep throttle counters in memory, and start every test with none."""
+    settings.CACHES = {
+        "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
+    }
     cache.clear()
 
 

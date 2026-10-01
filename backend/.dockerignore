@@ -4,6 +4,7 @@ db.sqlite3*
 staticfiles/
 
 # Development and test files
+.cache/
 .coverage
 .pytest_cache/
 .ruff_cache/

@@ -10,7 +10,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
-import tempfile
 from datetime import timedelta
 from pathlib import Path
 
@@ -142,10 +141,11 @@ if DATABASES["default"]["ENGINE"].endswith("sqlite3"):
 
 # Holds the login throttle counters. The default in-memory cache is per process,
 # so each gunicorn worker would count on its own; files are shared by all of them.
+# Keep CACHE_DIR private to the app's user: cache files are pickles.
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
-        "LOCATION": Path(tempfile.gettempdir()) / "portfolio-cache",
+        "LOCATION": env.path("CACHE_DIR", default=BASE_DIR / ".cache"),
     }
 }
 
@@ -251,7 +251,6 @@ DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="webmaster@localhost")
 SERVER_EMAIL = env("SERVER_EMAIL", default=DEFAULT_FROM_EMAIL)
 # Addresses that receive server error reports
 ADMINS = env("ADMINS")
-
 
 
 # Logging: Django's defaults, except that error reports go through the "server"

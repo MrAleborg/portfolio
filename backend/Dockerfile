@@ -15,6 +15,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     # Gunicorn worker count
     WEB_CONCURRENCY=3
 
+# Login throttle counters; /app isn't writable by the app user.
+ENV CACHE_DIR=/tmp/portfolio-cache
+
 WORKDIR /app
 
 COPY --from=requirements /build/requirements.txt .
