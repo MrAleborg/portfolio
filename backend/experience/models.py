@@ -291,3 +291,16 @@ class Specialization(CredentialEntry):
         related_name="specializations",
         blank=True,
     )
+
+
+class Hobby(BaseEntry):
+    name_en = models.CharField(max_length=255)
+    name_fr = models.CharField(max_length=255)
+
+    class Meta:
+        verbose_name_plural = "hobbies"
+        ordering = ["display_order", "name_en"]
+        constraints = [translated_together("description")]
+
+    def __str__(self):
+        return self.name_en

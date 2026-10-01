@@ -120,6 +120,18 @@ erDiagram
         datetime updated_at
     }
 
+    Hobby {
+        bigint id PK
+        varchar name_en
+        varchar name_fr
+        text description_en
+        text description_fr
+        int display_order
+        bool is_visible
+        datetime created_at
+        datetime updated_at
+    }
+
     Profile {
         smallint id PK "always 1"
         varchar full_name
@@ -133,6 +145,7 @@ erDiagram
 ```
 
 `Profile` stands alone: it describes the owner of the portfolio, not an entry.
+`Hobby` stands alone too: it has no relationship with the other entries.
 
 Many-to-many relationships are stored in join tables that Django creates
 automatically (`experience_project_tags`, `experience_certification_tags`,
@@ -160,7 +173,7 @@ model gets its own copy of the fields.
 
 | Base | Fields | Used by |
 |---|---|---|
-| `BaseEntry` | `description_en`, `description_fr`, `display_order`, `is_visible`, `created_at`, `updated_at` | every entry below |
+| `BaseEntry` | `description_en`, `description_fr`, `display_order`, `is_visible`, `created_at`, `updated_at` | `Hobby`, and every entry below |
 | `DateRangeEntry` (extends `BaseEntry`) | `start_date`, `end_date` | `Education`, `ProfessionalExperience`, `Project` |
 | `CredentialEntry` (extends `BaseEntry`) | `name_en`, `name_fr`, `issuer`, `issue_date`, `expiration_date`, `credential_id`, `credential_url` | `Certification`, `Specialization` |
 

@@ -5,6 +5,7 @@ from experience.admin_api import serializers
 from experience.models import (
     Certification,
     Education,
+    Hobby,
     Methodology,
     ProfessionalExperience,
     Project,
@@ -58,3 +59,8 @@ class ToolViewSet(AdminViewSet):
 class MethodologyViewSet(AdminViewSet):
     queryset = Methodology.objects.all()
     serializer_class = serializers.MethodologySerializer
+
+
+class HobbyViewSet(AdminViewSet):
+    queryset = Hobby.objects.all()
+    serializer_class = serializers.HobbySerializer

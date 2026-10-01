@@ -19,6 +19,7 @@ from django.urls import reverse
 from experience.models import (
     Certification,
     Education,
+    Hobby,
     Mission,
     ProfessionalExperience,
     Project,
@@ -48,6 +49,7 @@ CONTENT_MODELS = [
     Certification,
     Specialization,
     Tag,
+    Hobby,
     Profile,
 ]
 

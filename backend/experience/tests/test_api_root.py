@@ -18,6 +18,7 @@ COLLECTIONS = [
     "skills",
     "tools",
     "methodologies",
+    "hobbies",
 ]
 
 

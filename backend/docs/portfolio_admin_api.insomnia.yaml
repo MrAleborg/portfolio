@@ -137,7 +137,7 @@ collection:
       created: 1790700000000
       modified: 1790700000000
       isPrivate: false
-      description: Lists the 8 collections.
+      description: Lists the 9 collections.
       sortKey: 4
     method: GET
     authentication:
@@ -158,8 +158,8 @@ collection:
           insomnia.expect(insomnia.response.code).to.equal(200);
         });
         const body = insomnia.response.json();
-        insomnia.test("Lists the 8 collections", () => {
-          insomnia.expect(body).to.have.all.keys("education", "professional-experiences", "projects", "certifications", "specializations", "skills", "tools", "methodologies");
+        insomnia.test("Lists the 9 collections", () => {
+          insomnia.expect(body).to.have.all.keys("education", "professional-experiences", "projects", "certifications", "specializations", "skills", "tools", "methodologies", "hobbies");
         });
   - url: '{{ _.base_url }}/api/v1/admin/'
     name: Admin root without token → 401
@@ -4083,12 +4083,541 @@ collection:
         insomnia.test("Explains why", () => {
           insomnia.expect(body).to.have.property('detail');
         });
-- name: 10. Cleanup (deletes)
+- name: 10. Hobbies
+  meta:
+    id: fld_9c82f934a3d19c847b856f4dde5d572f
+    created: 1790700000000
+    modified: 1790700000000
+    sortKey: 10
+    description: ''
+  children:
+  - url: '{{ _.base_url }}/api/v1/admin/hobbies/'
+    name: Create hobby → 201
+    meta:
+      id: req_b83eecfb5b98f7f5da6f14502baf2644
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'Response has every field, including display_order, is_visible and timestamps.'
+      sortKey: 107
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "name": {"en": "Climbing", "fr": "Escalade"},
+          "description": {"en": "Created from Insomnia.", "fr": "Created from Insomnia."},
+          "display_order": 0,
+          "is_visible": true
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 201", () => {
+          insomnia.expect(insomnia.response.code).to.equal(201);
+        });
+        const body = insomnia.response.json();
+        insomnia.environment.set('hobby_id', body.id);
+        insomnia.test("Returns the internal fields", () => {
+          insomnia.expect(body).to.include.keys('display_order', 'is_visible', 'created_at', 'updated_at');
+        });
+        insomnia.test("Texts are in every language", () => {
+          insomnia.expect(body.name).to.eql({"en": "Climbing", "fr": "Escalade"});
+          insomnia.expect(body.description).to.eql({"en": "Created from Insomnia.", "fr": "Created from Insomnia."});
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/hobbies/'
+    name: Create with required fields only → 201
+    meta:
+      id: req_33ff69ed636ebc5e4b26d58c73244913
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'is_visible true, display_order 0, empty description.'
+      sortKey: 108
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "name": {"en": "Chess", "fr": "Échecs"}
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 201", () => {
+          insomnia.expect(insomnia.response.code).to.equal(201);
+        });
+        const body = insomnia.response.json();
+        insomnia.environment.set('second_hobby_id', body.id);
+        insomnia.test("Optional fields take their defaults", () => {
+          insomnia.expect(body.is_visible).to.eql(true);
+          insomnia.expect(body.display_order).to.eql(0);
+          insomnia.expect(body.description).to.eql({"en": "", "fr": ""});
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/hobbies/'
+    name: Create without a name → 400
+    meta:
+      id: req_0b5a1958b3b8b5f9403e0dd10db392eb
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'Error on name.'
+      sortKey: 109
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {}
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 400", () => {
+          insomnia.expect(insomnia.response.code).to.equal(400);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Names the missing field", () => {
+          insomnia.expect(body).to.have.all.keys("name");
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/hobbies/'
+    name: Create with a name missing its French text → 400
+    meta:
+      id: req_1ba999a418f3c45e08756044382d93cf
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'Every language must be filled in; the error names the missing one: {"name": {"fr": ["This field may not be blank."]}}.'
+      sortKey: 110
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "name": {"en": "Climbing", "fr": ""}
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 400", () => {
+          insomnia.expect(insomnia.response.code).to.equal(400);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Names the missing language", () => {
+          insomnia.expect(body).to.eql({"name": {"fr": ["This field may not be blank."]}});
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/hobbies/'
+    name: Create with a description in one language only → 400
+    meta:
+      id: req_13179f7fdb857782ba17fb514ce210a2
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'An optional text is filled in every language or left empty in all.'
+      sortKey: 111
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "name": {"en": "Climbing", "fr": "Escalade"},
+          "description": {"en": "Bouldering", "fr": ""}
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 400", () => {
+          insomnia.expect(insomnia.response.code).to.equal(400);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Names the empty language", () => {
+          insomnia.expect(body).to.eql({"description": {"fr": ["Fill in every language, or leave them all empty."]}});
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/hobbies/'
+    name: List (hidden hobbies included) → 200
+    meta:
+      id: req_94f3aa9573a29358ba68162f0b4f8004
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 112
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 200", () => {
+          insomnia.expect(insomnia.response.code).to.equal(200);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Returns a list", () => {
+          insomnia.expect(body).to.be.an('array');
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/hobbies/{{ _.hobby_id }}/'
+    name: Retrieve → 200
+    meta:
+      id: req_5ba6e29520c8fb5bedb8157aa3949c00
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 113
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 200", () => {
+          insomnia.expect(insomnia.response.code).to.equal(200);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Returns the created hobby", () => {
+          insomnia.expect(body.name).to.eql({"en": "Climbing", "fr": "Escalade"});
+          insomnia.expect(body).to.include.keys('display_order', 'is_visible', 'created_at', 'updated_at');
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/hobbies/{{ _.hobby_id }}/'
+    name: Update (PUT) → 200
+    meta:
+      id: req_9f6c49e0ad5f536a190b93a97fab7b7a
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'The omitted description keeps its value.'
+      sortKey: 114
+    method: PUT
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "name": {"en": "Bouldering", "fr": "Bloc"}
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 200", () => {
+          insomnia.expect(insomnia.response.code).to.equal(200);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Sent fields are updated", () => {
+          insomnia.expect(body.name).to.eql({"en": "Bouldering", "fr": "Bloc"});
+        });
+        insomnia.test("Omitted optional fields keep their value", () => {
+          insomnia.expect(body.description).to.eql({"en": "Created from Insomnia.", "fr": "Created from Insomnia."});
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/hobbies/{{ _.hobby_id }}/'
+    name: PUT without a name → 400
+    meta:
+      id: req_639aaa879b6fdded0469150f57822b12
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'Error on name.'
+      sortKey: 115
+    method: PUT
+    body:
+      mimeType: application/json
+      text: |-
+        {}
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 400", () => {
+          insomnia.expect(insomnia.response.code).to.equal(400);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Names the missing field", () => {
+          insomnia.expect(body).to.have.all.keys("name");
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/hobbies/{{ _.hobby_id }}/'
+    name: Hide (PATCH is_visible false) → 200
+    meta:
+      id: req_39a42316f6dcf5f1adf406e7d6a545e4
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'Only the sent fields change.'
+      sortKey: 116
+    method: PATCH
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "is_visible": false,
+          "display_order": 5
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 200", () => {
+          insomnia.expect(insomnia.response.code).to.equal(200);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Is hidden and moved", () => {
+          insomnia.expect(body.is_visible).to.eql(false);
+          insomnia.expect(body.display_order).to.eql(5);
+        });
+  - url: '{{ _.base_url }}/api/v1/experience/hobbies/{{ _.hobby_id }}/'
+    name: Public detail of the hidden hobby → 404
+    meta:
+      id: req_12eab8313aa2db0bd24d922b41360d16
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 117
+    method: GET
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 404", () => {
+          insomnia.expect(insomnia.response.code).to.equal(404);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Explains why", () => {
+          insomnia.expect(body).to.have.property('detail');
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/hobbies/{{ _.hobby_id }}/'
+    name: Admin retrieve of the hidden hobby → 200
+    meta:
+      id: req_61ca6ce50ada59dd19bd8ea77278ee61
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'The admin API still reaches it.'
+      sortKey: 118
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 200", () => {
+          insomnia.expect(insomnia.response.code).to.equal(200);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Is still hidden", () => {
+          insomnia.expect(body.is_visible).to.eql(false);
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/hobbies/{{ _.hobby_id }}/'
+    name: Show again → 200
+    meta:
+      id: req_1161c8b800c8a4bc3f959273425cd3d0
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 119
+    method: PATCH
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "is_visible": true
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 200", () => {
+          insomnia.expect(insomnia.response.code).to.equal(200);
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/hobbies/999999/'
+    name: Retrieve unknown id → 404
+    meta:
+      id: req_4bb2947cdf66cddbb0449922b2c7585f
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 120
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 404", () => {
+          insomnia.expect(insomnia.response.code).to.equal(404);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Explains why", () => {
+          insomnia.expect(body).to.have.property('detail');
+        });
+- name: 11. Cleanup (deletes)
   meta:
     id: fld_f0b429f1315c54ff8a07f816db612884
     created: 1790700000000
     modified: 1790700000000
-    sortKey: 10
+    sortKey: 11
     description: Removes what the collection created. The collection can then be run again from the start.
   children:
   - url: '{{ _.base_url }}/api/v1/admin/specializations/{{ _.specialization_id }}/'
@@ -4374,6 +4903,91 @@ collection:
       isPrivate: false
       description: ''
       sortKey: 105
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 404", () => {
+          insomnia.expect(insomnia.response.code).to.equal(404);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Explains why", () => {
+          insomnia.expect(body).to.have.property('detail');
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/hobbies/{{ _.hobby_id }}/'
+    name: Delete hobby → 204
+    meta:
+      id: req_17a06f046207779e3d2bb8b5daee8394
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 105.1
+    method: DELETE
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 204", () => {
+          insomnia.expect(insomnia.response.code).to.equal(204);
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/hobbies/{{ _.second_hobby_id }}/'
+    name: Delete second hobby → 204
+    meta:
+      id: req_e4fef499f48e425a53c390ba31aa1628
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 105.2
+    method: DELETE
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 204", () => {
+          insomnia.expect(insomnia.response.code).to.equal(204);
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/hobbies/{{ _.hobby_id }}/'
+    name: Deleted hobby → 404
+    meta:
+      id: req_eaa122cade6c63200cfbace1e34e2f06
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 105.3
     method: GET
     authentication:
       type: bearer

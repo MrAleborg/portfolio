@@ -16,6 +16,7 @@ from experience.languages import LANGUAGES
 from experience.models import (
     Certification,
     Education,
+    Hobby,
     ProfessionalExperience,
     Project,
     Skill,
@@ -56,6 +57,7 @@ ROWS = {
         "issuer": "Python Institute",
         "issue_date": date(2024, 1, 1),
     },
+    Hobby: {"name_en": "Chess", "name_fr": "Échecs"},
 }
 OPTIONAL_TRANSLATIONS = [
     (Education, "field_of_study"),

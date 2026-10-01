@@ -3,6 +3,7 @@ from django.contrib import admin
 from experience.models import (
     Certification,
     Education,
+    Hobby,
     Mission,
     ProfessionalExperience,
     Project,
@@ -27,6 +28,7 @@ admin.site.register(Education)
 admin.site.register(ProfessionalExperience)
 admin.site.register(Certification)
 admin.site.register(Specialization)
+admin.site.register(Hobby)
 
 
 @admin.register(Tag)
