@@ -44,15 +44,28 @@ jobs:
           runs=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$COMMIT&event=push" \
             --jq '[.workflow_runs[] | select(.name == "Backend CI" or .name == "Frontend CI")]')
           echo "$runs" | jq -r '.[] | "\(.name): \(.status) \(.conclusion // "")"'
+          ready=true
           if [ "$(echo "$runs" | jq '[.[] | select(.status != "completed")] | length')" != 0 ]; then
             echo "::notice::Another CI run is still going; it will trigger the deploy."
-            echo "ready=false" >> "$GITHUB_OUTPUT"
+            ready=false
           elif [ "$(echo "$runs" | jq '[.[] | select(.conclusion != "success")] | length')" != 0 ]; then
             echo "::warning::A CI run failed for this commit; not deploying."
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "ready=true" >> "$GITHUB_OUTPUT"
+            ready=false
+          elif [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+            # The commit may have no CI run at all (CI only runs when its
+            # paths change), which proves nothing: also require the latest
+            # completed run of each CI on main to have passed.
+            for workflow in backend-ci.yml frontend-ci.yml; do
+              conclusion=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/$workflow/runs?branch=main&status=completed&per_page=1" \
+                --jq '.workflow_runs[0].conclusion')
+              echo "$workflow, latest completed run on main: $conclusion"
+              if [ "$conclusion" != success ]; then
+                echo "::warning::The latest $workflow run on main did not succeed; not deploying."
+                ready=false
+              fi
+            done
           fi
+          echo "ready=$ready" >> "$GITHUB_OUTPUT"
 
   build:
     needs: check

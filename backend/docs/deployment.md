@@ -280,7 +280,9 @@ workflow ignores a run started from another branch).
    on only once every CI run for the commit has passed. While the other one
    is still running, this run stops and the other one's completion triggers
    the deploy. If one failed, nothing is deployed. A run started by hand goes
-   through the same check.
+   through the same check, and also needs the latest completed run of each CI
+   on `main` to have passed (a commit can have no CI run at all, since CI only
+   runs when its paths change).
 2. **build**: builds the `backend` and `frontend` images and pushes them to
    GHCR, tagged `sha-<commit>`. There is no `latest` tag: a bad build can't be
    pulled by accident.
