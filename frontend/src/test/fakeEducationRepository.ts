@@ -1,5 +1,6 @@
 import type { Education } from '@/domain/education/Education'
 import type { EducationRepository } from '@/domain/education/EducationRepository'
+import { failing, pending, resolving } from '@/test/fakeList'
 
 /** A finished degree with every field filled in. */
 export const masters: Education = {
@@ -30,21 +31,15 @@ export const doctorate: Education = {
 
 /** A repository that answers with the given entries. */
 export function fakeEducationRepository(entries: Education[] = [masters, doctorate]) {
-  return {
-    list: vi.fn(() => Promise.resolve(entries)),
-  } satisfies EducationRepository
+  return { list: resolving(entries) } satisfies EducationRepository
 }
 
 /** A repository whose request fails. */
 export function failingEducationRepository() {
-  return {
-    list: vi.fn(() => Promise.reject(new Error('Network error'))),
-  } satisfies EducationRepository
+  return { list: failing<Education>() } satisfies EducationRepository
 }
 
 /** A repository whose request never answers. */
 export function pendingEducationRepository() {
-  return {
-    list: vi.fn(() => new Promise<Education[]>(() => {})),
-  } satisfies EducationRepository
+  return { list: pending<Education>() } satisfies EducationRepository
 }

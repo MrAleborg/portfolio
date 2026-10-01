@@ -22,4 +22,25 @@ describe('TileList', () => {
     expect(within(listItems[0]!).getByRole('article')).toHaveAccessibleName('First')
     expect(within(listItems[1]!).getByRole('article')).toHaveAccessibleName('Second')
   })
+
+  it('lays the tiles out in one column only when asked', () => {
+    const { rerender } = render(
+      <TileList
+        items={items}
+        getKey={(item) => item.id}
+        renderTile={(item) => <Tile title={item.name} />}
+      />,
+    )
+    expect(screen.getByRole('list')).not.toHaveClass('tile-list--single')
+
+    rerender(
+      <TileList
+        singleColumn
+        items={items}
+        getKey={(item) => item.id}
+        renderTile={(item) => <Tile title={item.name} />}
+      />,
+    )
+    expect(screen.getByRole('list')).toHaveClass('tile-list--single')
+  })
 })

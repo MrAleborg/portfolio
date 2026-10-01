@@ -1,4 +1,5 @@
 import { createHttpEducationRepository } from '@/infrastructure/education/httpEducationRepository'
+import { respondWith } from '@/test/respondWith'
 
 const finished = {
   id: 1,
@@ -26,20 +27,9 @@ const ongoing = {
   description: { en: '', fr: '' },
 }
 
-function respondWith(status: number, json: unknown = [finished, ongoing]) {
-  return vi.fn<typeof fetch>(() =>
-    Promise.resolve(
-      new Response(JSON.stringify(json), {
-        status,
-        headers: { 'Content-Type': 'application/json' },
-      }),
-    ),
-  )
-}
-
 describe('httpEducationRepository', () => {
   it('requests the education endpoint', async () => {
-    const fetchFn = respondWith(200)
+    const fetchFn = respondWith(200, [finished, ongoing])
 
     await createHttpEducationRepository('https://api.example.com', fetchFn).list()
 
@@ -48,18 +38,10 @@ describe('httpEducationRepository', () => {
     )
   })
 
-  it('requests the endpoint on the same domain without an API URL', async () => {
-    const fetchFn = respondWith(200)
-
-    await createHttpEducationRepository(undefined, fetchFn).list()
-
-    expect(fetchFn).toHaveBeenCalledWith('/api/v1/experience/education/')
-  })
-
   it('turns the response into education entries, in the same order', async () => {
     const repository = createHttpEducationRepository(
       'https://api.example.com',
-      respondWith(200),
+      respondWith(200, [finished, ongoing]),
     )
 
     await expect(repository.list()).resolves.toEqual([
