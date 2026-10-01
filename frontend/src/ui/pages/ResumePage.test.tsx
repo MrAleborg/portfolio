@@ -1,4 +1,5 @@
 import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import type { Locale } from '@/domain/i18n/Locale'
 import {
   failingEducationRepository,
@@ -105,11 +106,39 @@ describe('ResumePage', () => {
     expect(await section.findByRole('article', { name: firstInFrench })).toBeInTheDocument()
   })
 
-  it('shows the expertise as domains, then categories, then tags, in API order', async () => {
+  /** The Expertise section, once loaded, with the domain of the given name expanded. */
+  async function expandedExpertise(domain: string) {
+    const expertise = within(screen.getByRole('region', { name: 'Expertise' }))
+    await userEvent.setup().click(await expertise.findByRole('button', { name: domain }))
+    return expertise
+  }
+
+  it('shows each domain of the expertise as a tile, in API order', async () => {
     renderPage()
 
     const expertise = within(screen.getByRole('region', { name: 'Expertise' }))
-    expect(await expertise.findByRole('heading', { level: 3, name: 'Engineering' })).toBeInTheDocument()
+    const articles = await expertise.findAllByRole('article')
+    expect(articles).toHaveLength(1)
+    expect(articles[0]).toHaveAccessibleName('Engineering')
+  })
+
+  it('hides the categories of a domain until its title is clicked', async () => {
+    renderPage()
+
+    const expertise = within(screen.getByRole('region', { name: 'Expertise' }))
+    await expertise.findByRole('button', { name: 'Engineering' })
+    expect(expertise.queryByRole('list', { name: 'Languages' })).not.toBeInTheDocument()
+
+    const expanded = await expandedExpertise('Engineering')
+
+    expect(expanded.getByRole('list', { name: 'Languages' })).toBeVisible()
+  })
+
+  it('shows the categories and tags of an expanded domain in API order', async () => {
+    renderPage()
+
+    const expertise = await expandedExpertise('Engineering')
+
     const labels = ['Languages', 'Tooling'].map((name) => expertise.getByText(name))
     expect(labels[0]?.compareDocumentPosition(labels[1] as Node)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
@@ -126,8 +155,9 @@ describe('ResumePage', () => {
   it('shows the note of a tag after its name when it has one', async () => {
     renderPage()
 
-    const expertise = within(screen.getByRole('region', { name: 'Expertise' }))
-    const tooling = within(await expertise.findByRole('list', { name: 'Tooling' }))
+    const expertise = await expandedExpertise('Engineering')
+
+    const tooling = within(expertise.getByRole('list', { name: 'Tooling' }))
     expect(tooling.getAllByRole('listitem').map((chip) => chip.textContent)).toEqual([
       'Git',
       'Claude Code · used daily for agentic coding',
@@ -137,8 +167,9 @@ describe('ResumePage', () => {
   it('hides the separator before a note from assistive technology', async () => {
     renderPage()
 
-    const expertise = within(screen.getByRole('region', { name: 'Expertise' }))
-    const tooling = within(await expertise.findByRole('list', { name: 'Tooling' }))
+    const expertise = await expandedExpertise('Engineering')
+
+    const tooling = within(expertise.getByRole('list', { name: 'Tooling' }))
     const chip = within(tooling.getByText(/Claude Code/))
     expect(chip.getByText('·')).toHaveAttribute('aria-hidden', 'true')
     expect(chip.getByText('used daily for agentic coding')).not.toHaveAttribute('aria-hidden')
@@ -147,8 +178,8 @@ describe('ResumePage', () => {
   it('shows the domains, categories, tags and notes of the expertise in French', async () => {
     renderPage({}, 'fr')
 
-    const expertise = within(screen.getByRole('region', { name: 'Expertise' }))
-    expect(await expertise.findByRole('heading', { level: 3, name: 'Ingénierie' })).toBeInTheDocument()
+    const expertise = await expandedExpertise('Ingénierie')
+
     const languages = within(expertise.getByRole('list', { name: 'Langages' }))
     expect(languages.getAllByRole('listitem').map((chip) => chip.textContent)).toEqual([
       'Python',
@@ -163,8 +194,8 @@ describe('ResumePage', () => {
   it('hides the categories without tags and the domains without categories', async () => {
     renderPage()
 
-    const expertise = within(screen.getByRole('region', { name: 'Expertise' }))
-    await expertise.findByRole('heading', { level: 3, name: 'Engineering' })
+    const expertise = await expandedExpertise('Engineering')
+
     expect(expertise.getAllByRole('heading', { level: 3 })).toHaveLength(1)
     expect(expertise.queryByText('Unused')).not.toBeInTheDocument()
     expect(expertise.queryByRole('heading', { name: 'Management' })).not.toBeInTheDocument()
