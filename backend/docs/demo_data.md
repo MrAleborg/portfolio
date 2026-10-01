@@ -107,9 +107,11 @@ Entries are listed by their English text.
 | | 3 | Python Developer | Has an `expiration_date` |
 | | 4 | Hidden certification | **Hidden** |
 | Specialization | 1 | Agile path | Certifications 1, 2 and the hidden 4 |
-| Skill | 1, 2 | Python, API design | |
+| Skill | 1, 2 | Python, API design | Python has a note and sits in two categories |
 | Tool | 3, 4, 5 | Django, React, Docker | |
 | Methodology | 6, 7 | Scrum, TDD | |
+| Tag category | 1 | Software engineering | Domain: categories 2 Backend & APIs (Python, Django, API design), 3 Frontend (React), 4 Delivery practices (TDD, Scrum, Docker) |
+| | 5 | Data | Domain: categories 6 Data pipelines (Python, Docker), 7 Data products (Django, API design) |
 | Hobby | 1 | Climbing | With a description |
 | | 2 | Chess | |
 | | 3 | Hidden hobby | **Hidden** |
@@ -148,6 +150,8 @@ relative to `http://localhost:8000/api/v1/experience/`; see
 | `skills/3/` | `404`: Django is a tool |
 | `methodologies/6/` | Certifications 2 then 1, not the hidden one |
 | `certifications/?tag=6` | Certifications 2, 1 |
+| `tag-categories/` | Software engineering, then Data. Python under Backend & APIs and Data pipelines, with its note; Backend & APIs lists API design, Django, Python |
+| `tag-categories/2/` | `404`: Backend & APIs is a category, not a domain |
 | `certifications/1/` | `specializations: [{"id": 1, "name": {"en": "Agile path", "fr": "Parcours agile"}}]` |
 | `specializations/1/` | Certifications 2, 1, not the hidden one |
 | `hobbies/` | Chess, then Climbing (same `display_order`, so by English name). Not 3 |

@@ -39,6 +39,7 @@ same answers.
 | `certifications/` | Certifications |
 | `specializations/` | Specializations (paths of certifications) |
 | `skills/`, `tools/`, `methodologies/` | Tags of each kind |
+| `tag-categories/` | Domains and categories that group tags |
 | `hobbies/` | Hobbies and interests |
 | `commitments/` | Associations and events the owner took part in |
 | `scientific-communications/` | Talks, posters, papers and articles |
@@ -115,7 +116,7 @@ Send bodies as JSON (`Content-Type: application/json`).
 ## Resources
 
 The examples show a detail response; lists return arrays of the same objects.
-Every entry except tags also has `display_order`, `is_visible`, `created_at`
+Every entry except tags and tag categories also has `display_order`, `is_visible`, `created_at`
 and `updated_at`, left out of the examples below:
 
 ```json
@@ -240,10 +241,16 @@ of the certifications on its path.
 
 ### `skills/`, `tools/`, `methodologies/`
 
-A tag only has a `name` (required); its kind is the route it is created on.
+A tag has a `name` (required), the ids of its `categories` and an optional
+`note`; its kind is the route it is created on.
 
 ```json
-{"id": 12, "name": {"en": "API design", "fr": "Conception d'API"}}
+{
+  "id": 12,
+  "name": {"en": "API design", "fr": "Conception d'API"},
+  "categories": [3],
+  "note": {"en": "", "fr": ""}
+}
 ```
 
 - A name is unique within its kind, in each language: a duplicate is a `400`
@@ -253,6 +260,28 @@ A tag only has a `name` (required); its kind is the route it is created on.
 - Tag ids are shared across kinds, but each route only reaches its own kind:
   a tool's id under `skills/` is a `404`.
 - Deleting a tag removes it from the projects and certifications that used it.
+- `categories` only takes categories, not domains: a domain's id is a `400`
+  on `categories`. Left out on creation, it is empty.
+- `note` is free text shown next to the tag in the Expertise section (e.g.
+  "used daily for agentic coding"), translated like any optional text.
+
+### `tag-categories/`
+
+Domains (`"parent": null`) and the categories under them, which hold the tags
+(see [database.md](database.md#tag-categories-domains-and-categories)). Lists
+are ordered by `position`, then English name.
+
+```json
+{"id": 3, "name": {"en": "GenAI & LLMs", "fr": "IA générative et LLM"}, "parent": 1, "position": 0}
+```
+
+- `name` is required; `parent` (default `null`) and `position` (default `0`)
+  are optional.
+- The tree is two levels deep. These are a `400` on `parent`: a parent that is
+  not a domain, a parent on a domain that has categories, a category as its
+  own parent, and `null` on a category that holds tags.
+- Deleting a domain deletes its categories. Deleting a category removes it
+  from its tags; the tags stay.
 
 ### `hobbies/`
 
