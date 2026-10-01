@@ -2,8 +2,23 @@
 # then reload with: sudo systemctl reload caddy
 # Caddy gets and renews the HTTPS certificate for each domain by itself.
 
+# Security headers for both sites. No includeSubDomains in HSTS: the server
+# hosts other sites. The "?" keeps the HSTS header Django sends (its duration
+# starts low and is raised later: see "HTTPS" in backend/docs/deployment.md);
+# responses without one get this. The frontend's CSP comes from its nginx,
+# don't repeat it here.
+(security_headers) {
+	header ?Strict-Transport-Security "max-age=31536000"
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		X-Frame-Options DENY
+	}
+}
+
 # Backend. The port is BACKEND_PORT from .env (default 8000).
 api.example.com {
+	import security_headers
 	encode zstd gzip
 	reverse_proxy 127.0.0.1:8000
 }
@@ -11,6 +26,7 @@ api.example.com {
 # Frontend. The port is FRONTEND_PORT from .env (default 8080).
 # /api/ goes to the backend, so the site calls the API on its own domain.
 example.com {
+	import security_headers
 	encode zstd gzip
 	handle /api/* {
 		reverse_proxy 127.0.0.1:8000

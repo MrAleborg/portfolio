@@ -174,6 +174,11 @@ and 8080):
 - `example.com` proxies `/api/*` to the backend and everything else to the
   frontend.
 - `www.example.com` redirects to `example.com`.
+- Both sites get the `security_headers` snippet: `X-Content-Type-Options`,
+  `Referrer-Policy`, `X-Frame-Options`, and an HSTS header of one year without
+  `includeSubDomains` (the server hosts other sites) when the response has none
+  yet. Django's own HSTS header, sent on the backend's responses, wins. The
+  frontend's CSP is set by its nginx.
 
 Then check and reload:
 
