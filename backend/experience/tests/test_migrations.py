@@ -9,6 +9,7 @@ from datetime import date
 import pytest
 from django.db import connection
 from django.db.migrations.executor import MigrationExecutor
+from django.db.migrations.loader import MigrationLoader
 
 from experience.models import Education, Project, Tag
 
@@ -200,7 +201,8 @@ def test_rolling_back_to_the_first_schema_and_forward_keeps_the_content(migrate)
     assert (education.degree, education.description) == ("MSc", "About")
     assert old_apps.get_model("experience", "Tag").objects.get().name == "Python"
 
-    migrate("0008_achievements_validator")
+    _, latest = MigrationLoader(connection).graph.leaf_nodes("experience")[0]
+    migrate(latest)
 
     project = Project.objects.get()
     assert (project.title_en, project.title_fr) == ("Portfolio", "Portfolio")
