@@ -51,6 +51,8 @@ interface Messages {
   /** Labels of the theme button, which name the theme it switches to. */
   switchToDark: string
   switchToLight: string
+  /** Label of the button that opens the theme and language switches. */
+  settings: string
 }
 
 export const messages: Localized<Messages> = {
@@ -111,6 +113,7 @@ export const messages: Localized<Messages> = {
     switchLanguage: 'Français',
     switchToDark: 'Switch to dark mode',
     switchToLight: 'Switch to light mode',
+    settings: 'Settings',
   },
   fr: {
     navLabel: 'Principale',
@@ -169,5 +172,6 @@ export const messages: Localized<Messages> = {
     switchLanguage: 'English',
     switchToDark: 'Passer en mode sombre',
     switchToLight: 'Passer en mode clair',
+    settings: 'Préférences',
   },
 }

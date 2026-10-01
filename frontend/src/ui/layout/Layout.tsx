@@ -1,7 +1,6 @@
 import { NavLink, Outlet, useLocation } from 'react-router'
 import { ErrorBoundary } from '@/ui/components/ErrorBoundary'
-import { LanguageSwitch } from '@/ui/components/LanguageSwitch'
-import { ThemeSwitch } from '@/ui/components/ThemeSwitch'
+import { SettingsMenu } from '@/ui/components/SettingsMenu'
 import { messages } from '@/ui/i18n/messages'
 import { useLocale } from '@/ui/i18n/useLocale'
 import './Layout.css'
@@ -19,10 +18,7 @@ export function Layout() {
           </NavLink>
           <NavLink to="/resume">{text.navResume}</NavLink>
         </nav>
-        <div className="layout__switches">
-          <ThemeSwitch />
-          <LanguageSwitch />
-        </div>
+        <SettingsMenu />
       </header>
       <main className="layout__main">
         {/* Keyed by path, so leaving a failed page shows the next one. */}

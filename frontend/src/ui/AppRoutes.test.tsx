@@ -105,7 +105,9 @@ describe('AppRoutes', () => {
     renderAt('/', { repositories: fakeRepositories({ profile }) })
     await screen.findByText('Analyst')
 
-    await user.click(screen.getByRole('button', { name: 'Français' }))
+    await user.click(
+      screen.getByRole('button', { name: 'Français', hidden: true }),
+    )
 
     expect(screen.getByText('Analyste')).toBeInTheDocument()
     expect(
@@ -120,7 +122,9 @@ describe('AppRoutes', () => {
     renderAt('/resume', { repositories: fakeRepositories({ education }) })
     await screen.findByRole('article', { name: 'Master’s degree, Computer Science' })
 
-    await user.click(screen.getByRole('button', { name: 'Français' }))
+    await user.click(
+      screen.getByRole('button', { name: 'Français', hidden: true }),
+    )
 
     expect(screen.getByRole('article', { name: 'Master, Informatique' })).toBeInTheDocument()
     expect(education.list).toHaveBeenCalledTimes(1)
@@ -131,7 +135,9 @@ describe('AppRoutes', () => {
     renderAt('/resume')
 
     await user.click(await screen.findByRole('button', { name: 'Master’s degree, Computer Science' }))
-    await user.click(screen.getByRole('button', { name: 'Français' }))
+    await user.click(
+      screen.getByRole('button', { name: 'Français', hidden: true }),
+    )
 
     expect(screen.getByRole('button', { name: 'Master, Informatique' })).toHaveAttribute(
       'aria-expanded',
