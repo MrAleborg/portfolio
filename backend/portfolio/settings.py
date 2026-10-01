@@ -198,8 +198,9 @@ STORAGES = {
 # https://django-rest-framework-simplejwt.readthedocs.io/en/latest/settings.html
 
 REST_FRAMEWORK = {
-    # The public API stays open (default permission AllowAny); a JWT is only
-    # needed on the admin routes.
+    # Admin only by default: the public API views declare AllowAny themselves,
+    # so a new view is never open by accident.
+    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAdminUser"],
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
