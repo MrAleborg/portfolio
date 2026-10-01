@@ -1,5 +1,5 @@
 # graphify
-- **graphify** (`.claude/skills/graphify/SKILL.md`) - any input to knowledge graph. Trigger: `/graphify`
+- **graphify** (`.claude/skills/graphify/SKILL.md`, not tracked: install it with `graphify install --platform claude`) - any input to knowledge graph. Trigger: `/graphify`
 When the user types `/graphify`, use the installed graphify skill or instructions before doing anything else.
 
 # Spec and plan (main session)
