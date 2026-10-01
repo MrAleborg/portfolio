@@ -19,8 +19,8 @@
 .tag {
   padding: 0.125rem 0.5rem;
   font-size: 0.75rem;
-  color: var(--tag);
-  background: transparent;
+  color: #fff;
+  background: var(--tag);
   border: 1px solid var(--tag);
   border-radius: 999px;
   overflow-wrap: anywhere;
@@ -29,8 +29,4 @@
 /* A chip with a note can wrap onto several lines: a pill would turn into an oval. */
 .tag:has(.tag__note) {
   border-radius: 0.75rem;
-}
-
-.tag__note {
-  color: var(--text);
 }

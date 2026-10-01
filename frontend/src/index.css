@@ -1,12 +1,13 @@
 :root {
-  /* Flexoki (stephango.com/flexoki). Text, accent and tag reach ~4.4–6.5:1 on bg and surface. */
-  --text: light-dark(#6f6e69, #878580);
-  --text-strong: light-dark(#100f0f, #cecdc3);
-  --bg: light-dark(#fffcf0, #100f0f);
-  --surface: light-dark(#f2f0e5, #1c1b1a);
-  --border: light-dark(#cecdc3, #403e3c);
-  --accent: light-dark(#205ea6, #4385be);
-  --tag: light-dark(#a02f6f, #ce5d97);
+  /* GitHub Primer. Text, accent and subtitle reach 4.5:1 or more on bg and surface in both themes; tags are white on --tag (4.6:1 or more). */
+  --text: light-dark(#59636e, #9198a1);
+  --text-strong: light-dark(#1f2328, #f0f6fc);
+  --bg: light-dark(#ffffff, #0d1117);
+  --surface: light-dark(#f6f8fa, #151b23);
+  --border: light-dark(#d1d9e0, #3d444d);
+  --accent: light-dark(#0969da, #4493f8);
+  --subtitle: light-dark(#8250df, #ab7df8);
+  --tag: light-dark(#9a6700, #9e6a03);
   --shadow: 0 10px 25px -5px
     light-dark(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.6));
 
