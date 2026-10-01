@@ -26,8 +26,9 @@ onto them:
 - `components/TagList`: `TagGroup`, a labelled row of tag chips, each with an optional
   note (`Claude Code · used daily`), and `TagList`, which uses it to group an
   entry's tags by kind (skills, tools, methodologies)
-- `resume/TagSection`: the Expertise section, one panel listing each domain
-  of the tag category tree with its categories as `TagGroup` rows;
+- `resume/TagSection`: the Expertise section, one panel where each domain
+  of the tag category tree expands, like a tile title, to its categories as
+  `TagGroup` rows;
   `visibleDomains` (in `domain/tag/TagCategory`) leaves out empty categories
   and domains
 
