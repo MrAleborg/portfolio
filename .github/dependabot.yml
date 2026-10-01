@@ -31,19 +31,23 @@ updates:
     directory: /backend
     schedule:
       interval: weekly
-    # One pull request per week for the minor and patch updates. A major
-    # update comes as its own pull request, so it can't block the others.
+    # One pull request per week for the minor and patch updates. Major
+    # versions are upgraded on purpose.
     groups:
       all:
         patterns: ["*"]
-        update-types: ["minor", "patch"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: npm
     directory: /frontend
     schedule:
       interval: weekly
-    # One pull request per week for the minor and patch updates. A major
-    # update comes as its own pull request, so it can't block the others.
+    # One pull request per week for the minor and patch updates. Major
+    # versions are upgraded on purpose.
     groups:
       all:
         patterns: ["*"]
-        update-types: ["minor", "patch"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
