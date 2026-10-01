@@ -300,7 +300,7 @@ All from `/opt/portfolio` on the server.
 | Task | Command |
 |---|---|
 | Status | `docker compose ps` |
-| Logs | `docker compose logs -f backend` (or `frontend`); Caddy: `journalctl -u caddy -f` |
+| Logs | `docker compose logs -f backend` (or `frontend`); Caddy: `journalctl -u caddy -f`. Docker keeps the last 3 × 10 MB per container |
 | Django shell | `docker compose exec backend python manage.py shell` |
 | Restart | `docker compose restart backend` (or `frontend`) |
 | Change a setting | edit `.env` (keep its `TAG=` line), then `docker compose up -d` |

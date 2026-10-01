@@ -5,6 +5,13 @@
 #   docker compose up -d
 name: portfolio
 
+# Docker keeps container logs forever by default: cap them.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "3"
+
 services:
   backend:
     image: ghcr.io/mraleborg/portfolio-backend:${TAG:?set TAG in .env}
@@ -16,6 +23,7 @@ services:
     volumes:
       - db-data:/data
     restart: unless-stopped
+    logging: *logging
 
   frontend:
     image: ghcr.io/mraleborg/portfolio-frontend:${TAG:?set TAG in .env}
@@ -23,6 +31,7 @@ services:
       # Loopback only, like the backend.
       - "127.0.0.1:${FRONTEND_PORT:-8080}:8080"
     restart: unless-stopped
+    logging: *logging
 
 volumes:
   db-data:
