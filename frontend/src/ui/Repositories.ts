@@ -1,3 +1,4 @@
+import type { CertificationRepository } from '@/domain/certification/CertificationRepository'
 import type { CommitmentRepository } from '@/domain/commitment/CommitmentRepository'
 import type { EducationRepository } from '@/domain/education/EducationRepository'
 import type { HobbyRepository } from '@/domain/hobby/HobbyRepository'
@@ -8,6 +9,7 @@ import type { ScientificCommunicationRepository } from '@/domain/scientificCommu
 export interface Repositories {
   profile: ProfileRepository
   education: EducationRepository
+  certification: CertificationRepository
   scientificCommunication: ScientificCommunicationRepository
   commitment: CommitmentRepository
   hobby: HobbyRepository

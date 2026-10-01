@@ -12,6 +12,7 @@ interface Messages {
   navResume: string
   resumeTitle: string
   educationTitle: string
+  certificationsTitle: string
   scientificCommunicationsTitle: string
   commitmentsTitle: string
   hobbiesTitle: string
@@ -23,6 +24,10 @@ interface Messages {
   opensInNewTab: string
   /** What goes between a link's text and the colon that introduces what it is about. */
   spaceBeforeColon: string
+  issued: string
+  expires: string
+  seeCredential: string
+  partOf: string
   tagKinds: Record<TagKind, string>
   loading: string
   profileUnavailable: string
@@ -43,6 +48,7 @@ export const messages: Localized<Messages> = {
     navResume: 'Resume',
     resumeTitle: 'Resume',
     educationTitle: 'Education',
+    certificationsTitle: 'Certifications',
     scientificCommunicationsTitle: 'Scientific communications',
     commitmentsTitle: 'Commitments',
     hobbiesTitle: 'Hobbies',
@@ -61,6 +67,10 @@ export const messages: Localized<Messages> = {
     seeOnline: 'See online',
     opensInNewTab: '(opens in a new tab)',
     spaceBeforeColon: '',
+    issued: 'Issued',
+    expires: 'Expires',
+    seeCredential: 'See credential',
+    partOf: 'Part of',
     tagKinds: { skill: 'Skills', tool: 'Tools', methodology: 'Methodologies' },
     loading: 'Loading…',
     profileUnavailable:
@@ -79,6 +89,7 @@ export const messages: Localized<Messages> = {
     navResume: 'CV',
     resumeTitle: 'CV',
     educationTitle: 'Formation',
+    certificationsTitle: 'Certifications',
     scientificCommunicationsTitle: 'Communications scientifiques',
     commitmentsTitle: 'Engagements',
     hobbiesTitle: 'Loisirs',
@@ -97,6 +108,10 @@ export const messages: Localized<Messages> = {
     seeOnline: 'Voir en ligne',
     opensInNewTab: '(s’ouvre dans un nouvel onglet)',
     spaceBeforeColon: ' ',
+    issued: 'Obtenue en',
+    expires: 'Expire en',
+    seeCredential: 'Voir le certificat',
+    partOf: 'Fait partie de',
     tagKinds: { skill: 'Compétences', tool: 'Outils', methodology: 'Méthodologies' },
     loading: 'Chargement…',
     profileUnavailable: 'Le profil n’a pas pu être chargé. Réessayez plus tard.',
