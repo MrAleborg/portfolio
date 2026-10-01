@@ -1,6 +1,7 @@
 import type { CommitmentKind } from '@/domain/commitment/Commitment'
 import type { ScientificCommunicationKind } from '@/domain/scientificCommunication/ScientificCommunication'
 import type { TagKind } from '@/domain/tag/Tag'
+import type { EmploymentType } from '@/domain/professionalExperience/ProfessionalExperience'
 import type { Localized } from '@/domain/i18n/Locale'
 
 /** French elides "de" before a vowel (or a mute h). */
@@ -11,6 +12,7 @@ interface Messages {
   navHome: string
   navResume: string
   resumeTitle: string
+  professionalExperienceTitle: string
   sideProjectsTitle: string
   educationTitle: string
   specializationsTitle: string
@@ -32,6 +34,8 @@ interface Messages {
   partOf: string
   missions: string
   achievements: string
+  projectsLabel: string
+  employmentTypes: Record<EmploymentType, string>
   tagKinds: Record<TagKind, string>
   loading: string
   profileUnavailable: string
@@ -51,6 +55,7 @@ export const messages: Localized<Messages> = {
     navHome: 'Home',
     navResume: 'Resume',
     resumeTitle: 'Resume',
+    professionalExperienceTitle: 'Professional experience',
     sideProjectsTitle: 'Personal projects',
     educationTitle: 'Education',
     specializationsTitle: 'Specializations',
@@ -79,6 +84,15 @@ export const messages: Localized<Messages> = {
     partOf: 'Part of',
     missions: 'Missions',
     achievements: 'Achievements',
+    projectsLabel: 'Projects',
+    employmentTypes: {
+      full_time: 'Full-time',
+      part_time: 'Part-time',
+      contract: 'Contract',
+      freelance: 'Freelance',
+      internship: 'Internship',
+      apprenticeship: 'Apprenticeship',
+    },
     tagKinds: { skill: 'Skills', tool: 'Tools', methodology: 'Methodologies' },
     loading: 'Loading…',
     profileUnavailable:
@@ -96,6 +110,7 @@ export const messages: Localized<Messages> = {
     navHome: 'Accueil',
     navResume: 'CV',
     resumeTitle: 'CV',
+    professionalExperienceTitle: 'Expérience professionnelle',
     sideProjectsTitle: 'Projets personnels',
     educationTitle: 'Formation',
     specializationsTitle: 'Spécialisations',
@@ -124,6 +139,15 @@ export const messages: Localized<Messages> = {
     partOf: 'Fait partie de',
     missions: 'Missions',
     achievements: 'Réalisations',
+    projectsLabel: 'Projets',
+    employmentTypes: {
+      full_time: 'Temps plein',
+      part_time: 'Temps partiel',
+      contract: 'CDD',
+      freelance: 'Freelance',
+      internship: 'Stage',
+      apprenticeship: 'Alternance',
+    },
     tagKinds: { skill: 'Compétences', tool: 'Outils', methodology: 'Méthodologies' },
     loading: 'Chargement…',
     profileUnavailable: 'Le profil n’a pas pu être chargé. Réessayez plus tard.',

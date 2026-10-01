@@ -20,6 +20,12 @@ function renderPage(overrides: Partial<Repositories> = {}, locale: Locale = 'en'
 /** Each section: its name in English and French, its tiles in order, and the first tile in French. */
 const sections = [
   {
+    en: 'Professional experience',
+    fr: 'Expérience professionnelle',
+    tiles: ['Software engineer', 'Consultant'],
+    firstInFrench: 'Ingénieur logiciel',
+  },
+  {
     en: 'Personal projects',
     fr: 'Projets personnels',
     tiles: ['Portfolio site', 'Chess engine'],

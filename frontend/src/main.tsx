@@ -6,6 +6,7 @@ import { createHttpCertificationRepository } from '@/infrastructure/certificatio
 import { createHttpCommitmentRepository } from '@/infrastructure/commitment/httpCommitmentRepository'
 import { createHttpEducationRepository } from '@/infrastructure/education/httpEducationRepository'
 import { createHttpHobbyRepository } from '@/infrastructure/hobby/httpHobbyRepository'
+import { createHttpProfessionalExperienceRepository } from '@/infrastructure/professionalExperience/httpProfessionalExperienceRepository'
 import { createHttpProfileRepository } from '@/infrastructure/profile/httpProfileRepository'
 import { createHttpProjectRepository } from '@/infrastructure/project/httpProjectRepository'
 import { createHttpScientificCommunicationRepository } from '@/infrastructure/scientificCommunication/httpScientificCommunicationRepository'
@@ -15,6 +16,7 @@ const apiUrl = import.meta.env.VITE_API_URL
 
 const repositories = {
   profile: createHttpProfileRepository(apiUrl),
+  experience: createHttpProfessionalExperienceRepository(apiUrl),
   project: createHttpProjectRepository(apiUrl),
   education: createHttpEducationRepository(apiUrl),
   certification: createHttpCertificationRepository(apiUrl),

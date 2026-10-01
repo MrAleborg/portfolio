@@ -3,6 +3,7 @@ import { useLocale } from '@/ui/i18n/useLocale'
 import { CertificationSection } from '@/ui/resume/CertificationSection'
 import { CommitmentSection } from '@/ui/resume/CommitmentSection'
 import { EducationSection } from '@/ui/resume/EducationSection'
+import { ExperienceSection } from '@/ui/resume/ExperienceSection'
 import { HobbySection } from '@/ui/resume/HobbySection'
 import { ScientificCommunicationSection } from '@/ui/resume/ScientificCommunicationSection'
 import { SideProjectSection } from '@/ui/resume/SideProjectSection'
@@ -20,6 +21,7 @@ export function ResumePage({ repositories }: ResumePageProps) {
   return (
     <div className="resume">
       <h1>{text.resumeTitle}</h1>
+      <ExperienceSection repository={repositories.experience} />
       <SideProjectSection repository={repositories.project} />
       <EducationSection repository={repositories.education} />
       <CertificationSection repository={repositories.certification} />
