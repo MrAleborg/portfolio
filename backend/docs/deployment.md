@@ -270,16 +270,19 @@ workflow ignores a run started from another branch).
 2. **build**: builds the `backend` and `frontend` images and pushes them to
    GHCR, tagged `sha-<commit>`. There is no `latest` tag: a bad build can't be
    pulled by accident.
-3. **deploy**: copies `compose.yml` and `backup.sh` to `/opt/portfolio/`,
-   then over SSH runs `./backup.sh` (skipped when no backend is running yet:
-   the new backend applies migrations when it starts), `docker compose pull`
-   and `docker compose up -d --wait`
-   with `TAG=sha-<commit>`. `--wait` fails the job if a new container doesn't
-   pass its health check. A container whose image didn't change isn't
-   restarted. Once the containers are healthy, the deploy writes
-   `TAG=sha-<commit>` in `/opt/portfolio/.env`, so every later `docker compose`
-   command on the server uses the deployed images. `compose.yml` refuses to run
-   without a `TAG`.
+3. **deploy** (15 minutes at most): copies `compose.yml` and `backup.sh` to
+   `/opt/portfolio/`, then over SSH, with `TAG=sha-<commit>`:
+   - runs `./backup.sh`, unless no backend is running yet: the new backend
+     applies migrations when it starts;
+   - runs `docker compose pull` and `docker compose up -d --wait
+     --wait-timeout 180`. `--wait` fails the job if a new container doesn't
+     pass its health check within 3 minutes. A container whose image didn't
+     change isn't restarted;
+   - writes `TAG=sha-<commit>` in `/opt/portfolio/.env`, so every later
+     `docker compose` command on the server uses the deployed images
+     (`compose.yml` refuses to run without a `TAG`);
+   - deletes this repo's images older than a week. The `sha-*` tags of the last
+     week stay available for a rollback.
 4. **Smoke test**: `curl` on `https://$API_DOMAIN/api/v1/experience/` and
    `https://$FRONTEND_DOMAIN/`.
 

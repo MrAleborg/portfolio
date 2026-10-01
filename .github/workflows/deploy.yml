@@ -81,6 +81,8 @@ jobs:
         with:
           context: ${{ matrix.service }}
           push: true
+          # Lets the deploy prune this repo's old images, and nothing else.
+          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
           tags: |
             ghcr.io/mraleborg/portfolio-${{ matrix.service }}:${{ needs.check.outputs.tag }}
           cache-from: type=gha,scope=${{ matrix.service }}
@@ -89,6 +91,7 @@ jobs:
   deploy:
     needs: [check, build]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     environment:
       name: Portfolio production
       url: https://${{ vars.FRONTEND_DOMAIN }}
@@ -128,13 +131,17 @@ jobs:
               ./backup.sh
           fi
           docker compose pull
-          docker compose up -d --wait
+          docker compose up -d --wait --wait-timeout 180
           if grep -q '^TAG=' .env; then
               sed -i "s/^TAG=.*/TAG=$TAG/" .env
           else
               echo "TAG=$TAG" >> .env
           fi
-          docker image prune -f
+          # Old sha-* tags stay tagged, so a plain prune removes nothing. Keep
+          # a week of them for rollbacks, and only touch this repo's images:
+          # the server is shared.
+          docker image prune -af --filter until=168h \
+              --filter label=org.opencontainers.image.source=https://github.com/MrAleborg/portfolio
           EOF
 
       - name: Smoke test
