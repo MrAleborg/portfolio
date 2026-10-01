@@ -54,4 +54,21 @@ describe('LanguageSwitch', () => {
     expect(screen.getByRole('button', { name: 'Français' })).toBeInTheDocument()
     expect(document.documentElement).toHaveAttribute('lang', 'en')
   })
+
+  it('exposes the current locale as data-locale and flips it after a click', async () => {
+    const user = userEvent.setup()
+    renderSwitch('en')
+
+    expect(screen.getByRole('button', { name: 'Français' })).toHaveAttribute(
+      'data-locale',
+      'en',
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Français' }))
+
+    expect(screen.getByRole('button', { name: 'English' })).toHaveAttribute(
+      'data-locale',
+      'fr',
+    )
+  })
 })
