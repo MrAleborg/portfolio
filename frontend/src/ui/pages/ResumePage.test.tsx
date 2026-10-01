@@ -25,6 +25,12 @@ const sections = [
     tiles: ['Master’s degree, Computer Science', 'PhD'],
     firstInFrench: 'Master, Informatique',
   },
+  {
+    en: 'Hobbies',
+    fr: 'Loisirs',
+    tiles: ['Climbing', 'Chess'],
+    firstInFrench: 'Escalade',
+  },
 ]
 
 describe('ResumePage', () => {

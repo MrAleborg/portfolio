@@ -10,6 +10,7 @@ interface Messages {
   navResume: string
   resumeTitle: string
   educationTitle: string
+  hobbiesTitle: string
   /** Said after the name of a link that opens in a new tab. */
   opensInNewTab: string
   /** What goes between a link's text and the colon that introduces what it is about. */
@@ -34,6 +35,7 @@ export const messages: Localized<Messages> = {
     navResume: 'Resume',
     resumeTitle: 'Resume',
     educationTitle: 'Education',
+    hobbiesTitle: 'Hobbies',
     opensInNewTab: '(opens in a new tab)',
     spaceBeforeColon: '',
     tagKinds: { skill: 'Skills', tool: 'Tools', methodology: 'Methodologies' },
@@ -54,6 +56,7 @@ export const messages: Localized<Messages> = {
     navResume: 'CV',
     resumeTitle: 'CV',
     educationTitle: 'Formation',
+    hobbiesTitle: 'Loisirs',
     opensInNewTab: '(s’ouvre dans un nouvel onglet)',
     spaceBeforeColon: ' ',
     tagKinds: { skill: 'Compétences', tool: 'Outils', methodology: 'Méthodologies' },

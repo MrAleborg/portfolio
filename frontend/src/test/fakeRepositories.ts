@@ -1,4 +1,5 @@
 import { fakeEducationRepository } from '@/test/fakeEducationRepository'
+import { fakeHobbyRepository } from '@/test/fakeHobbyRepository'
 import { fakeProfileRepository } from '@/test/fakeProfileRepository'
 import type { Repositories } from '@/ui/Repositories'
 
@@ -7,6 +8,7 @@ export function fakeRepositories(overrides: Partial<Repositories> = {}) {
   return {
     profile: fakeProfileRepository(),
     education: fakeEducationRepository(),
+    hobby: fakeHobbyRepository(),
     ...overrides,
   } satisfies Repositories
 }
