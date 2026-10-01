@@ -49,6 +49,6 @@
   color: var(--text-strong);
 }
 
-.layout__main p {
+:where(.layout__main) p {
   margin: 0;
 }
