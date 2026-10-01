@@ -45,3 +45,8 @@ must be running.
 `VITE_API_URL` can point the site at a backend on another domain instead (e.g.
 `VITE_API_URL=https://api.example.com npm run dev`); that backend must then
 allow the site's origin in `CORS_ALLOWED_ORIGINS`.
+
+The nginx image sends a Content-Security-Policy with `default-src 'self'`, so
+the browser only lets the site call an API on its own origin (`/api/`). A build
+with `VITE_API_URL` pointing at another origin needs that origin added to a
+`connect-src` directive in `nginx.conf`.
