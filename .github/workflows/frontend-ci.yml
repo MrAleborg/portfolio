@@ -39,15 +39,10 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Type check
-        run: npm run typecheck
-
       - name: Run tests
-        run: npm test
-
-      - name: Build
-        run: npm run build
+        run: npm run test:coverage
 
       - name: Build the image
-        # Not pushed: this only checks the Dockerfile before the deploy uses it.
+        # Not pushed: this only checks the Dockerfile before the deploy uses
+        # it. It also type-checks and builds the site (npm run build).
         run: docker build --tag portfolio-frontend:ci .

@@ -67,4 +67,8 @@ jobs:
         run: pipenv run python manage.py check --deploy --fail-level WARNING
 
       - name: Run tests
-        run: pipenv run pytest --cov --cov-report=term-missing
+        run: pipenv run pytest --cov --cov-report=term-missing --cov-fail-under=100
+
+      - name: Build the image
+        # Not pushed: this only checks the Dockerfile before the deploy uses it.
+        run: docker build --tag portfolio-backend:ci .
