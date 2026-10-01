@@ -22,6 +22,7 @@ from experience.models import (
     ScientificCommunication,
     Skill,
     Specialization,
+    TagCategory,
     Tool,
 )
 
@@ -51,6 +52,7 @@ CASES = [
     ("commitment", "detail", 1),
     ("scientific-communication", "list", 1),
     ("scientific-communication", "detail", 1),
+    ("tag-category", "list", 3),
 ]
 
 
@@ -90,6 +92,13 @@ def portfolio():
             position_fr="Développeur",
             start_date=date(2020, 1, 1),
         )
+        # A domain of two categories, each holding every tag.
+        domain = TagCategory.objects.create(name_en="Domain", name_fr="Domaine")
+        for _ in range(2):
+            category = TagCategory.objects.create(
+                name_en="Category", name_fr="Catégorie", parent=domain
+            )
+            category.tags.add(*tags)
         # Two projects per experience, and a side project.
         for owner in (experience, experience, None):
             project = Project.objects.create(

@@ -29,6 +29,7 @@ router.register(
 router.register("skills", views.SkillViewSet, basename="skill")
 router.register("tools", views.ToolViewSet, basename="tool")
 router.register("methodologies", views.MethodologyViewSet, basename="methodology")
+router.register("tag-categories", views.TagCategoryViewSet, basename="tag-category")
 router.register("hobbies", views.HobbyViewSet, basename="hobby")
 router.register("commitments", views.CommitmentViewSet, basename="commitment")
 router.register(

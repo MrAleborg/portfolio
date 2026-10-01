@@ -14,6 +14,8 @@ from experience.models import (
     ScientificCommunication,
     Skill,
     Specialization,
+    Tag,
+    TagCategory,
     Tool,
 )
 from experience.serializers import (
@@ -25,6 +27,7 @@ from experience.serializers import (
     ProjectSerializer,
     ScientificCommunicationSerializer,
     SpecializationSerializer,
+    TagCategorySerializer,
     TagDetailSerializer,
     TagSerializer,
 )
@@ -173,6 +176,22 @@ class ToolViewSet(TagViewSet):
 
 class MethodologyViewSet(TagViewSet):
     queryset = Methodology.objects.all()
+
+
+class TagCategoryViewSet(PublicReadOnlyViewSet):
+    """The domains (top-level categories)."""
+
+    # Categorized tags are public even when only hidden entries use them:
+    # categorizing a tag is an explicit choice to publish it.
+    queryset = TagCategory.objects.filter(parent__isnull=True).prefetch_related(
+        Prefetch(
+            "children",
+            queryset=TagCategory.objects.prefetch_related(
+                Prefetch("tags", queryset=Tag.objects.order_by("name_en"))
+            ),
+        ),
+    )
+    serializer_class = TagCategorySerializer
 
 
 class HobbyViewSet(PublicReadOnlyViewSet):
