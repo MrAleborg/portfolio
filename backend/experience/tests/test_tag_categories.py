@@ -77,38 +77,60 @@ def test_deleting_a_domain_deletes_its_categories_and_keeps_the_tags():
     assert skill.categories.count() == 0
 
 
-def test_tag_can_belong_to_two_categories():
-    domain = make_category("AI")
-    genai = make_category("GenAI", parent=domain)
-    mlops = make_category("MLOps", parent=domain)
-    skill = make_skill("Docker")
+def test_category_holding_tags_cannot_lose_its_parent():
+    """Else it becomes a domain holding tags, which the API never lists."""
+    category = make_category("GenAI", parent=make_category("AI"))
+    make_skill().categories.add(category)
 
-    skill.categories.add(genai, mlops)
+    category.parent = None
+    with pytest.raises(ValidationError) as error:
+        category.full_clean()
 
-    assert set(skill.categories.all()) == {genai, mlops}
-    assert list(genai.tags.all()) == [skill]
-
-
-def test_category_is_managed_in_the_admin(admin_client):
-    domain = make_category("AI")
-    category = make_category("GenAI", parent=domain)
-
-    changelist = admin_client.get(reverse("admin:experience_tagcategory_changelist"))
-    change = admin_client.get(
-        reverse("admin:experience_tagcategory_change", args=[category.pk])
-    )
-
-    assert changelist.status_code == 200
-    assert change.status_code == 200
+    assert "parent" in error.value.message_dict
 
 
-def test_tag_admin_edits_categories_and_note(admin_client):
+def tag_form(skill, **fields):
+    """The data the admin change form of `skill` posts."""
+    return {
+        "name_en": skill.name_en,
+        "name_fr": skill.name_fr,
+        "kind": skill.kind,
+        "note_en": "",
+        "note_fr": "",
+        **fields,
+    }
+
+
+def test_tag_admin_saves_categories_and_notes(admin_client):
+    category = make_category("GenAI", parent=make_category("AI"))
     skill = make_skill()
 
-    response = admin_client.get(reverse("admin:experience_tag_change", args=[skill.pk]))
+    admin_client.post(
+        reverse("admin:experience_tag_change", args=[skill.pk]),
+        tag_form(
+            skill,
+            categories=[category.pk],
+            note_en="Daily",
+            note_fr="Au quotidien",
+        ),
+    )
 
-    fields = response.context["adminform"].form.fields
-    assert {"categories", "note_en", "note_fr"} <= fields.keys()
+    skill.refresh_from_db()
+    assert list(skill.categories.all()) == [category]
+    assert (skill.note_en, skill.note_fr) == ("Daily", "Au quotidien")
+
+
+def test_tag_admin_refuses_a_domain_as_category(admin_client):
+    domain = make_category("AI")
+    skill = make_skill()
+
+    response = admin_client.post(
+        reverse("admin:experience_tag_change", args=[skill.pk]),
+        tag_form(skill, categories=[domain.pk]),
+    )
+
+    assert "categories" in response.context["adminform"].form.errors
+    assert skill.categories.count() == 0
 
 
 @pytest.mark.parametrize("language", LANGUAGES)

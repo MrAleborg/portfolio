@@ -158,6 +158,10 @@ class TagCategory(models.Model):
             raise ValidationError({"parent": "The parent must be a domain."})
         if self.parent and self.pk and self.children.exists():
             raise ValidationError({"parent": "A domain with categories is top-level."})
+        if not self.parent and self.pk and self.tags.exists():
+            raise ValidationError(
+                {"parent": "A category with tags must stay under a domain."}
+            )
 
     def __str__(self):
         return self.name_en

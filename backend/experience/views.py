@@ -187,7 +187,7 @@ class TagCategoryViewSet(PublicReadOnlyViewSet):
         Prefetch(
             "children",
             queryset=TagCategory.objects.prefetch_related(
-                Prefetch("tags", queryset=Tag.objects.order_by("name_en"))
+                Prefetch("tags", queryset=Tag.objects.order_by("name_en", "id"))
             ),
         ),
     )
