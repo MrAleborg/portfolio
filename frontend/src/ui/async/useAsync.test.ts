@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react'
+import { act, renderHook, waitFor } from '@testing-library/react'
 import { useAsync } from '@/ui/async/useAsync'
 
 function deferred<T>() {
@@ -54,5 +54,23 @@ describe('useAsync', () => {
     await waitFor(() =>
       expect(hook.current).toEqual({ status: 'loaded', value: 'second' }),
     )
+  })
+
+  it('ignores the result of a previous load that settles after a newer one', async () => {
+    const first = deferred<string>()
+    const second = deferred<string>()
+    const { result: hook, rerender } = renderHook(
+      ({ load }) => useAsync(load),
+      { initialProps: { load: () => first.promise } },
+    )
+    rerender({ load: () => second.promise })
+    second.resolve('second')
+    await waitFor(() =>
+      expect(hook.current).toEqual({ status: 'loaded', value: 'second' }),
+    )
+
+    await act(async () => first.resolve('first'))
+
+    expect(hook.current).toEqual({ status: 'loaded', value: 'second' })
   })
 })

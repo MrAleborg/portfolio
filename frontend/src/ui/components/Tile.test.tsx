@@ -10,6 +10,11 @@ function renderTileWithContent() {
   )
 }
 
+/** The meta items of the only tile on screen; an empty one is invisible in the text. */
+function metaItems() {
+  return screen.getByRole('article').querySelectorAll('.tile__meta > span')
+}
+
 describe('Tile', () => {
   it('is an article named by its title', () => {
     render(<Tile title="Master’s degree" />)
@@ -38,7 +43,9 @@ describe('Tile', () => {
 
     expect(screen.getByText('Sep 2015 – Jun 2017')).toBeInTheDocument()
     expect(screen.getByText('Brittany')).toBeInTheDocument()
-    expect(screen.getByRole('article')).not.toHaveTextContent('·')
+    expect(screen.getByRole('article')).toHaveTextContent(
+      /^Master’s degreeSep 2015 – Jun 2017 Brittany$/,
+    )
   })
 
   it('keeps its meta items apart in its text', () => {
@@ -51,6 +58,7 @@ describe('Tile', () => {
     render(<Tile title="Master’s degree" meta={['Sep 2015 – Jun 2017', '']} />)
 
     expect(screen.getByText('Sep 2015 – Jun 2017')).toBeInTheDocument()
+    expect(metaItems()).toHaveLength(1)
   })
 
   it('hides its content until the title is clicked', () => {
@@ -120,5 +128,6 @@ describe('Tile', () => {
     render(<Tile title="Master’s degree" meta={['']} />)
 
     expect(screen.getByRole('article')).toHaveTextContent(/^Master’s degree$/)
+    expect(metaItems()).toHaveLength(0)
   })
 })
