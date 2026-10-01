@@ -55,8 +55,9 @@ SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 # Start small, raise once HTTPS is known to work (browsers remember HSTS).
 SECURE_HSTS_SECONDS = env.int("SECURE_HSTS_SECONDS", default=0 if DEBUG else 3600)
+# Off by default: the server also hosts other sites, which may not have HTTPS.
 SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool(
-    "SECURE_HSTS_INCLUDE_SUBDOMAINS", default=True
+    "SECURE_HSTS_INCLUDE_SUBDOMAINS", default=False
 )
 SILENCED_SYSTEM_CHECKS = [
     # HSTS preload means submitting the domain to the browsers' preload list,
@@ -125,12 +126,13 @@ WSGI_APPLICATION = "portfolio.wsgi.application"
 DATABASES = {
     "default": env.db("DATABASE_URL", default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
 }
-# WAL mode and immediate transactions let several gunicorn workers share the
-# SQLite file without "database is locked" errors.
-DATABASES["default"]["OPTIONS"] = {
-    "transaction_mode": "IMMEDIATE",
-    "init_command": "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;",
-}
+if DATABASES["default"]["ENGINE"].endswith("sqlite3"):
+    # WAL mode and immediate transactions let several gunicorn workers share the
+    # SQLite file without "database is locked" errors.
+    DATABASES["default"]["OPTIONS"] = {
+        "transaction_mode": "IMMEDIATE",
+        "init_command": "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;",
+    }
 
 
 # Cache
@@ -269,6 +271,7 @@ LOGGING = {
     },
     "handlers": {
         "console": {
+            "level": "WARNING",
             "class": "logging.StreamHandler",
             "filters": ["require_debug_false"],
         },

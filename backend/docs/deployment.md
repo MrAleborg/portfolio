@@ -69,7 +69,7 @@ Django reads its settings from the environment
 | `ADMINS` | `you@example.com` | Receive server error reports by email |
 | `SECURE_HSTS_SECONDS` | `3600`, later `31536000` | See [HTTPS](#https) |
 | `SECURE_SSL_REDIRECT` | default `True` | Only for testing without HTTPS |
-| `SECURE_HSTS_INCLUDE_SUBDOMAINS` | default `True` | |
+| `SECURE_HSTS_INCLUDE_SUBDOMAINS` | default `False` | Set `True` only if every subdomain, on this server or elsewhere, serves HTTPS |
 
 When `DEBUG` is off, Django redirects HTTP to HTTPS, marks cookies secure and
 sends an HSTS header. It trusts the `X-Forwarded-Proto` header that Caddy sets,
@@ -243,7 +243,7 @@ docker compose exec backend python manage.py createsuperuser
 Never run `seed_demo`, `flush_demo` or `reset_demo` here
 (see [demo_data.md](demo_data.md)).
 
-### 9. Backups
+### 9. Backups and token cleanup
 
 The job must belong to `deploy`, which owns `/opt/portfolio` and can use
 Docker. In another user's crontab it fails without a trace:
@@ -268,6 +268,13 @@ of the cron line (`0 3 * * * KEEP_DAYS=365 /opt/portfolio/backup.sh ...`).
 A backup on the same disk doesn't survive losing the server, so also copy that
 folder elsewhere (e.g. `rclone` to object storage, or `rsync` to another
 machine).
+
+Every login and refresh stores a row in the token blacklist tables, and nothing
+deletes them. Purge the expired ones weekly, from the same crontab:
+
+```bash
+# 0 4 * * 0 cd /opt/portfolio && docker compose exec -T backend python manage.py flushexpiredtokens >> /opt/portfolio/backup.log 2>&1
+```
 
 ## How a deploy works
 
@@ -383,6 +390,8 @@ HSTS tells browsers to use HTTPS only, for `SECURE_HSTS_SECONDS`. It starts at
 one hour so a mistake is quick to undo. Once the site has run fine over HTTPS
 for a while, raise it to a year (`31536000`). HSTS preload is not enabled: it
 means submitting the domain to browser vendors, which takes months to undo.
+HSTS doesn't cover subdomains by default, so other sites on the same domain or
+server are unaffected (`SECURE_HSTS_INCLUDE_SUBDOMAINS`).
 
 ## Trying the stack locally
 
