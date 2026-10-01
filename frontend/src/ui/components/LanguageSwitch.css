@@ -9,7 +9,11 @@
   cursor: pointer;
 }
 
-.language-switch:hover,
-.language-switch:focus-visible {
+.language-switch:hover {
   border-color: var(--accent);
+}
+
+.language-switch:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
 }

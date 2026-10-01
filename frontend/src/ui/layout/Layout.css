@@ -25,10 +25,14 @@
 }
 
 .layout__nav a:hover,
-.layout__nav a:focus-visible,
 .layout__nav a[aria-current='page'] {
   color: var(--text-strong);
   border-bottom-color: var(--accent);
+}
+
+.layout__nav a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
 }
 
 .layout__main {
@@ -49,6 +53,6 @@
   color: var(--text-strong);
 }
 
-.layout__main p {
+:where(.layout__main) p {
   margin: 0;
 }
