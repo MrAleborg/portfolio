@@ -126,6 +126,7 @@ and timestamp helpers in
 | [`test_specializations.py`](../experience/tests/test_specializations.py) | `specializations/` |
 | [`test_tags.py`](../experience/tests/test_tags.py) | `skills/`, `tools/`, `methodologies/` |
 | [`test_hobbies.py`](../experience/tests/test_hobbies.py) | `hobbies/` |
+| [`test_commitments.py`](../experience/tests/test_commitments.py) | `commitments/` |
 | [`test_query_counts.py`](../experience/tests/test_query_counts.py) | The number of queries of every public list and detail, so a dropped `prefetch_related` fails |
 | [`test_demo_commands.py`](../experience/tests/test_demo_commands.py) | The `seed_demo`, `flush_demo` and `reset_demo` management commands |
 | [`test_date_constraints.py`](../experience/tests/test_date_constraints.py) | The database rules on date order |

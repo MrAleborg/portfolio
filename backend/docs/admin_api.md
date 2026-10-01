@@ -40,6 +40,7 @@ same answers.
 | `specializations/` | Specializations (paths of certifications) |
 | `skills/`, `tools/`, `methodologies/` | Tags of each kind |
 | `hobbies/` | Hobbies and interests |
+| `commitments/` | Associations and events the owner took part in |
 
 Each collection supports:
 
@@ -260,6 +261,27 @@ Required: `name`. `description` is optional.
 {
   "id": 1,
   "name": {"en": "Climbing", "fr": "Escalade"},
+  "description": {"en": "", "fr": ""}
+}
+```
+
+### `commitments/`
+
+Required: `organization`, `role`, `start_date`. `kind` is one of
+`association` (default), `conference_organization`, `other_event`; any other
+value is a `400` on `kind`. `location`, `url` and `description` are optional.
+
+```json
+{
+  "id": 1,
+  "kind": "association",
+  "organization": "Demo Robotics Club",
+  "role": {"en": "Treasurer", "fr": "Trésorier"},
+  "location": {"en": "Rennes", "fr": "Rennes"},
+  "url": "https://robotics-club.example",
+  "start_date": "2019-09-01",
+  "end_date": null,
+  "is_current": true,
   "description": {"en": "", "fr": ""}
 }
 ```

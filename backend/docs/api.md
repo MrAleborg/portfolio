@@ -24,6 +24,7 @@ owner's [profile](#profile-apiv1profile), which is in the `owner` app.
 | `tools/`, `tools/{id}/` | Tool tags | |
 | `methodologies/`, `methodologies/{id}/` | Methodology tags | |
 | `hobbies/`, `hobbies/{id}/` | Hobbies and interests | |
+| `commitments/`, `commitments/{id}/` | Associations and events the owner took part in | |
 
 ## Common behavior
 
@@ -56,7 +57,7 @@ owner's [profile](#profile-apiv1profile), which is in the `owner` app.
 
   The languages are `en` and `fr`. A text is filled in every language, or
   empty (`""`) in every language. Proper nouns, codes, URLs and dates are not
-  translated: `institution`, `company`, `issuer`, `credential_id`, the URLs,
+  translated: `institution`, `company`, `organization`, `issuer`, `credential_id`, the URLs,
   `employment_type` (a code the frontend labels) and `kind`.
 
   | Resource | Translated fields |
@@ -67,6 +68,7 @@ owner's [profile](#profile-apiv1profile), which is in the `owner` app.
   | Certification, specialization | `name`, `description` |
   | Tag | `name` |
   | Hobby | `name`, `description` |
+  | Commitment | `role`, `location`, `description` |
 
 These rules are pinned down by the test suite; see
 [testing.md](testing.md#rules-every-endpoint-is-tested-against).
@@ -250,6 +252,28 @@ Hobbies are listed in `display_order`, then by English name.
 {
   "id": 1,
   "name": {"en": "Climbing", "fr": "Escalade"},
+  "description": {"en": "", "fr": ""}
+}
+```
+
+### `commitments/`
+
+Associations, conferences and other events the owner got involved in, listed
+in `display_order`, then newest `start_date`. `kind` is one of
+`association`, `conference_organization`, `other_event`. `end_date` is `null`
+while the commitment is ongoing.
+
+```json
+{
+  "id": 1,
+  "kind": "association",
+  "organization": "Demo Robotics Club",
+  "role": {"en": "Treasurer", "fr": "Trésorier"},
+  "location": {"en": "Rennes", "fr": "Rennes"},
+  "url": "https://robotics-club.example",
+  "start_date": "2019-09-01",
+  "end_date": null,
+  "is_current": true,
   "description": {"en": "", "fr": ""}
 }
 ```

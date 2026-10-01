@@ -19,6 +19,7 @@ COLLECTIONS = [
     "tools",
     "methodologies",
     "hobbies",
+    "commitments",
 ]
 
 

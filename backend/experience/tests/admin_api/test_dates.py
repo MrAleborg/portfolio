@@ -13,6 +13,7 @@ import pytest
 
 from experience.models import (
     Certification,
+    Commitment,
     Education,
     ProfessionalExperience,
     Project,
@@ -47,6 +48,16 @@ def make_project():
     return Project.objects.create(
         title_en="Portfolio",
         title_fr="Portfolio",
+        start_date=date(2024, 1, 1),
+        end_date=date(2024, 6, 30),
+    )
+
+
+def make_commitment():
+    return Commitment.objects.create(
+        organization="Red Cross",
+        role_en="Volunteer",
+        role_fr="Bénévole",
         start_date=date(2024, 1, 1),
         end_date=date(2024, 6, 30),
     )
@@ -96,6 +107,13 @@ RESOURCES = [
         "start_date",
         "end_date",
         make_project,
+    ),
+    (
+        "commitment",
+        {"organization": "Red Cross", "role": {"en": "Volunteer", "fr": "Bénévole"}},
+        "start_date",
+        "end_date",
+        make_commitment,
     ),
     (
         "certification",

@@ -18,6 +18,7 @@ from django.urls import reverse
 
 from experience.models import (
     Certification,
+    Commitment,
     Education,
     Hobby,
     Mission,
@@ -40,6 +41,7 @@ LIST_ROUTES = [
     "tool",
     "methodology",
     "hobby",
+    "commitment",
 ]
 
 CONTENT_MODELS = [
@@ -51,6 +53,7 @@ CONTENT_MODELS = [
     Specialization,
     Tag,
     Hobby,
+    Commitment,
     Profile,
 ]
 
@@ -122,6 +125,30 @@ def test_seed_creates_a_hidden_hobby_that_is_not_exposed(api_client):
 
     hidden = Hobby.objects.filter(is_visible=False)
     exposed = {h["id"] for h in api_client.get(reverse("experience:hobby-list")).json()}
+
+    assert hidden.exists()
+    assert not exposed & set(hidden.values_list("id", flat=True))
+
+
+def test_seed_creates_a_visible_commitment_of_each_kind():
+    """Every kind of commitment has an entry to look at."""
+    run("seed_demo")
+
+    kinds = set(
+        Commitment.objects.filter(is_visible=True).values_list("kind", flat=True)
+    )
+
+    assert kinds == {"association", "conference_organization", "other_event"}
+
+
+def test_seed_creates_a_hidden_commitment_that_is_not_exposed(api_client):
+    """The demo data includes a hidden commitment, so visibility can be checked."""
+    run("seed_demo")
+
+    hidden = Commitment.objects.filter(is_visible=False)
+    exposed = {
+        c["id"] for c in api_client.get(reverse("experience:commitment-list")).json()
+    }
 
     assert hidden.exists()
     assert not exposed & set(hidden.values_list("id", flat=True))

@@ -137,7 +137,7 @@ collection:
       created: 1790700000000
       modified: 1790700000000
       isPrivate: false
-      description: Lists the 9 collections.
+      description: Lists the 10 collections.
       sortKey: 4
     method: GET
     authentication:
@@ -158,8 +158,8 @@ collection:
           insomnia.expect(insomnia.response.code).to.equal(200);
         });
         const body = insomnia.response.json();
-        insomnia.test("Lists the 9 collections", () => {
-          insomnia.expect(body).to.have.all.keys("education", "professional-experiences", "projects", "certifications", "specializations", "skills", "tools", "methodologies", "hobbies");
+        insomnia.test("Lists the 10 collections", () => {
+          insomnia.expect(body).to.have.all.keys("education", "professional-experiences", "projects", "certifications", "specializations", "skills", "tools", "methodologies", "hobbies", "commitments");
         });
   - url: '{{ _.base_url }}/api/v1/admin/'
     name: Admin root without token → 401
@@ -4612,12 +4612,652 @@ collection:
         insomnia.test("Explains why", () => {
           insomnia.expect(body).to.have.property('detail');
         });
-- name: 11. Cleanup (deletes)
+- name: 11. Commitments
+  meta:
+    id: fld_9e93113cd5d604b9c02a6d1a0d191d18
+    created: 1790700000000
+    modified: 1790700000000
+    sortKey: 11
+    description: ''
+  children:
+  - url: '{{ _.base_url }}/api/v1/admin/commitments/'
+    name: Create commitment → 201
+    meta:
+      id: req_2401e91c31cb693df06e498b74d115eb
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'Response has every field, including display_order, is_visible and timestamps.'
+      sortKey: 121
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "kind": "association",
+          "organization": "Demo Robotics Club",
+          "role": {"en": "Treasurer", "fr": "Trésorier"},
+          "location": {"en": "Rennes", "fr": "Rennes"},
+          "url": "https://robotics-club.example",
+          "start_date": "2019-09-01",
+          "end_date": "2022-06-30",
+          "description": {"en": "Created from Insomnia.", "fr": "Created from Insomnia."},
+          "display_order": 0,
+          "is_visible": true
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 201", () => {
+          insomnia.expect(insomnia.response.code).to.equal(201);
+        });
+        const body = insomnia.response.json();
+        insomnia.environment.set('commitment_id', body.id);
+        insomnia.test("Returns the internal fields", () => {
+          insomnia.expect(body).to.include.keys('display_order', 'is_visible', 'created_at', 'updated_at');
+        });
+        insomnia.test("Texts are in every language", () => {
+          insomnia.expect(body.role).to.eql({"en": "Treasurer", "fr": "Trésorier"});
+          insomnia.expect(body.location).to.eql({"en": "Rennes", "fr": "Rennes"});
+        });
+        insomnia.test("Keeps its kind and is not current", () => {
+          insomnia.expect(body.kind).to.eql("association");
+          insomnia.expect(body.is_current).to.eql(false);
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/commitments/'
+    name: Create with required fields only → 201
+    meta:
+      id: req_cce2f9321c2a634e41cbb3606ac20a4e
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'kind association, end_date null, is_current true, is_visible true, display_order 0.'
+      sortKey: 122
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "organization": "Demo Dev Conference",
+          "role": {"en": "Program organizer", "fr": "Organisateur du programme"},
+          "start_date": "2022-01-01"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 201", () => {
+          insomnia.expect(insomnia.response.code).to.equal(201);
+        });
+        const body = insomnia.response.json();
+        insomnia.environment.set('second_commitment_id', body.id);
+        insomnia.test("Optional fields take their defaults", () => {
+          insomnia.expect(body.kind).to.eql("association");
+          insomnia.expect(body.end_date).to.eql(null);
+          insomnia.expect(body.is_current).to.eql(true);
+          insomnia.expect(body.is_visible).to.eql(true);
+          insomnia.expect(body.display_order).to.eql(0);
+          insomnia.expect(body.location).to.eql({"en": "", "fr": ""});
+          insomnia.expect(body.description).to.eql({"en": "", "fr": ""});
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/commitments/'
+    name: Create without required fields → 400
+    meta:
+      id: req_b5cba18fdaf39eef0c81c20edfeb2f3a
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'Errors on organization, role and start_date.'
+      sortKey: 123
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {}
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 400", () => {
+          insomnia.expect(insomnia.response.code).to.equal(400);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Names the missing fields", () => {
+          insomnia.expect(body).to.have.all.keys("organization", "role", "start_date");
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/commitments/'
+    name: Create with a role missing its French text → 400
+    meta:
+      id: req_bef7de7cd67ff7d8fbe9ebe4ade5378f
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'Every language must be filled in; the error names the missing one: {"role": {"fr": ["This field may not be blank."]}}.'
+      sortKey: 124
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "organization": "X",
+          "role": {"en": "Treasurer", "fr": ""},
+          "start_date": "2024-01-01"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 400", () => {
+          insomnia.expect(insomnia.response.code).to.equal(400);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Names the missing language", () => {
+          insomnia.expect(body).to.eql({"role": {"fr": ["This field may not be blank."]}});
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/commitments/'
+    name: Create with a location in one language only → 400
+    meta:
+      id: req_e2dced18c500bd49134688ce14c46010
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'An optional text is filled in every language or left empty in all.'
+      sortKey: 125
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "organization": "X",
+          "role": {"en": "Treasurer", "fr": "Trésorier"},
+          "location": {"en": "Rennes", "fr": ""},
+          "start_date": "2024-01-01"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 400", () => {
+          insomnia.expect(insomnia.response.code).to.equal(400);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Names the empty language", () => {
+          insomnia.expect(body).to.eql({"location": {"fr": ["Fill in every language, or leave them all empty."]}});
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/commitments/'
+    name: Create with an unknown kind → 400
+    meta:
+      id: req_0533502661918bdd08069dec396cd10b
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'kind is one of association, conference_organization, other_event.'
+      sortKey: 126
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "kind": "hobby",
+          "organization": "X",
+          "role": {"en": "Treasurer", "fr": "Trésorier"},
+          "start_date": "2024-01-01"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 400", () => {
+          insomnia.expect(insomnia.response.code).to.equal(400);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Names the kind", () => {
+          insomnia.expect(body).to.have.all.keys("kind");
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/commitments/'
+    name: Create ending before it starts → 400
+    meta:
+      id: req_38cafe194192b20ce8842f72bcce8bd9
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'Error on end_date.'
+      sortKey: 126.5
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "organization": "X",
+          "role": {"en": "Treasurer", "fr": "Trésorier"},
+          "start_date": "2024-01-02",
+          "end_date": "2024-01-01"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 400", () => {
+          insomnia.expect(insomnia.response.code).to.equal(400);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Error is on end_date", () => {
+          insomnia.expect(body).to.have.all.keys("end_date");
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/commitments/'
+    name: List (hidden commitments included) → 200
+    meta:
+      id: req_d673d325b769cabf030e729e8b26ffa3
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 127
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 200", () => {
+          insomnia.expect(insomnia.response.code).to.equal(200);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Returns a list", () => {
+          insomnia.expect(body).to.be.an('array');
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/commitments/{{ _.commitment_id }}/'
+    name: Retrieve → 200
+    meta:
+      id: req_f8ceabce6d8adde7707a31d7230a748b
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 128
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 200", () => {
+          insomnia.expect(insomnia.response.code).to.equal(200);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Returns the created commitment", () => {
+          insomnia.expect(body.organization).to.eql("Demo Robotics Club");
+          insomnia.expect(body).to.include.keys('display_order', 'is_visible', 'created_at', 'updated_at');
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/commitments/{{ _.commitment_id }}/'
+    name: Update (PUT) → 200
+    meta:
+      id: req_fe5b749c14319181e56e73d2a63f96d8
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'Omitted optional fields (location, description...) keep their values.'
+      sortKey: 129
+    method: PUT
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "kind": "other_event",
+          "organization": "Demo Hackathon",
+          "role": {"en": "Mentor", "fr": "Mentor"},
+          "start_date": "2019-09-01"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 200", () => {
+          insomnia.expect(insomnia.response.code).to.equal(200);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Sent fields are updated", () => {
+          insomnia.expect(body.kind).to.eql("other_event");
+          insomnia.expect(body.role).to.eql({"en": "Mentor", "fr": "Mentor"});
+        });
+        insomnia.test("Omitted optional fields keep their value", () => {
+          insomnia.expect(body.location).to.eql({"en": "Rennes", "fr": "Rennes"});
+          insomnia.expect(body.description).to.eql({"en": "Created from Insomnia.", "fr": "Created from Insomnia."});
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/commitments/{{ _.commitment_id }}/'
+    name: PUT without required fields → 400
+    meta:
+      id: req_f864b36afeba7019449822105eb8dbd2
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'Errors on organization, role and start_date.'
+      sortKey: 130
+    method: PUT
+    body:
+      mimeType: application/json
+      text: |-
+        {}
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 400", () => {
+          insomnia.expect(insomnia.response.code).to.equal(400);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Names the missing fields", () => {
+          insomnia.expect(body).to.have.all.keys("organization", "role", "start_date");
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/commitments/{{ _.commitment_id }}/'
+    name: Hide (PATCH is_visible false) → 200
+    meta:
+      id: req_bbc74f7350268d97ad8b41d55ed948d1
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'Only the sent fields change.'
+      sortKey: 131
+    method: PATCH
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "is_visible": false,
+          "display_order": 5
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 200", () => {
+          insomnia.expect(insomnia.response.code).to.equal(200);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Is hidden and moved", () => {
+          insomnia.expect(body.is_visible).to.eql(false);
+          insomnia.expect(body.display_order).to.eql(5);
+        });
+  - url: '{{ _.base_url }}/api/v1/experience/commitments/{{ _.commitment_id }}/'
+    name: Public detail of the hidden commitment → 404
+    meta:
+      id: req_6ab9e72178b7c6a43f6d93dddac4dfbc
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 132
+    method: GET
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 404", () => {
+          insomnia.expect(insomnia.response.code).to.equal(404);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Explains why", () => {
+          insomnia.expect(body).to.have.property('detail');
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/commitments/{{ _.commitment_id }}/'
+    name: Admin retrieve of the hidden commitment → 200
+    meta:
+      id: req_1de1a916cf258385deecdb8c7d9a0907
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'The admin API still reaches it.'
+      sortKey: 133
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 200", () => {
+          insomnia.expect(insomnia.response.code).to.equal(200);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Is still hidden", () => {
+          insomnia.expect(body.is_visible).to.eql(false);
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/commitments/{{ _.commitment_id }}/'
+    name: Show again → 200
+    meta:
+      id: req_68ec0319ffb22de61f37395397c5dae0
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 134
+    method: PATCH
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "is_visible": true
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 200", () => {
+          insomnia.expect(insomnia.response.code).to.equal(200);
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/commitments/999999/'
+    name: Retrieve unknown id → 404
+    meta:
+      id: req_b1d5fd328d6b9aafa6eada902fb634a9
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 135
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 404", () => {
+          insomnia.expect(insomnia.response.code).to.equal(404);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Explains why", () => {
+          insomnia.expect(body).to.have.property('detail');
+        });
+- name: 12. Cleanup (deletes)
   meta:
     id: fld_f0b429f1315c54ff8a07f816db612884
     created: 1790700000000
     modified: 1790700000000
-    sortKey: 11
+    sortKey: 12
     description: Removes what the collection created. The collection can then be run again from the start.
   children:
   - url: '{{ _.base_url }}/api/v1/admin/specializations/{{ _.specialization_id }}/'
@@ -4988,6 +5628,91 @@ collection:
       isPrivate: false
       description: ''
       sortKey: 105.3
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 404", () => {
+          insomnia.expect(insomnia.response.code).to.equal(404);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Explains why", () => {
+          insomnia.expect(body).to.have.property('detail');
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/commitments/{{ _.commitment_id }}/'
+    name: Delete commitment → 204
+    meta:
+      id: req_bc62c21a3afe79840838a78b8905fe44
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 105.4
+    method: DELETE
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 204", () => {
+          insomnia.expect(insomnia.response.code).to.equal(204);
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/commitments/{{ _.second_commitment_id }}/'
+    name: Delete second commitment → 204
+    meta:
+      id: req_de79998fe450dc56926938532acc290d
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 105.5
+    method: DELETE
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 204", () => {
+          insomnia.expect(insomnia.response.code).to.equal(204);
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/commitments/{{ _.commitment_id }}/'
+    name: Deleted commitment → 404
+    meta:
+      id: req_739aff9a9ae74804192768d46200b98d
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 105.6
     method: GET
     authentication:
       type: bearer

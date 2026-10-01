@@ -6,6 +6,7 @@ from django.db import connection
 
 from experience.models import (
     Certification,
+    Commitment,
     Education,
     Hobby,
     Mission,
@@ -26,6 +27,7 @@ CONTENT_MODELS = [
     Specialization,
     Tag,
     Hobby,
+    Commitment,
     Profile,
 ]
 

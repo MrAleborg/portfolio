@@ -4,6 +4,7 @@ from experience.languages import LANGUAGES
 from experience.localized import LocalizedField, LocalizedText
 from experience.models import (
     Certification,
+    Commitment,
     Education,
     Hobby,
     ProfessionalExperience,
@@ -215,3 +216,24 @@ class HobbySerializer(serializers.ModelSerializer):
     class Meta:
         model = Hobby
         fields = ["id", "name", "description"]
+
+
+class CommitmentSerializer(serializers.ModelSerializer):
+    role = LocalizedField()
+    location = LocalizedField()
+    description = LocalizedField()
+
+    class Meta:
+        model = Commitment
+        fields = [
+            "id",
+            "kind",
+            "organization",
+            "role",
+            "location",
+            "url",
+            "start_date",
+            "end_date",
+            "is_current",
+            "description",
+        ]

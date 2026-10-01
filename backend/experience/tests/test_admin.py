@@ -15,6 +15,7 @@ from django.urls import reverse
 
 from experience.models import (
     Certification,
+    Commitment,
     Education,
     Hobby,
     Mission,
@@ -34,6 +35,7 @@ MODELS = [
     Specialization,
     Tag,
     Hobby,
+    Commitment,
 ]
 
 
@@ -63,8 +65,13 @@ def make(model):
         },
         Tag: {"name_en": "Python", "name_fr": "Python", "kind": Tag.Kind.SKILL},
         Hobby: {"name_en": "Chess", "name_fr": "Échecs"},
+        Commitment: {
+            "organization": "Red Cross",
+            "role_en": "Volunteer",
+            "role_fr": "Bénévole",
+        },
     }[model]
-    if model in (Education, ProfessionalExperience, Project):
+    if model in (Education, ProfessionalExperience, Project, Commitment):
         required["start_date"] = date(2024, 1, 1)
     if model in (Certification, Specialization):
         required["issue_date"] = date(2024, 1, 1)

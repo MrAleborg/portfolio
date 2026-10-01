@@ -14,6 +14,7 @@ from django.db import IntegrityError
 
 from experience.models import (
     Certification,
+    Commitment,
     Education,
     ProfessionalExperience,
     Project,
@@ -30,6 +31,11 @@ DATE_RANGE_ROWS = {
         "position_fr": "Développeur",
     },
     Project: {"title_en": "Portfolio", "title_fr": "Portfolio"},
+    Commitment: {
+        "organization": "Red Cross",
+        "role_en": "Volunteer",
+        "role_fr": "Bénévole",
+    },
 }
 
 CREDENTIAL_ROWS = {

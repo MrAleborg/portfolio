@@ -304,3 +304,29 @@ class Hobby(BaseEntry):
 
     def __str__(self):
         return self.name_en
+
+
+class Commitment(DateRangeEntry):
+    class Kind(models.TextChoices):
+        ASSOCIATION = "association", "Association"
+        CONFERENCE_ORGANIZATION = "conference_organization", "Conference organization"
+        OTHER_EVENT = "other_event", "Other event"
+
+    kind = models.CharField(
+        max_length=30, choices=Kind.choices, default=Kind.ASSOCIATION
+    )
+    organization = models.CharField(max_length=255)
+    role_en = models.CharField(max_length=255)
+    role_fr = models.CharField(max_length=255)
+    location_en = models.CharField(max_length=255, blank=True)
+    location_fr = models.CharField(max_length=255, blank=True)
+    url = models.URLField(blank=True)
+
+    class Meta(DateRangeEntry.Meta):
+        constraints = [
+            *DateRangeEntry.Meta.constraints,
+            translated_together("location"),
+        ]
+
+    def __str__(self):
+        return f"{self.role_en} — {self.organization}"
