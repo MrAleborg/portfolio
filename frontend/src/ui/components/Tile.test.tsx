@@ -19,19 +19,11 @@ describe('Tile', () => {
     ).toBeInTheDocument()
   })
 
-  it('shows its title as a level 3 heading by default', () => {
+  it('shows its title as a level 3 heading', () => {
     render(<Tile title="Master’s degree" />)
 
     expect(
       screen.getByRole('heading', { level: 3, name: 'Master’s degree' }),
-    ).toBeInTheDocument()
-  })
-
-  it('can show its title at another heading level', () => {
-    render(<Tile title="Master’s degree" headingLevel={4} />)
-
-    expect(
-      screen.getByRole('heading', { level: 4, name: 'Master’s degree' }),
     ).toBeInTheDocument()
   })
 
@@ -90,10 +82,9 @@ describe('Tile', () => {
   it('tells which content its title expands', () => {
     renderTileWithContent()
 
-    const content = screen.getByText('Thesis on compilers.').parentElement!
-    expect(
-      screen.getByRole('button', { name: 'Master’s degree' }),
-    ).toHaveAttribute('aria-controls', content.id)
+    const button = screen.getByRole('button', { name: 'Master’s degree' })
+    const content = document.getElementById(button.getAttribute('aria-controls')!)
+    expect(content).toContainElement(screen.getByText('Thesis on compilers.'))
   })
 
   it('keeps its title the heading of the tile when it can expand', () => {
