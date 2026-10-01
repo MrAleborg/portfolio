@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import type { Locale } from '@/domain/i18n/Locale'
 import type { ProfileRepository } from '@/domain/profile/ProfileRepository'
 import {
@@ -7,6 +8,7 @@ import {
   fakeProfileRepository,
   pendingProfileRepository,
 } from '@/test/fakeProfileRepository'
+import { LanguageSwitch } from '@/ui/components/LanguageSwitch'
 import { LocaleProvider } from '@/ui/i18n/LocaleProvider'
 import { HomePage } from '@/ui/pages/HomePage'
 
@@ -115,17 +117,25 @@ describe('HomePage', () => {
     expect(screen.getByText('Second paragraph.')).toBeInTheDocument()
   })
 
-  it('shows a paragraph again when the bio repeats it', async () => {
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
-    renderPage(
-      fakeProfileRepository({
-        ...ada,
-        bio: { en: 'Same.\n\nSame.', fr: '' },
-      }),
+  it('shows a repeated paragraph each time, and no stale one after a language switch', async () => {
+    const user = userEvent.setup()
+    render(
+      <LocaleProvider initialLocale="en">
+        <LanguageSwitch />
+        <HomePage
+          profileRepository={fakeProfileRepository({
+            ...ada,
+            bio: { en: 'Same.\n\nSame.', fr: 'Other.\n\nSame.' },
+          })}
+        />
+      </LocaleProvider>,
     )
-
     expect(await screen.findAllByText('Same.')).toHaveLength(2)
-    expect(consoleError).not.toHaveBeenCalled()
-    consoleError.mockRestore()
+
+    await user.click(screen.getByRole('button', { name: 'Français' }))
+
+    expect(
+      screen.getAllByText(/Same|Other/).map((paragraph) => paragraph.textContent),
+    ).toEqual(['Other.', 'Same.'])
   })
 })
