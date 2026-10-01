@@ -176,10 +176,11 @@ and 8080):
   frontend.
 - `www.example.com` redirects to `example.com`.
 - Both sites get the `security_headers` snippet: `X-Content-Type-Options`,
-  `Referrer-Policy`, `X-Frame-Options`, and an HSTS header of one year without
-  `includeSubDomains` (the server hosts other sites) when the response has none
-  yet. Django's own HSTS header, sent on the backend's responses, wins. The
-  frontend's CSP is set by its nginx.
+  `Referrer-Policy`, `X-Frame-Options` and HSTS (without `includeSubDomains`:
+  the server hosts other sites). Each is added only when the response doesn't
+  have it already, so Django's own headers on the backend's responses are not
+  doubled. HSTS starts at one hour: raise it to `31536000` in the snippet when
+  you raise `SECURE_HSTS_SECONDS`. The frontend's CSP is set by its nginx.
 
 Then check and reload:
 
