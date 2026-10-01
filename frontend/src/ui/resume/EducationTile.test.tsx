@@ -47,10 +47,13 @@ describe('EducationTile', () => {
       expect(screen.getByText('Université de Rennes')).toBeInTheDocument()
     })
 
-    it('shows the period and the location', () => {
+    it('shows the period in time elements and the location', () => {
       renderTile(masters)
 
-      expect(screen.getByText('Sep 2015 – Jun 2017 · Brittany')).toBeInTheDocument()
+      const [start, end] = screen.getAllByRole('time')
+      expect(start).toHaveTextContent('Sep 2015')
+      expect(end).toHaveTextContent('Jun 2017')
+      expect(screen.getByText('Brittany')).toBeInTheDocument()
     })
 
     it('shows the grade and the description once expanded', async () => {
@@ -73,7 +76,7 @@ describe('EducationTile', () => {
     it('shows an ongoing degree as lasting until now', () => {
       renderTile(doctorate)
 
-      expect(screen.getByText('Oct 2021 – Present')).toBeInTheDocument()
+      expect(screen.getByRole('article')).toHaveTextContent('Oct 2021 – Present')
     })
   })
 
@@ -84,10 +87,13 @@ describe('EducationTile', () => {
       expect(screen.getByRole('article')).toHaveAccessibleName('Master, Informatique')
     })
 
-    it('shows the period and the location', () => {
+    it('shows the period in time elements and the location', () => {
       renderTile(masters, 'fr')
 
-      expect(screen.getByText('sept. 2015 – juin 2017 · Bretagne')).toBeInTheDocument()
+      const [start, end] = screen.getAllByRole('time')
+      expect(start).toHaveTextContent('sept. 2015')
+      expect(end).toHaveTextContent('juin 2017')
+      expect(screen.getByText('Bretagne')).toBeInTheDocument()
     })
 
     it('shows the grade and the description once expanded', async () => {
@@ -102,7 +108,7 @@ describe('EducationTile', () => {
     it('shows an ongoing degree as lasting until now', () => {
       renderTile(doctorate, 'fr')
 
-      expect(screen.getByText('oct. 2021 – aujourd’hui')).toBeInTheDocument()
+      expect(screen.getByRole('article')).toHaveTextContent('oct. 2021 – aujourd’hui')
     })
   })
 

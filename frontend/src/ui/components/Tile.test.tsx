@@ -33,10 +33,12 @@ describe('Tile', () => {
     expect(screen.getByText('Université de Rennes')).toBeInTheDocument()
   })
 
-  it('joins its meta items with a middle dot', () => {
+  it('shows each meta item as its own element, without a separator', () => {
     render(<Tile title="Master’s degree" meta={['Sep 2015 – Jun 2017', 'Brittany']} />)
 
-    expect(screen.getByText('Sep 2015 – Jun 2017 · Brittany')).toBeInTheDocument()
+    expect(screen.getByText('Sep 2015 – Jun 2017')).toBeInTheDocument()
+    expect(screen.getByText('Brittany')).toBeInTheDocument()
+    expect(screen.getByRole('article')).not.toHaveTextContent('·')
   })
 
   it('leaves out empty meta items', () => {

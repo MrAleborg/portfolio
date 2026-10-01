@@ -4,8 +4,8 @@ import './Tile.css'
 interface TileProps {
   title: string
   subtitle?: string
-  /** Short facts shown on one line, e.g. a period and a place; empty ones are left out. */
-  meta?: string[]
+  /** Short facts shown side by side, e.g. a period and a place; empty ones are left out. */
+  meta?: ReactNode[]
   /** Details hidden until the title is clicked. */
   children?: ReactNode
 }
@@ -20,7 +20,7 @@ export function Tile({
   const titleId = useId()
   const bodyId = useId()
   const [expanded, setExpanded] = useState(false)
-  const metaLine = meta.filter(Boolean).join(' · ')
+  const metaItems = meta.filter(Boolean)
   const hasDetails = Children.toArray(children).length > 0
 
   return (
@@ -42,7 +42,13 @@ export function Tile({
         )}
       </h3>
       {subtitle && <p className="tile__subtitle">{subtitle}</p>}
-      {metaLine && <p className="tile__meta">{metaLine}</p>}
+      {metaItems.length > 0 && (
+        <p className="tile__meta">
+          {metaItems.map((item, index) => (
+            <span key={index}>{item}</span>
+          ))}
+        </p>
+      )}
       {hasDetails && (
         <div id={bodyId} className="tile__body" hidden={!expanded}>
           {children}
