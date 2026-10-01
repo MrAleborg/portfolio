@@ -111,6 +111,12 @@ describe('Tile', () => {
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
 
+  it('has no button when its content is an empty list', () => {
+    render(<Tile title="Master’s degree">{[]}</Tile>)
+
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+  })
+
   it('shows nothing but its title when it has nothing else', () => {
     render(<Tile title="Master’s degree" meta={['']} />)
 

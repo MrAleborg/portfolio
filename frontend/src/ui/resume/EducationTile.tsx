@@ -22,8 +22,9 @@ export function EducationTile({ education }: EducationTileProps) {
       subtitle={education.institution}
       meta={[formatPeriod(education.period, locale), education.location[locale]]}
     >
-      {lines.length > 0 &&
-        lines.map((line, index) => <p key={index}>{line}</p>)}
+      {lines.map((line, index) => (
+        <p key={index}>{line}</p>
+      ))}
     </Tile>
   )
 }

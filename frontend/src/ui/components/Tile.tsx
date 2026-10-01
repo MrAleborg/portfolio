@@ -1,4 +1,4 @@
-import { useId, useState, type ReactNode } from 'react'
+import { Children, useId, useState, type ReactNode } from 'react'
 import './Tile.css'
 
 interface TileProps {
@@ -25,11 +25,12 @@ export function Tile({
   const [expanded, setExpanded] = useState(false)
   const Heading = `h${headingLevel}` as const
   const metaLine = meta.filter(Boolean).join(' · ')
+  const hasDetails = Children.toArray(children).length > 0
 
   return (
     <article className="tile" aria-labelledby={titleId}>
       <Heading id={titleId} className="tile__title">
-        {children ? (
+        {hasDetails ? (
           <button
             type="button"
             className="tile__toggle"
@@ -46,7 +47,7 @@ export function Tile({
       </Heading>
       {subtitle && <p className="tile__subtitle">{subtitle}</p>}
       {metaLine && <p className="tile__meta">{metaLine}</p>}
-      {children && (
+      {hasDetails && (
         <div id={bodyId} className="tile__body" hidden={!expanded}>
           {children}
         </div>
