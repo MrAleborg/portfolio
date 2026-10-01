@@ -10,6 +10,8 @@ import pytest
 from django.db import connection
 from django.db.migrations.executor import MigrationExecutor
 
+from experience.models import Education, Project, Tag
+
 pytestmark = pytest.mark.django_db(transaction=True)
 
 
@@ -168,3 +170,41 @@ def test_descriptions_are_copied_to_every_language(migrate):
             f"About {model}",
             f"About {model}",
         )
+
+
+def test_rolling_back_to_the_first_schema_and_forward_keeps_the_content(migrate):
+    """Rolling back (see docs/deployment.md) keeps the English texts; going
+    forward again copies them to every language, as the old schema has no room
+    for the others."""
+    Project.objects.create(
+        title_en="Portfolio",
+        title_fr="Portfolio FR",
+        achievements=[{"en": "Shipped on time", "fr": "Livré à temps"}],
+        start_date=date(2024, 1, 1),
+    )
+    Education.objects.create(
+        institution="University",
+        degree_en="MSc",
+        degree_fr="Master",
+        description_en="About",
+        description_fr="À propos",
+        start_date=date(2020, 9, 1),
+    )
+    Tag.objects.create(name_en="Python", name_fr="Python FR", kind="skill")
+
+    old_apps = migrate("0002_date_constraints")
+
+    project = old_apps.get_model("experience", "Project").objects.get()
+    assert (project.title, project.achievements) == ("Portfolio", ["Shipped on time"])
+    education = old_apps.get_model("experience", "Education").objects.get()
+    assert (education.degree, education.description) == ("MSc", "About")
+    assert old_apps.get_model("experience", "Tag").objects.get().name == "Python"
+
+    migrate("0008_achievements_validator")
+
+    project = Project.objects.get()
+    assert (project.title_en, project.title_fr) == ("Portfolio", "Portfolio")
+    assert project.achievements == [{"en": "Shipped on time", "fr": "Shipped on time"}]
+    education = Education.objects.get()
+    assert (education.degree_fr, education.description_fr) == ("MSc", "About")
+    assert Tag.objects.get().name_fr == "Python"
