@@ -1,4 +1,4 @@
-from django.db.models import Prefetch, Q
+from django.db.models import Exists, OuterRef, Prefetch, Q
 from rest_framework import viewsets
 from rest_framework.exceptions import ValidationError
 
@@ -130,7 +130,15 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        if self.action == "retrieve":
+        if self.action == "list":
+            # Hidden entries must not leak through their tags.
+            queryset = queryset.filter(
+                Exists(visible_projects().filter(tags=OuterRef("pk")))
+                | Exists(
+                    Certification.objects.filter(is_visible=True, tags=OuterRef("pk"))
+                )
+            )
+        elif self.action == "retrieve":
             queryset = queryset.prefetch_related(
                 Prefetch("projects", queryset=visible_projects()),
                 Prefetch(

@@ -210,7 +210,9 @@ path.
 ### `skills/`, `tools/`, `methodologies/`
 
 The three tag kinds behave the same way; each only returns tags of its kind.
-The list returns `id` and `name`:
+The list only includes tags used by at least one visible project or
+certification, so a tag that only tags hidden entries (or nothing) is left out.
+It returns `id` and `name`:
 
 ```json
 [
