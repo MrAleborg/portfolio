@@ -131,13 +131,23 @@ jobs:
           cd /opt/portfolio
           export TAG
           # The new backend applies migrations when it starts: back up first.
-          # Nothing to back up on the first deploy. </dev/null: docker compose
-          # exec forwards stdin, which here is this script, and would eat it.
-          if [ -n "$(docker compose ps --quiet backend)" ]; then
+          # Nothing to back up on the first deploy. A stopped backend counts
+          # (-a): backup.sh then fails, rather than skipping the backup.
+          # </dev/null: docker compose exec forwards stdin, which here is this
+          # script, and would eat it.
+          if [ -n "$(docker compose ps -a -q backend)" ]; then
               ./backup.sh </dev/null
           fi
           docker compose pull
-          docker compose up -d --wait --wait-timeout 180
+          if ! docker compose up -d --wait --wait-timeout 180; then
+              # The new containers are up but unhealthy: go back to the tag in
+              # .env (the last deployed one), if there is one. Not on the
+              # first deploy. Migrations may already have been applied.
+              if grep -q '^TAG=' .env; then
+                  env -u TAG docker compose up -d --wait --wait-timeout 180
+              fi
+              exit 1
+          fi
           # Drop the old TAG line, make sure the file ends with a newline (the
           # file is edited by hand), then add the new one.
           sed -i -e '/^TAG=/d' -e '$a\' .env && echo "TAG=$TAG" >> .env

@@ -286,12 +286,18 @@ workflow ignores a run started from another branch).
    pulled by accident.
 3. **deploy** (15 minutes at most): copies `compose.yml` and `backup.sh` to
    `/opt/portfolio/`, then over SSH, with `TAG=sha-<commit>`:
-   - runs `./backup.sh`, unless no backend is running yet: the new backend
-     applies migrations when it starts;
+   - runs `./backup.sh`, unless there is no backend container yet (first
+     deploy): the new backend applies migrations when it starts. If the backend
+     exists but is stopped, the backup fails and so does the deploy;
    - runs `docker compose pull` and `docker compose up -d --wait
      --wait-timeout 180`. `--wait` fails the job if a new container doesn't
      pass its health check within 3 minutes. A container whose image didn't
-     change isn't restarted;
+     change isn't restarted. On failure, the deploy starts the tag still in
+     `.env` (the last successful deploy) again, then fails. That does not undo
+     migrations the new backend may already have applied: if the old version
+     can't work with them, restore the backup taken just before the deploy
+     (see [Restore a backup](#restore-a-backup)). The first deploy has no
+     earlier tag, so it leaves the new containers as they are;
    - writes `TAG=sha-<commit>` in `/opt/portfolio/.env`, so every later
      `docker compose` command on the server uses the deployed images
      (`compose.yml` refuses to run without a `TAG`);
