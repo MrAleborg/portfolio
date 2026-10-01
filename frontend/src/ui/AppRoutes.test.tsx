@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import type { Locale } from '@/domain/i18n/Locale'
-import { fakeEducationRepository } from '@/test/fakeEducationRepository'
+import { fakeEducationRepository, masters } from '@/test/fakeEducationRepository'
 import { fakeProfileRepository } from '@/test/fakeProfileRepository'
 import { fakeRepositories } from '@/test/fakeRepositories'
 import { AppRoutes } from '@/ui/AppRoutes'
@@ -138,5 +138,55 @@ describe('AppRoutes', () => {
       'true',
     )
     expect(screen.getByText('Mémoire sur les compilateurs.')).toBeVisible()
+  })
+
+  describe('when a page fails to render', () => {
+    const malformedDate = fakeEducationRepository([
+      { ...masters, period: { start: 'not a date', end: null } },
+    ])
+
+    beforeEach(() => {
+      vi.spyOn(console, 'error').mockImplementation(() => {})
+    })
+
+    afterEach(() => {
+      vi.restoreAllMocks()
+    })
+
+    it('says so in the page and keeps the navigation', async () => {
+      renderAt('/resume', {
+        repositories: fakeRepositories({ education: malformedDate }),
+      })
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'Something went wrong. Please reload the page.',
+      )
+      expect(navigation().getByRole('link', { name: 'Home' })).toBeInTheDocument()
+    })
+
+    it('says so in French', async () => {
+      renderAt('/resume', {
+        locale: 'fr',
+        repositories: fakeRepositories({ education: malformedDate }),
+      })
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'Une erreur est survenue. Rechargez la page.',
+      )
+    })
+
+    it('shows the next page once the user navigates away', async () => {
+      const user = userEvent.setup()
+      renderAt('/resume', {
+        repositories: fakeRepositories({ education: malformedDate }),
+      })
+      await screen.findByRole('alert')
+
+      await user.click(navigation().getByRole('link', { name: 'Home' }))
+
+      expect(
+        await screen.findByRole('heading', { level: 1, name: 'Ada Lovelace' }),
+      ).toBeInTheDocument()
+    })
   })
 })
