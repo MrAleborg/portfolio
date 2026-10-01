@@ -1,12 +1,13 @@
-export type Locale = 'en' | 'fr'
+const LOCALES = ['en', 'fr'] as const
+
+export type Locale = (typeof LOCALES)[number]
 
 export type Localized<T> = Record<Locale, T>
 
-const SUPPORTED_LOCALES: readonly string[] = ['en', 'fr'] satisfies Locale[]
 const DEFAULT_LOCALE: Locale = 'en'
 
 export function isLocale(language: string): language is Locale {
-  return SUPPORTED_LOCALES.includes(language)
+  return (LOCALES as readonly string[]).includes(language)
 }
 
 /** Picks the first supported language from the browser's preference list. */
