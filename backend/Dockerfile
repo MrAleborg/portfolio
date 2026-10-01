@@ -1,14 +1,14 @@
 # syntax=docker/dockerfile:1
 
 # Export the locked production dependencies, so the final image doesn't need pipenv.
-FROM python:3.12-slim AS requirements
+FROM python:3.12.14-slim AS requirements
 RUN pip install --no-cache-dir pipenv
 WORKDIR /build
 COPY Pipfile Pipfile.lock ./
 RUN pipenv requirements --hash > requirements.txt
 
 
-FROM python:3.12-slim
+FROM python:3.12.14-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
