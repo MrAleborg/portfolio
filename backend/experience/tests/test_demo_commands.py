@@ -39,6 +39,7 @@ LIST_ROUTES = [
     "skill",
     "tool",
     "methodology",
+    "hobby",
 ]
 
 CONTENT_MODELS = [
@@ -113,6 +114,17 @@ def test_seed_creates_hidden_entries_that_are_not_exposed(api_client):
     assert not exposed & set(
         projects_of_hidden_experiences.values_list("id", flat=True)
     )
+
+
+def test_seed_creates_a_hidden_hobby_that_is_not_exposed(api_client):
+    """The demo data includes a hidden hobby, so visibility can be checked."""
+    run("seed_demo")
+
+    hidden = Hobby.objects.filter(is_visible=False)
+    exposed = {h["id"] for h in api_client.get(reverse("experience:hobby-list")).json()}
+
+    assert hidden.exists()
+    assert not exposed & set(hidden.values_list("id", flat=True))
 
 
 def test_seed_refuses_to_run_on_a_database_with_content():
@@ -191,6 +203,7 @@ def test_reset_replaces_the_content():
     assert Education.objects.exists()
     assert Certification.objects.exists()
     assert Specialization.objects.exists()
+    assert Hobby.objects.exists()
 
 
 def test_reset_works_on_an_empty_database():
