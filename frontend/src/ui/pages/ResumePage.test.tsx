@@ -110,11 +110,10 @@ describe('ResumePage', () => {
 
     const expertise = within(screen.getByRole('region', { name: 'Expertise' }))
     expect(await expertise.findByRole('heading', { level: 3, name: 'Engineering' })).toBeInTheDocument()
-    const lists = expertise.getAllByRole('list').map((list) => list.getAttribute('aria-labelledby'))
-    expect(lists.map((id) => document.getElementById(id ?? '')?.textContent)).toEqual([
-      'Languages',
-      'Tooling',
-    ])
+    const labels = ['Languages', 'Tooling'].map((name) => expertise.getByText(name))
+    expect(labels[0]?.compareDocumentPosition(labels[1] as Node)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    )
     const languages = within(expertise.getByRole('list', { name: 'Languages' }))
     expect(languages.getAllByRole('listitem').map((chip) => chip.textContent)).toEqual([
       'Python',
@@ -133,6 +132,16 @@ describe('ResumePage', () => {
       'Git',
       'Claude Code · used daily for agentic coding',
     ])
+  })
+
+  it('hides the separator before a note from assistive technology', async () => {
+    renderPage()
+
+    const expertise = within(screen.getByRole('region', { name: 'Expertise' }))
+    const tooling = within(await expertise.findByRole('list', { name: 'Tooling' }))
+    const chip = within(tooling.getByText(/Claude Code/))
+    expect(chip.getByText('·')).toHaveAttribute('aria-hidden', 'true')
+    expect(chip.getByText('used daily for agentic coding')).not.toHaveAttribute('aria-hidden')
   })
 
   it('shows the domains, categories, tags and notes of the expertise in French', async () => {

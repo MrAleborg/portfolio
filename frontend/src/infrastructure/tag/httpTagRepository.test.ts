@@ -26,17 +26,9 @@ const tagCategories = [
   { id: 2, name: { en: 'Practices', fr: 'Pratiques' }, children: [] },
 ]
 
-/** A fetch that answers the tag categories endpoint, and any other path with an empty list. */
-function fakeApi(status = 200) {
-  return vi.fn<typeof fetch>((input) => {
-    const isCategories = String(input).endsWith(TAG_CATEGORIES)
-    return respondWith(isCategories ? status : 200, isCategories ? tagCategories : [])(input)
-  })
-}
-
 describe('httpTagRepository', () => {
   it('requests the tag categories, and nothing else', async () => {
-    const fetchFn = fakeApi()
+    const fetchFn = respondWith(200, tagCategories)
 
     await createHttpTagRepository('https://api.example.com', fetchFn).list()
 
@@ -45,7 +37,7 @@ describe('httpTagRepository', () => {
   })
 
   it('returns the domains with their categories, tags and notes, in API order', async () => {
-    const repository = createHttpTagRepository('https://api.example.com', fakeApi())
+    const repository = createHttpTagRepository('https://api.example.com', respondWith(200, tagCategories))
 
     await expect(repository.list()).resolves.toEqual([
       {
@@ -72,7 +64,7 @@ describe('httpTagRepository', () => {
   })
 
   it('fails when the tag categories cannot be loaded', async () => {
-    const repository = createHttpTagRepository('https://api.example.com', fakeApi(500))
+    const repository = createHttpTagRepository('https://api.example.com', respondWith(500, tagCategories))
 
     await expect(repository.list()).rejects.toThrow('500')
   })
