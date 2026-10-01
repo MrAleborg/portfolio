@@ -7,6 +7,7 @@ import { createHttpCommitmentRepository } from '@/infrastructure/commitment/http
 import { createHttpEducationRepository } from '@/infrastructure/education/httpEducationRepository'
 import { createHttpHobbyRepository } from '@/infrastructure/hobby/httpHobbyRepository'
 import { createHttpProfileRepository } from '@/infrastructure/profile/httpProfileRepository'
+import { createHttpProjectRepository } from '@/infrastructure/project/httpProjectRepository'
 import { createHttpScientificCommunicationRepository } from '@/infrastructure/scientificCommunication/httpScientificCommunicationRepository'
 import { createHttpSpecializationRepository } from '@/infrastructure/specialization/httpSpecializationRepository'
 
@@ -14,6 +15,7 @@ const apiUrl = import.meta.env.VITE_API_URL
 
 const repositories = {
   profile: createHttpProfileRepository(apiUrl),
+  project: createHttpProjectRepository(apiUrl),
   education: createHttpEducationRepository(apiUrl),
   certification: createHttpCertificationRepository(apiUrl),
   specialization: createHttpSpecializationRepository(apiUrl),

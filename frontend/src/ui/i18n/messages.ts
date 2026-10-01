@@ -11,6 +11,7 @@ interface Messages {
   navHome: string
   navResume: string
   resumeTitle: string
+  sideProjectsTitle: string
   educationTitle: string
   specializationsTitle: string
   certificationsTitle: string
@@ -29,6 +30,8 @@ interface Messages {
   expires: string
   seeCredential: string
   partOf: string
+  missions: string
+  achievements: string
   tagKinds: Record<TagKind, string>
   loading: string
   profileUnavailable: string
@@ -48,6 +51,7 @@ export const messages: Localized<Messages> = {
     navHome: 'Home',
     navResume: 'Resume',
     resumeTitle: 'Resume',
+    sideProjectsTitle: 'Personal projects',
     educationTitle: 'Education',
     specializationsTitle: 'Specializations',
     certificationsTitle: 'Certifications',
@@ -73,6 +77,8 @@ export const messages: Localized<Messages> = {
     expires: 'Expires',
     seeCredential: 'See credential',
     partOf: 'Part of',
+    missions: 'Missions',
+    achievements: 'Achievements',
     tagKinds: { skill: 'Skills', tool: 'Tools', methodology: 'Methodologies' },
     loading: 'Loading…',
     profileUnavailable:
@@ -90,6 +96,7 @@ export const messages: Localized<Messages> = {
     navHome: 'Accueil',
     navResume: 'CV',
     resumeTitle: 'CV',
+    sideProjectsTitle: 'Projets personnels',
     educationTitle: 'Formation',
     specializationsTitle: 'Spécialisations',
     certificationsTitle: 'Certifications',
@@ -115,6 +122,8 @@ export const messages: Localized<Messages> = {
     expires: 'Expire en',
     seeCredential: 'Voir le certificat',
     partOf: 'Fait partie de',
+    missions: 'Missions',
+    achievements: 'Réalisations',
     tagKinds: { skill: 'Compétences', tool: 'Outils', methodology: 'Méthodologies' },
     loading: 'Chargement…',
     profileUnavailable: 'Le profil n’a pas pu être chargé. Réessayez plus tard.',
