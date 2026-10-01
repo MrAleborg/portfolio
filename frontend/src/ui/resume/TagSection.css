@@ -20,3 +20,8 @@
   line-height: 1.3;
   color: var(--text-strong);
 }
+
+/* Category labels read like the labels of the other tiles, not like the small project tag labels. */
+.tag-summary .tag-list__label {
+  font-size: inherit;
+}
