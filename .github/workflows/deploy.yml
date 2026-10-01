@@ -139,7 +139,7 @@ jobs:
         # is the tag written to .env, so a manual `docker compose` command on
         # the server uses the images that were deployed.
         run: |
-          ssh "$TARGET" env TAG="$TAG" sh -s <<'EOF'
+          ssh "$TARGET" env TAG="$TAG" REPO="$GITHUB_REPOSITORY" sh -s <<'EOF'
           set -eu
           cd /opt/portfolio
           export TAG
@@ -164,11 +164,11 @@ jobs:
           # Drop the old TAG line, make sure the file ends with a newline (the
           # file is edited by hand), then add the new one.
           sed -i -e '/^TAG=/d' -e '$a\' .env && echo "TAG=$TAG" >> .env
-          # Old sha-* tags stay tagged, so a plain prune removes nothing. Keep
-          # a week of them for rollbacks, and only touch this repo's images:
-          # the server is shared.
-          docker image prune -af --filter until=168h \
-              --filter label=org.opencontainers.image.source=https://github.com/MrAleborg/portfolio
+          # Old sha-* tags stay tagged, so a plain prune removes nothing. Remove
+          # the unused images of this repo (a rollback pulls its image again),
+          # and only those: the server is shared.
+          docker image prune -af \
+              --filter "label=org.opencontainers.image.source=https://github.com/$REPO"
           EOF
 
       - name: Smoke test

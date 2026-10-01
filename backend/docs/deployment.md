@@ -303,8 +303,11 @@ workflow ignores a run started from another branch).
    - writes `TAG=sha-<commit>` in `/opt/portfolio/.env`, so every later
      `docker compose` command on the server uses the deployed images
      (`compose.yml` refuses to run without a `TAG`);
-   - deletes this repo's images older than a week. The `sha-*` tags of the last
-     week stay available for a rollback.
+   - deletes this repo's images that no container uses (found through the
+     `org.opencontainers.image.source` label the build adds, so the server's
+     other images are safe). A rollback pulls its image from GHCR again. Images
+     built before that label was added are never removed by it: delete them once
+     by hand with `docker image rm`.
 4. **Smoke test**: `curl` on `https://$API_DOMAIN/api/v1/experience/` and
    `https://$FRONTEND_DOMAIN/`.
 
