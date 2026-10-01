@@ -138,11 +138,9 @@ jobs:
           fi
           docker compose pull
           docker compose up -d --wait --wait-timeout 180
-          if grep -q '^TAG=' .env; then
-              sed -i "s/^TAG=.*/TAG=$TAG/" .env
-          else
-              echo "TAG=$TAG" >> .env
-          fi
+          # Drop the old TAG line, make sure the file ends with a newline (the
+          # file is edited by hand), then add the new one.
+          sed -i -e '/^TAG=/d' -e '$a\' .env && echo "TAG=$TAG" >> .env
           # Old sha-* tags stay tagged, so a plain prune removes nothing. Keep
           # a week of them for rollbacks, and only touch this repo's images:
           # the server is shared.
