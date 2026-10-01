@@ -285,3 +285,55 @@ def test_login_throttle_ignores_a_spoofed_forwarded_for_address(api_client):
     ]
 
     assert statuses == [401] * 5 + [429]
+
+
+def change_password(api_client, access):
+    authenticate(api_client, access)
+    response = api_client.post(
+        SET_PASSWORD_URL,
+        {"current_password": PASSWORD, "new_password": "a-new-strong-pass-42"},
+        format="json",
+    )
+    api_client.credentials()
+    assert response.status_code == 204
+
+
+def test_access_token_stops_working_after_a_password_change(api_client):
+    """Changing the password logs out the sessions that were already open."""
+    make_user()
+    tokens = login(api_client).json()
+    change_password(api_client, tokens["access"])
+    authenticate(api_client, tokens["access"])
+
+    response = api_client.get(ME_URL)
+
+    assert response.status_code == 401
+
+
+def test_refresh_token_stops_working_after_a_password_change(api_client):
+    """A stolen refresh token does not survive a password change."""
+    make_user()
+    tokens = login(api_client).json()
+    change_password(api_client, tokens["access"])
+
+    response = api_client.post(
+        REFRESH_URL, {"refresh": tokens["refresh"]}, format="json"
+    )
+
+    assert response.status_code == 401
+
+
+def test_tokens_issued_after_a_password_change_work(api_client):
+    """Logging in again with the new password gives a usable session."""
+    make_user()
+    change_password(api_client, login(api_client).json()["access"])
+    tokens = login(api_client, password="a-new-strong-pass-42").json()
+    authenticate(api_client, tokens["access"])
+
+    me = api_client.get(ME_URL)
+    refreshed = api_client.post(
+        REFRESH_URL, {"refresh": tokens["refresh"]}, format="json"
+    )
+
+    assert me.status_code == 200
+    assert refreshed.status_code == 200

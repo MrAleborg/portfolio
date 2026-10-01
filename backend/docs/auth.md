@@ -62,6 +62,9 @@ Authorization: Bearer <access>
   and blacklists the old one, so the frontend must store the new one.
 - **Logging out** blacklists the refresh token. The access token keeps working
   until it expires (15 minutes at most), so the frontend should drop it too.
+- **Changing the password logs out every session.** Tokens carry a hash of the
+  password (`CHECK_REVOKE_TOKEN`), so access and refresh tokens issued before
+  the change are rejected with a `401`, and the frontend must log in again.
 - **Don't send an expired token to public routes.** JWT authentication checks
   every `Authorization` header it gets, so a bad token is a `401` even on
   `/api/v1/experience/`, which needs no token.

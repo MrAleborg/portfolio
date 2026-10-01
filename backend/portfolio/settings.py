@@ -214,8 +214,11 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
+    # Tokens carry a hash of the password: changing it logs out every session.
+    "CHECK_REVOKE_TOKEN": True,
     "AUTH_HEADER_TYPES": ("Bearer",),
     "TOKEN_OBTAIN_SERIALIZER": "accounts.serializers.StaffTokenObtainPairSerializer",
+    "TOKEN_REFRESH_SERIALIZER": "accounts.serializers.RefreshSerializer",
 }
 
 
