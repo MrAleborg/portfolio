@@ -14,6 +14,7 @@
 import pytest
 from django.contrib.auth import get_user_model
 from django.core.management import CommandError, call_command
+from django.db.models import Count, Q
 from django.urls import reverse
 
 from experience.models import (
@@ -27,6 +28,7 @@ from experience.models import (
     ScientificCommunication,
     Specialization,
     Tag,
+    TagCategory,
 )
 from owner.models import Profile
 
@@ -44,6 +46,7 @@ LIST_ROUTES = [
     "hobby",
     "commitment",
     "scientific-communication",
+    "tag-category",
 ]
 
 CONTENT_MODELS = [
@@ -54,6 +57,7 @@ CONTENT_MODELS = [
     Certification,
     Specialization,
     Tag,
+    TagCategory,
     Hobby,
     Commitment,
     ScientificCommunication,
@@ -186,6 +190,44 @@ def test_seed_creates_a_hidden_communication_that_is_not_exposed(api_client):
     assert not exposed & set(hidden.values_list("id", flat=True))
 
 
+def test_seed_creates_two_domains_of_two_or_three_categories_holding_tags():
+    """The technical strengths tree has a realistic shape."""
+    run("seed_demo")
+
+    domains = TagCategory.objects.filter(parent=None)
+    categories = TagCategory.objects.filter(parent__isnull=False)
+
+    assert domains.count() == 2
+    assert all(2 <= domain.children.count() <= 3 for domain in domains)
+    assert all(category.tags.exists() for category in categories)
+
+
+def test_seed_puts_a_tag_in_two_categories():
+    """A tag can be shown under several categories."""
+    run("seed_demo")
+
+    shared = Tag.objects.annotate(count=Count("categories")).filter(count__gte=2)
+
+    assert shared.exists()
+
+
+def test_seed_gives_a_tag_a_note_in_every_language():
+    """The note of a tag has something to look at."""
+    run("seed_demo")
+
+    noted = Tag.objects.filter(~Q(note_en=""), ~Q(note_fr=""))
+
+    assert noted.exists()
+
+
+def test_seed_refuses_to_run_on_a_database_with_only_categories():
+    """A category is content: has_content counts it like a tag."""
+    TagCategory.objects.create(name_en="Mine", name_fr="Mien")
+
+    with pytest.raises(CommandError, match="reset_demo"):
+        run("seed_demo")
+
+
 def test_seed_refuses_to_run_on_a_database_with_content():
     """Real content is never mixed with demo data by accident."""
     run("seed_demo")
@@ -205,6 +247,25 @@ def test_flush_deletes_all_content():
 
     for model in CONTENT_MODELS:
         assert not model.objects.exists(), model.__name__
+
+
+def test_flush_deletes_the_categories():
+    """The category tree goes with the tags."""
+    domain = TagCategory.objects.create(name_en="Mine", name_fr="Mien")
+    TagCategory.objects.create(name_en="Sub", name_fr="Sous", parent=domain)
+
+    run("flush_demo", interactive=False)
+
+    assert not TagCategory.objects.exists()
+
+
+def test_reset_recreates_the_category_tree_without_duplicates():
+    """Resetting twice leaves one tree, not two."""
+    run("seed_demo")
+
+    run("reset_demo", interactive=False)
+
+    assert TagCategory.objects.filter(parent=None).count() == 2
 
 
 def test_flush_restarts_ids():

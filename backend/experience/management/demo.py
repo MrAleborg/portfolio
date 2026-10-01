@@ -15,6 +15,7 @@ from experience.models import (
     ScientificCommunication,
     Specialization,
     Tag,
+    TagCategory,
 )
 from owner.models import Profile
 
@@ -27,6 +28,7 @@ CONTENT_MODELS = [
     Certification,
     Specialization,
     Tag,
+    TagCategory,
     Hobby,
     Commitment,
     ScientificCommunication,
