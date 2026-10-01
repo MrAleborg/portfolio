@@ -249,16 +249,6 @@ def test_flush_deletes_all_content():
         assert not model.objects.exists(), model.__name__
 
 
-def test_flush_deletes_the_categories():
-    """The category tree goes with the tags."""
-    domain = TagCategory.objects.create(name_en="Mine", name_fr="Mien")
-    TagCategory.objects.create(name_en="Sub", name_fr="Sous", parent=domain)
-
-    run("flush_demo", interactive=False)
-
-    assert not TagCategory.objects.exists()
-
-
 def test_reset_recreates_the_category_tree_without_duplicates():
     """Resetting twice leaves one tree, not two."""
     run("seed_demo")

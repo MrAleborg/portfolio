@@ -9,15 +9,14 @@ come back as a 400 on ``parent``.
 import pytest
 
 from experience.models import Skill, TagCategory
-from experience.tests.admin_api.helpers import detail_url, list_url, listed_ids
+from experience.tests.admin_api.helpers import (
+    detail_url,
+    list_url,
+    listed_ids,
+    make_category,
+)
 
 pytestmark = pytest.mark.django_db
-
-
-def make_category(name="AI", parent=None, position=0):
-    return TagCategory.objects.create(
-        name_en=name, name_fr=f"{name} fr", parent=parent, position=position
-    )
 
 
 def test_routes():
@@ -149,6 +148,19 @@ def test_a_category_cannot_be_its_own_parent(staff_api_client):
 
     assert response.status_code == 400
     assert list(response.json()) == ["parent"]
+
+
+def test_a_domain_cannot_be_its_own_parent(staff_api_client):
+    domain = make_category("AI")
+
+    response = staff_api_client.patch(
+        detail_url("tag-category", domain.id), {"parent": domain.id}, format="json"
+    )
+
+    assert response.status_code == 400
+    assert list(response.json()) == ["parent"]
+    domain.refresh_from_db()
+    assert domain.parent is None
 
 
 def test_partial_update_renames_and_moves_a_category(staff_api_client):

@@ -12,8 +12,13 @@ from datetime import date
 import pytest
 
 from experience.languages import LANGUAGES
-from experience.models import Methodology, Project, Skill, Tag, TagCategory, Tool
-from experience.tests.admin_api.helpers import detail_url, list_url, listed_ids
+from experience.models import Methodology, Project, Skill, Tag, Tool
+from experience.tests.admin_api.helpers import (
+    detail_url,
+    list_url,
+    listed_ids,
+    make_category,
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -235,10 +240,6 @@ def test_tag_of_another_kind_is_not_found(staff_api_client, route, method):
     assert Tag.objects.get().name_en == "Python"
 
 
-def make_category(name="GenAI", parent=None):
-    return TagCategory.objects.create(name_en=name, name_fr=name, parent=parent)
-
-
 def test_create_with_categories_and_a_note(staff_api_client, route):
     """A tag is created in several categories, with a note in every language."""
     basename, _, model, _ = route
@@ -315,3 +316,21 @@ def test_note_filled_in_one_language_is_a_bad_request(staff_api_client, route):
         "note": {"fr": ["Fill in every language, or leave them all empty."]}
     }
     assert not model.objects.exists()
+
+
+def test_list_runs_a_fixed_number_of_queries(
+    staff_api_client, django_assert_num_queries, route
+):
+    """Tags and their categories load in two queries, however many tags."""
+    basename, _, model, _ = route
+    domain = make_category("AI")
+    categories = [make_category(f"Category {n}", parent=domain) for n in range(3)]
+    for number in range(4):
+        model.objects.create(name_en=f"Tag {number}", name_fr=f"Tag {number}")
+    for tag in model.objects.all():
+        tag.categories.add(*categories)
+
+    with django_assert_num_queries(2):
+        response = staff_api_client.get(list_url(basename))
+
+    assert response.status_code == 200

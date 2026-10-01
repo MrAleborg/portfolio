@@ -64,6 +64,17 @@ def test_category_cannot_be_its_own_parent():
     assert "parent" in error.value.message_dict
 
 
+def test_domain_cannot_be_its_own_parent_even_when_loaded_separately():
+    """The parent is a fresh row of the same domain, with no parent of its own."""
+    domain = make_category("AI")
+
+    domain.parent = models.TagCategory.objects.get(pk=domain.pk)
+    with pytest.raises(ValidationError) as error:
+        domain.full_clean()
+
+    assert "parent" in error.value.message_dict
+
+
 def test_deleting_a_domain_deletes_its_categories_and_keeps_the_tags():
     domain = make_category("AI")
     category = make_category("GenAI", parent=domain)
