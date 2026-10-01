@@ -31,8 +31,8 @@ export function HomePage({ profileRepository }: HomePageProps) {
       />
       <h1>{state.value.fullName}</h1>
       <p className="home__headline">{state.value.headline[locale]}</p>
-      {paragraphs(state.value.bio[locale]).map((paragraph) => (
-        <p key={paragraph} className="home__bio">{paragraph}</p>
+      {paragraphs(state.value.bio[locale]).map((paragraph, index) => (
+        <p key={index} className="home__bio">{paragraph}</p>
       ))}
     </>
   )

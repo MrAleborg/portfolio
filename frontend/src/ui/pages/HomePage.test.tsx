@@ -114,4 +114,18 @@ describe('HomePage', () => {
     expect(await screen.findByText('First paragraph.')).toBeInTheDocument()
     expect(screen.getByText('Second paragraph.')).toBeInTheDocument()
   })
+
+  it('shows a paragraph again when the bio repeats it', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    renderPage(
+      fakeProfileRepository({
+        ...ada,
+        bio: { en: 'Same.\n\nSame.', fr: '' },
+      }),
+    )
+
+    expect(await screen.findAllByText('Same.')).toHaveLength(2)
+    expect(consoleError).not.toHaveBeenCalled()
+    consoleError.mockRestore()
+  })
 })
