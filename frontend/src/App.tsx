@@ -1,17 +1,17 @@
 import { BrowserRouter } from 'react-router'
-import type { ProfileRepository } from '@/domain/profile/ProfileRepository'
 import { AppRoutes } from '@/ui/AppRoutes'
 import { LocaleProvider } from '@/ui/i18n/LocaleProvider'
+import type { Repositories } from '@/ui/Repositories'
 
 interface AppProps {
-  profileRepository: ProfileRepository
+  repositories: Repositories
 }
 
-function App({ profileRepository }: AppProps) {
+function App({ repositories }: AppProps) {
   return (
     <LocaleProvider>
       <BrowserRouter>
-        <AppRoutes profileRepository={profileRepository} />
+        <AppRoutes repositories={repositories} />
       </BrowserRouter>
     </LocaleProvider>
   )

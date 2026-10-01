@@ -8,9 +8,13 @@ interface Messages {
   navHome: string
   navResume: string
   resumeTitle: string
-  comingSoon: string
-  loadingProfile: string
+  educationTitle: string
+  loading: string
   profileUnavailable: string
+  sectionUnavailable: string
+  sectionEmpty: string
+  /** End of a period that is still going on. */
+  ongoing: string
   avatarAlt: (fullName: string) => string
   /** Label of the button that switches to the other language, written in that language. */
   switchLanguage: string
@@ -22,10 +26,14 @@ export const messages: Localized<Messages> = {
     navHome: 'Home',
     navResume: 'Resume',
     resumeTitle: 'Resume',
-    comingSoon: 'This page is coming soon.',
-    loadingProfile: 'Loading…',
+    educationTitle: 'Education',
+    loading: 'Loading…',
     profileUnavailable:
       'The profile could not be loaded. Please try again later.',
+    sectionUnavailable:
+      'This section could not be loaded. Please try again later.',
+    sectionEmpty: 'Nothing to show yet.',
+    ongoing: 'Present',
     avatarAlt: (fullName) => `Portrait of ${fullName}`,
     switchLanguage: 'Français',
   },
@@ -34,9 +42,13 @@ export const messages: Localized<Messages> = {
     navHome: 'Accueil',
     navResume: 'CV',
     resumeTitle: 'CV',
-    comingSoon: 'Cette page arrive bientôt.',
-    loadingProfile: 'Chargement…',
+    educationTitle: 'Formation',
+    loading: 'Chargement…',
     profileUnavailable: 'Le profil n’a pas pu être chargé. Réessayez plus tard.',
+    sectionUnavailable:
+      'Cette section n’a pas pu être chargée. Réessayez plus tard.',
+    sectionEmpty: 'Rien à afficher pour le moment.',
+    ongoing: 'aujourd’hui',
     avatarAlt: (fullName) =>
       `Portrait ${STARTS_WITH_VOWEL.test(fullName) ? 'd’' : 'de '}${fullName}`,
     switchLanguage: 'English',

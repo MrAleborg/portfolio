@@ -1,0 +1,10 @@
+.resume-section {
+  width: 100%;
+  text-align: left;
+}
+
+.resume-section > h2 {
+  margin: 0 0 1rem;
+  font-size: 1.5rem;
+  color: var(--text-strong);
+}

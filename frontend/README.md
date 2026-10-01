@@ -1,15 +1,27 @@
 # Portfolio frontend
 
-React + TypeScript + Vite single-page app. It shows the owner's profile, read
-from the backend API, in English and French.
+React + TypeScript + Vite single-page app. It shows the owner's profile and
+resume, read from the backend API, in English and French.
 
 ## Structure
 
 Domain-driven layers under `src/`:
 
-- `domain/`: entities and ports (`Profile`, `ProfileRepository`, `Locale`)
-- `infrastructure/`: adapters to the outside world (`httpProfileRepository`)
+- `domain/`: entities, value objects and ports (`Profile`, `Education`,
+  `Period`, `Locale`, and a repository per entity)
+- `infrastructure/`: adapters to the outside world (`http*Repository`, on top
+  of `getJson`)
 - `ui/`: React components, pages, routes and messages
+
+The resume is made of reusable pieces, so each kind of entry only maps itself
+onto them:
+
+- `components/Tile`: a card for one entry (title, subtitle, meta line), whose
+  title expands its details,
+  and `components/TileList` to lay tiles out in a grid
+- `resume/ResumeSection`: a titled section that loads its entries with
+  `async/useAsync` and shows the loading, error, empty or tile states
+- `resume/EducationTile` and `resume/EducationSection`: the education entries
 
 ## Commands
 
