@@ -259,12 +259,14 @@ machine).
 [`deploy.yml`](../../.github/workflows/deploy.yml) deploys the whole stack for
 one commit. It runs when [Backend CI](testing.md#continuous-integration)
 (`backend/` or `deploy/` changed) or Frontend CI (`frontend/` changed) passes
-on a push to `main`, or by hand from the Actions tab.
+on a push to `main`, or by hand from the Actions tab (`main` only: the
+workflow ignores a run started from another branch).
 
 1. **check**: a push that touches both parts runs both CIs. The deploy goes
    on only once every CI run for the commit has passed. While the other one
    is still running, this run stops and the other one's completion triggers
-   the deploy. If one failed, nothing is deployed.
+   the deploy. If one failed, nothing is deployed. A run started by hand goes
+   through the same check.
 2. **build**: builds the `backend` and `frontend` images and pushes them to
    GHCR, tagged `sha-<commit>`. There is no `latest` tag: a bad build can't be
    pulled by accident.
