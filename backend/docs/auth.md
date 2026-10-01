@@ -31,6 +31,19 @@ An invalid or expired token, or a missing one on a route that needs it, is a
 `401`. A rejected new password (see Django's password validators) or a wrong
 current password is a `400`.
 
+## Login throttling
+
+`jwt/create/` accepts 5 attempts a minute per client address; the 6th is a
+`429`. The rate is `DEFAULT_THROTTLE_RATES` in
+[`portfolio/settings.py`](../portfolio/settings.py). Counters live in a
+file-based cache so that all gunicorn workers share them, and `NUM_PROXIES = 1`
+makes DRF read the client address Caddy appends to `X-Forwarded-For`, not the
+value the client sent. If the app is ever served without exactly one proxy in
+front, change `NUM_PROXIES`, or the throttle can be bypassed.
+
+The Django admin login (`/admin/login/`) is not throttled: it is not a DRF
+view, and the admin account is a single staff user. Keep its password long.
+
 ## Using the tokens
 
 Send the access token in the `Authorization` header:

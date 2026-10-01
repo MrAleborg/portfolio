@@ -255,3 +255,33 @@ def test_public_api_rejects_an_invalid_token(api_client):
     response = api_client.get(reverse("experience:education-list"))
 
     assert response.status_code == 401
+
+
+def test_login_is_throttled_after_five_attempts_a_minute(api_client):
+    """Guessing the admin password is slowed down: the 6th attempt is a 429."""
+    make_user()
+
+    statuses = [login(api_client, password="wrong").status_code for _ in range(6)]
+
+    assert statuses == [401] * 5 + [429]
+
+
+def test_login_throttle_ignores_a_spoofed_forwarded_for_address(api_client):
+    """Behind one proxy, only the address the proxy appended counts.
+
+    The client can put anything at the start of X-Forwarded-For, so changing it
+    must not reset the counter.
+    """
+    make_user()
+
+    statuses = [
+        api_client.post(
+            CREATE_URL,
+            {"username": "admin", "password": "wrong"},
+            format="json",
+            HTTP_X_FORWARDED_FOR=f"10.0.0.{i}, 203.0.113.7",
+        ).status_code
+        for i in range(6)
+    ]
+
+    assert statuses == [401] * 5 + [429]

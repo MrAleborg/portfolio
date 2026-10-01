@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import tempfile
 from datetime import timedelta
 from pathlib import Path
 
@@ -132,6 +133,19 @@ DATABASES["default"]["OPTIONS"] = {
 }
 
 
+# Cache
+# https://docs.djangoproject.com/en/6.1/topics/cache/
+
+# Holds the login throttle counters. The default in-memory cache is per process,
+# so each gunicorn worker would count on its own; files are shared by all of them.
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
+        "LOCATION": Path(tempfile.gettempdir()) / "portfolio-cache",
+    }
+}
+
+
 # Password validation
 # https://docs.djangoproject.com/en/6.1/ref/settings/#auth-password-validators
 
@@ -189,6 +203,10 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
+    "DEFAULT_THROTTLE_RATES": {"login": "5/min"},
+    # Caddy is the only proxy in front of the app. Without this, DRF identifies
+    # clients by the whole X-Forwarded-For header, which they can set freely.
+    "NUM_PROXIES": 1,
 }
 
 SIMPLE_JWT = {

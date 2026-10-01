@@ -1,5 +1,12 @@
 import pytest
+from django.core.cache import cache
 from rest_framework.test import APIClient
+
+
+@pytest.fixture(autouse=True)
+def clear_cache():
+    """Start every test with fresh throttle counters."""
+    cache.clear()
 
 
 @pytest.fixture(autouse=True)
