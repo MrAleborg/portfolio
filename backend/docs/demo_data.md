@@ -24,7 +24,7 @@ From `backend/`:
 
 ```bash
 pipenv install --dev                          # dependencies
-cp .env.example .env                          # then set SECRET_KEY, and DEBUG=True
+cp .env.example .env                          # then set SECRET_KEY
 pipenv run python manage.py migrate           # create the tables
 pipenv run python manage.py createsuperuser   # admin account, to log in (optional)
 ```
