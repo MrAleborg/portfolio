@@ -12,7 +12,7 @@ from datetime import date
 import pytest
 
 from experience.languages import LANGUAGES
-from experience.models import Methodology, Project, Skill, Tag, Tool
+from experience.models import Methodology, Project, Skill, Tag, TagCategory, Tool
 from experience.tests.admin_api.helpers import detail_url, list_url, listed_ids
 
 pytestmark = pytest.mark.django_db
@@ -53,7 +53,7 @@ def test_list_returns_only_tags_of_its_kind_by_name(staff_api_client, route):
 
 
 def test_detail_returns_id_and_name(staff_api_client, route):
-    """A tag has no other editable field; its kind is the route."""
+    """A tag's kind is the route, so it is not a field."""
     basename, _, model, _ = route
     tag = model.objects.create(
         name_en="Project management", name_fr="Gestion de projet"
@@ -65,6 +65,8 @@ def test_detail_returns_id_and_name(staff_api_client, route):
     assert response.json() == {
         "id": tag.id,
         "name": {"en": "Project management", "fr": "Gestion de projet"},
+        "categories": [],
+        "note": {"en": "", "fr": ""},
     }
 
 
@@ -78,7 +80,12 @@ def test_create_sets_the_kind_of_the_route(staff_api_client, route):
 
     assert response.status_code == 201
     tag = Tag.objects.get()
-    assert response.json() == {"id": tag.id, "name": {"en": "Python", "fr": "Python"}}
+    assert response.json() == {
+        "id": tag.id,
+        "name": {"en": "Python", "fr": "Python"},
+        "categories": [],
+        "note": {"en": "", "fr": ""},
+    }
     assert tag.kind == model.KIND
 
 
@@ -226,3 +233,85 @@ def test_tag_of_another_kind_is_not_found(staff_api_client, route, method):
 
     assert response.status_code == 404
     assert Tag.objects.get().name_en == "Python"
+
+
+def make_category(name="GenAI", parent=None):
+    return TagCategory.objects.create(name_en=name, name_fr=name, parent=parent)
+
+
+def test_create_with_categories_and_a_note(staff_api_client, route):
+    """A tag is created in several categories, with a note in every language."""
+    basename, _, model, _ = route
+    domain = make_category("AI")
+    genai = make_category("GenAI", parent=domain)
+    mlops = make_category("MLOps", parent=domain)
+
+    response = staff_api_client.post(
+        list_url(basename),
+        {
+            "name": {"en": "Docker", "fr": "Docker"},
+            "categories": [genai.id, mlops.id],
+            "note": {"en": "Daily", "fr": "Au quotidien"},
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201
+    tag = model.objects.get()
+    assert set(tag.categories.all()) == {genai, mlops}
+    assert (tag.note_en, tag.note_fr) == ("Daily", "Au quotidien")
+    assert set(response.json()["categories"]) == {genai.id, mlops.id}
+    assert response.json()["note"] == {"en": "Daily", "fr": "Au quotidien"}
+
+
+def test_update_sets_categories_and_note(staff_api_client, route):
+    """PATCH replaces the categories and the note of an existing tag."""
+    basename, _, model, _ = route
+    old = make_category("Old", parent=make_category("Domain"))
+    new = make_category("New", parent=old.parent)
+    tag = model.objects.create(name_en="Docker", name_fr="Docker")
+    tag.categories.add(old)
+
+    response = staff_api_client.patch(
+        detail_url(basename, tag.id),
+        {"categories": [new.id], "note": {"en": "Daily", "fr": "Au quotidien"}},
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert list(tag.categories.all()) == [new]
+    tag.refresh_from_db()
+    assert (tag.note_en, tag.note_fr) == ("Daily", "Au quotidien")
+
+
+def test_a_domain_cannot_be_a_category_of_a_tag(staff_api_client, route):
+    """Tags attach to categories only: a domain id is a 400 on categories."""
+    basename, _, model, _ = route
+    domain = make_category("AI")
+
+    response = staff_api_client.post(
+        list_url(basename),
+        {"name": {"en": "Docker", "fr": "Docker"}, "categories": [domain.id]},
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert list(response.json()) == ["categories"]
+    assert not model.objects.exists()
+
+
+def test_note_filled_in_one_language_is_a_bad_request(staff_api_client, route):
+    """The note is filled in every language or left empty in all of them."""
+    basename, _, model, _ = route
+
+    response = staff_api_client.post(
+        list_url(basename),
+        {"name": {"en": "Docker", "fr": "Docker"}, "note": {"en": "Daily", "fr": ""}},
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "note": {"fr": ["Fill in every language, or leave them all empty."]}
+    }
+    assert not model.objects.exists()
