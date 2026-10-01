@@ -132,6 +132,21 @@ def test_name_taken_in_one_language_is_a_bad_request(staff_api_client, route):
     assert list(response.json()["name"]) == ["en"]
 
 
+def test_name_longer_than_the_column_is_a_bad_request(staff_api_client, route):
+    """The name column holds 100 characters; the error names the language."""
+    basename, _, _, _ = route
+
+    response = staff_api_client.post(
+        list_url(basename),
+        {"name": {"en": "x" * 101, "fr": "Python"}},
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert list(response.json()["name"]) == ["en"]
+    assert not Tag.objects.exists()
+
+
 def test_same_name_is_allowed_in_another_kind(staff_api_client, route):
     """Uniqueness is per kind, so a skill and a tool may share a name."""
     basename, _, _, other = route
