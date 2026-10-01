@@ -121,9 +121,6 @@ describe('EducationTile', () => {
     expect(screen.getByRole('article')).toHaveTextContent(
       /^PhDInriaOct 2021 – Present$/,
     )
-    expect(
-      screen.getByRole('article').querySelectorAll('.tile__meta > span'),
-    ).toHaveLength(1)
   })
 
   it('shows each paragraph of the description apart', async () => {

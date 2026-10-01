@@ -23,9 +23,8 @@ describe('PeriodTime', () => {
   it('shows a finished period as two time elements, one per month', () => {
     const { container } = renderPeriod(finished)
 
-    const times = screen.getAllByRole('time')
-    const [start, end] = times
-    expect(times).toHaveLength(2)
+    const [start, end] = screen.getAllByRole('time')
+    expect(screen.getAllByRole('time')).toHaveLength(2)
     expect(start).toHaveAttribute('datetime', '2015-09')
     expect(end).toHaveAttribute('datetime', '2017-06')
     expect(container).toHaveTextContent('Sep 2015 – Jun 2017')
@@ -34,9 +33,8 @@ describe('PeriodTime', () => {
   it('shows an ongoing period as one time element followed by the ongoing word', () => {
     const { container } = renderPeriod(ongoing)
 
-    const times = screen.getAllByRole('time')
-    const [start] = times
-    expect(times).toHaveLength(1)
+    const [start] = screen.getAllByRole('time')
+    expect(screen.getAllByRole('time')).toHaveLength(1)
     expect(start).toHaveAttribute('datetime', '2021-10')
     expect(container).toHaveTextContent('Oct 2021 – Present')
   })
