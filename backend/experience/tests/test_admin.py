@@ -21,6 +21,7 @@ from experience.models import (
     Mission,
     ProfessionalExperience,
     Project,
+    ScientificCommunication,
     Specialization,
     Tag,
 )
@@ -36,6 +37,7 @@ MODELS = [
     Tag,
     Hobby,
     Commitment,
+    ScientificCommunication,
 ]
 
 
@@ -69,6 +71,14 @@ def make(model):
             "organization": "Red Cross",
             "role_en": "Volunteer",
             "role_fr": "Bénévole",
+        },
+        ScientificCommunication: {
+            "title_en": "Static analysis",
+            "title_fr": "Analyse statique",
+            "authors": "A. Lovelace",
+            "kind": "talk",
+            "venue": "PyCon",
+            "date": date(2024, 5, 1),
         },
     }[model]
     if model in (Education, ProfessionalExperience, Project, Commitment):

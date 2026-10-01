@@ -25,6 +25,7 @@ BASENAMES = [
     "methodology",
     "hobby",
     "commitment",
+    "scientific-communication",
 ]
 
 LIST_METHODS = ["get", "post"]
@@ -83,6 +84,7 @@ def test_root_lists_the_collections(staff_api_client):
         "methodologies",
         "hobbies",
         "commitments",
+        "scientific-communications",
     }
 
 

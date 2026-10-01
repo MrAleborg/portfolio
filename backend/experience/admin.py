@@ -8,6 +8,7 @@ from experience.models import (
     Mission,
     ProfessionalExperience,
     Project,
+    ScientificCommunication,
     Specialization,
     Tag,
 )
@@ -31,6 +32,7 @@ admin.site.register(Certification)
 admin.site.register(Specialization)
 admin.site.register(Hobby)
 admin.site.register(Commitment)
+admin.site.register(ScientificCommunication)
 
 
 @admin.register(Tag)

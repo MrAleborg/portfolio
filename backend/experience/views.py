@@ -11,6 +11,7 @@ from experience.models import (
     Methodology,
     ProfessionalExperience,
     Project,
+    ScientificCommunication,
     Skill,
     Specialization,
     Tool,
@@ -22,6 +23,7 @@ from experience.serializers import (
     HobbySerializer,
     ProfessionalExperienceSerializer,
     ProjectSerializer,
+    ScientificCommunicationSerializer,
     SpecializationSerializer,
     TagDetailSerializer,
     TagSerializer,
@@ -181,3 +183,8 @@ class HobbyViewSet(PublicReadOnlyViewSet):
 class CommitmentViewSet(PublicReadOnlyViewSet):
     queryset = Commitment.objects.filter(is_visible=True)
     serializer_class = CommitmentSerializer
+
+
+class ScientificCommunicationViewSet(PublicReadOnlyViewSet):
+    queryset = ScientificCommunication.objects.filter(is_visible=True)
+    serializer_class = ScientificCommunicationSerializer

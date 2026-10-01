@@ -14,6 +14,7 @@ from experience.models import (
     Mission,
     ProfessionalExperience,
     Project,
+    ScientificCommunication,
     Skill,
     Specialization,
     Tool,
@@ -262,6 +263,25 @@ class CommitmentSerializer(DateRangeSerializer):
             "start_date",
             "end_date",
             "is_current",
+            "description",
+            *INTERNAL_FIELDS,
+        ]
+
+
+class ScientificCommunicationSerializer(serializers.ModelSerializer):
+    title = LocalizedField()
+    description = LocalizedField(required=False, allow_blank=True)
+
+    class Meta:
+        model = ScientificCommunication
+        fields = [
+            "id",
+            "kind",
+            "title",
+            "authors",
+            "venue",
+            "date",
+            "url",
             "description",
             *INTERNAL_FIELDS,
         ]

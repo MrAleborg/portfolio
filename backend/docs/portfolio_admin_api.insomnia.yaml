@@ -137,7 +137,7 @@ collection:
       created: 1790700000000
       modified: 1790700000000
       isPrivate: false
-      description: Lists the 10 collections.
+      description: Lists the 11 collections.
       sortKey: 4
     method: GET
     authentication:
@@ -158,8 +158,8 @@ collection:
           insomnia.expect(insomnia.response.code).to.equal(200);
         });
         const body = insomnia.response.json();
-        insomnia.test("Lists the 10 collections", () => {
-          insomnia.expect(body).to.have.all.keys("education", "professional-experiences", "projects", "certifications", "specializations", "skills", "tools", "methodologies", "hobbies", "commitments");
+        insomnia.test("Lists the 11 collections", () => {
+          insomnia.expect(body).to.have.all.keys("education", "professional-experiences", "projects", "certifications", "specializations", "skills", "tools", "methodologies", "hobbies", "commitments", "scientific-communications");
         });
   - url: '{{ _.base_url }}/api/v1/admin/'
     name: Admin root without token → 401
@@ -5252,12 +5252,684 @@ collection:
         insomnia.test("Explains why", () => {
           insomnia.expect(body).to.have.property('detail');
         });
-- name: 12. Cleanup (deletes)
+- name: 12. Scientific communications
+  meta:
+    id: fld_a3e7cee910471355714105536c7f5023
+    created: 1790700000000
+    modified: 1790700000000
+    sortKey: 12
+    description: ''
+  children:
+  - url: '{{ _.base_url }}/api/v1/admin/scientific-communications/'
+    name: Create communication → 201
+    meta:
+      id: req_0bbdc0e1b5fa5c64d18792e29ee30819
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'Response has every field, including description, display_order, is_visible and timestamps.'
+      sortKey: 137
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "kind": "talk",
+          "title": {"en": "Static analysis", "fr": "Analyse statique"},
+          "authors": "Demo Owner",
+          "venue": "Demo Python Conference",
+          "date": "2024-05-14",
+          "url": "https://example.com/talks/static-analysis",
+          "description": {"en": "Created from Insomnia.", "fr": "Created from Insomnia."},
+          "display_order": 0,
+          "is_visible": true
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 201", () => {
+          insomnia.expect(insomnia.response.code).to.equal(201);
+        });
+        const body = insomnia.response.json();
+        insomnia.environment.set('communication_id', body.id);
+        insomnia.test("Returns the internal fields", () => {
+          insomnia.expect(body).to.include.keys('description', 'display_order', 'is_visible', 'created_at', 'updated_at');
+        });
+        insomnia.test("Title is in every language", () => {
+          insomnia.expect(body.title).to.eql({"en": "Static analysis", "fr": "Analyse statique"});
+        });
+        insomnia.test("Keeps its kind and date", () => {
+          insomnia.expect(body.kind).to.eql("talk");
+          insomnia.expect(body.date).to.eql("2024-05-14");
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/scientific-communications/'
+    name: Create with required fields only → 201
+    meta:
+      id: req_3fb9f69e34f36c8219502e50c1f24018
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'url empty, description empty, is_visible true, display_order 0.'
+      sortKey: 138
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "kind": "poster",
+          "title": {"en": "Type inference at scale", "fr": "Inférence de types à grande échelle"},
+          "authors": "Demo Owner, Ada Example",
+          "venue": "Demo Symposium",
+          "date": "2023-09-20"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 201", () => {
+          insomnia.expect(insomnia.response.code).to.equal(201);
+        });
+        const body = insomnia.response.json();
+        insomnia.environment.set('second_communication_id', body.id);
+        insomnia.test("Optional fields take their defaults", () => {
+          insomnia.expect(body.url).to.eql("");
+          insomnia.expect(body.is_visible).to.eql(true);
+          insomnia.expect(body.display_order).to.eql(0);
+          insomnia.expect(body.description).to.eql({"en": "", "fr": ""});
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/scientific-communications/'
+    name: Create without required fields → 400
+    meta:
+      id: req_4abba9f0275b3e6be67a2b162d08b25a
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'Errors on title, authors, kind, venue and date (kind has no default).'
+      sortKey: 139
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {}
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 400", () => {
+          insomnia.expect(insomnia.response.code).to.equal(400);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Names the missing fields", () => {
+          insomnia.expect(body).to.have.all.keys("title", "authors", "kind", "venue", "date");
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/scientific-communications/'
+    name: Create with a title missing its French text → 400
+    meta:
+      id: req_07ad7022e1e93292ac780f5f7e543576
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'Every language must be filled in; the error names the missing one: {"title": {"fr": ["This field may not be blank."]}}.'
+      sortKey: 140
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "kind": "talk",
+          "title": {"en": "Static analysis", "fr": ""},
+          "authors": "Demo Owner",
+          "venue": "X",
+          "date": "2024-05-14"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 400", () => {
+          insomnia.expect(insomnia.response.code).to.equal(400);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Names the missing language", () => {
+          insomnia.expect(body).to.eql({"title": {"fr": ["This field may not be blank."]}});
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/scientific-communications/'
+    name: Create with a description in one language only → 400
+    meta:
+      id: req_b729b31f43debdefbd2670a431f0a506
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'An optional text is filled in every language or left empty in all.'
+      sortKey: 141
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "kind": "talk",
+          "title": {"en": "Static analysis", "fr": "Analyse statique"},
+          "authors": "Demo Owner",
+          "venue": "X",
+          "date": "2024-05-14",
+          "description": {"en": "Shown in room B.", "fr": ""}
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 400", () => {
+          insomnia.expect(insomnia.response.code).to.equal(400);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Names the empty language", () => {
+          insomnia.expect(body).to.eql({"description": {"fr": ["Fill in every language, or leave them all empty."]}});
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/scientific-communications/'
+    name: Create with an unknown kind → 400
+    meta:
+      id: req_cd44df43a31526873d464091989007eb
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'kind is one of talk, poster, paper, article.'
+      sortKey: 142
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "kind": "keynote",
+          "title": {"en": "Static analysis", "fr": "Analyse statique"},
+          "authors": "Demo Owner",
+          "venue": "X",
+          "date": "2024-05-14"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 400", () => {
+          insomnia.expect(insomnia.response.code).to.equal(400);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Names the kind", () => {
+          insomnia.expect(body).to.have.all.keys("kind");
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/scientific-communications/'
+    name: Create with an invalid url → 400
+    meta:
+      id: req_6a76eadbfc06e478348a96500a2eab28
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'url must be a URL.'
+      sortKey: 143
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "kind": "talk",
+          "title": {"en": "Static analysis", "fr": "Analyse statique"},
+          "authors": "Demo Owner",
+          "venue": "X",
+          "date": "2024-05-14",
+          "url": "not a url"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 400", () => {
+          insomnia.expect(insomnia.response.code).to.equal(400);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Names the url", () => {
+          insomnia.expect(body).to.have.all.keys("url");
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/scientific-communications/'
+    name: List (hidden communications included) → 200
+    meta:
+      id: req_445716f6afc9106b6d9250e1f9a3566b
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 144
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 200", () => {
+          insomnia.expect(insomnia.response.code).to.equal(200);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Returns a list", () => {
+          insomnia.expect(body).to.be.an('array');
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/scientific-communications/{{ _.communication_id }}/'
+    name: Retrieve → 200
+    meta:
+      id: req_f461f6bb2a3995eff34a09ad1abb1b7a
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 145
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 200", () => {
+          insomnia.expect(insomnia.response.code).to.equal(200);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Returns the created communication", () => {
+          insomnia.expect(body.venue).to.eql("Demo Python Conference");
+          insomnia.expect(body).to.include.keys('description', 'display_order', 'is_visible', 'created_at', 'updated_at');
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/scientific-communications/{{ _.communication_id }}/'
+    name: Update (PUT) → 200
+    meta:
+      id: req_18e662a4f71569e661d524581cec9acb
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'Omitted optional fields (url, description) keep their values.'
+      sortKey: 146
+    method: PUT
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "kind": "paper",
+          "title": {"en": "Static analysis", "fr": "Analyse statique"},
+          "authors": "Demo Owner",
+          "venue": "Demo Conference on Testing",
+          "date": "2024-05-14"
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 200", () => {
+          insomnia.expect(insomnia.response.code).to.equal(200);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Sent fields are updated", () => {
+          insomnia.expect(body.kind).to.eql("paper");
+          insomnia.expect(body.venue).to.eql("Demo Conference on Testing");
+        });
+        insomnia.test("Omitted optional fields keep their value", () => {
+          insomnia.expect(body.url).to.eql("https://example.com/talks/static-analysis");
+          insomnia.expect(body.description).to.eql({"en": "Created from Insomnia.", "fr": "Created from Insomnia."});
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/scientific-communications/{{ _.communication_id }}/'
+    name: PUT without required fields → 400
+    meta:
+      id: req_7c6023ec3b11436003091ccbd6bcef9a
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'Errors on title, authors, kind, venue and date.'
+      sortKey: 147
+    method: PUT
+    body:
+      mimeType: application/json
+      text: |-
+        {}
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 400", () => {
+          insomnia.expect(insomnia.response.code).to.equal(400);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Names the missing fields", () => {
+          insomnia.expect(body).to.have.all.keys("title", "authors", "kind", "venue", "date");
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/scientific-communications/{{ _.communication_id }}/'
+    name: Hide (PATCH is_visible false) → 200
+    meta:
+      id: req_900f20e4af57cd982452ed4c5b47301b
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'Only the sent fields change.'
+      sortKey: 148
+    method: PATCH
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "is_visible": false,
+          "display_order": 5
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 200", () => {
+          insomnia.expect(insomnia.response.code).to.equal(200);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Is hidden and moved", () => {
+          insomnia.expect(body.is_visible).to.eql(false);
+          insomnia.expect(body.display_order).to.eql(5);
+        });
+  - url: '{{ _.base_url }}/api/v1/experience/scientific-communications/{{ _.communication_id }}/'
+    name: Public detail of the hidden communication → 404
+    meta:
+      id: req_e1fb25635ffc96f6ceda87d20107e3ef
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 149
+    method: GET
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 404", () => {
+          insomnia.expect(insomnia.response.code).to.equal(404);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Explains why", () => {
+          insomnia.expect(body).to.have.property('detail');
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/scientific-communications/{{ _.communication_id }}/'
+    name: Admin retrieve of the hidden communication → 200
+    meta:
+      id: req_c0dce75917fda99835a0235bf736b74a
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'The admin API still reaches it.'
+      sortKey: 150
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 200", () => {
+          insomnia.expect(insomnia.response.code).to.equal(200);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Is still hidden", () => {
+          insomnia.expect(body.is_visible).to.eql(false);
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/scientific-communications/{{ _.communication_id }}/'
+    name: Show again → 200
+    meta:
+      id: req_8f9402df5e3c1489210223d90b2ee2f7
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 151
+    method: PATCH
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "is_visible": true
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 200", () => {
+          insomnia.expect(insomnia.response.code).to.equal(200);
+        });
+  - url: '{{ _.base_url }}/api/v1/experience/scientific-communications/{{ _.communication_id }}/'
+    name: Public detail, without the description → 200
+    meta:
+      id: req_31b425c1428567c0daaacdd8cd221ece
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: 'The description is private: only the admin API returns it.'
+      sortKey: 152
+    method: GET
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 200", () => {
+          insomnia.expect(insomnia.response.code).to.equal(200);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Does not return the description", () => {
+          insomnia.expect(body).to.not.have.property('description');
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/scientific-communications/999999/'
+    name: Retrieve unknown id → 404
+    meta:
+      id: req_2895373931a41a5667a0769d219ef560
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 153
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 404", () => {
+          insomnia.expect(insomnia.response.code).to.equal(404);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Explains why", () => {
+          insomnia.expect(body).to.have.property('detail');
+        });
+- name: 13. Cleanup (deletes)
   meta:
     id: fld_f0b429f1315c54ff8a07f816db612884
     created: 1790700000000
     modified: 1790700000000
-    sortKey: 12
+    sortKey: 13
     description: Removes what the collection created. The collection can then be run again from the start.
   children:
   - url: '{{ _.base_url }}/api/v1/admin/specializations/{{ _.specialization_id }}/'
@@ -5713,6 +6385,91 @@ collection:
       isPrivate: false
       description: ''
       sortKey: 105.6
+    method: GET
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 404", () => {
+          insomnia.expect(insomnia.response.code).to.equal(404);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Explains why", () => {
+          insomnia.expect(body).to.have.property('detail');
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/scientific-communications/{{ _.communication_id }}/'
+    name: Delete communication → 204
+    meta:
+      id: req_fb9ed9ce040cacb4057d7c52091493f4
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 105.7
+    method: DELETE
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 204", () => {
+          insomnia.expect(insomnia.response.code).to.equal(204);
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/scientific-communications/{{ _.second_communication_id }}/'
+    name: Delete second communication → 204
+    meta:
+      id: req_f012d58ef072d6520201e9f053ac4fc7
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 105.8
+    method: DELETE
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 204", () => {
+          insomnia.expect(insomnia.response.code).to.equal(204);
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/scientific-communications/{{ _.communication_id }}/'
+    name: Deleted communication → 404
+    meta:
+      id: req_f55f5642fe49dc2ede8ee4a8aa19d63f
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 105.9
     method: GET
     authentication:
       type: bearer

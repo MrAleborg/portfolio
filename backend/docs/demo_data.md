@@ -117,6 +117,11 @@ Entries are listed by their English text.
 | | 2 | Program organizer @ Demo Dev Conference | Conference organization, `display_order` 1 |
 | | 3 | Mentor @ Demo Hackathon | Other event, `display_order` 2 |
 | | 4 | Hidden role @ Hidden Association | **Hidden** |
+| Scientific communication | 1 | Static analysis for Python services | Talk, `display_order` 0, with a URL |
+| | 2 | Type inference at scale | Poster, `display_order` 1 |
+| | 3 | Testing REST APIs from their specification | Paper, `display_order` 2, with a URL |
+| | 4 | Lessons from migrating a monolith | Article, `display_order` 3, the newest date (2025) but listed last: `display_order` beats the date |
+| | 5 | Hidden communication | **Hidden** |
 
 ## What to check
 
@@ -150,6 +155,8 @@ relative to `http://localhost:8000/api/v1/experience/`; see
 | `commitments/` | Commitments 1, 2, 3 (by `display_order`), one of each `kind`. Not 4 |
 | `commitments/1/` | `"is_current": true`, with `location` and `url` |
 | `commitments/4/` | `404` |
+| `scientific-communications/` | Communications 1, 2, 3, 4 (by `display_order`, although 4 is the newest), one of each `kind`. Not 5. No `description` |
+| `scientific-communications/5/` | `404` |
 | `/api/v1/profile/` (absolute path) | Demo Owner, with headline and bio in both languages |
 
 No response should contain `is_visible`, `display_order`, `created_at` or
