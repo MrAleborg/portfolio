@@ -11,8 +11,9 @@ sites, takes the HTTPS traffic and passes it to the containers, which listen on
   `/api/` paths go to the backend, so the site calls the API on its own
   domain. `www.example.com` redirects there.
 
-Every push to `main` that passes CI is deployed by GitHub Actions: the backend
-when `backend/` or `deploy/` changes, the frontend when `frontend/` changes.
+Every push to `main` that passes CI is deployed by GitHub Actions. CI runs per
+part (`backend/` and `deploy/`, or `frontend/`), but each deploy redeploys the
+whole stack.
 
 ```mermaid
 flowchart LR
@@ -101,7 +102,7 @@ Use both layers:
   ```
 
 Docker writes its own iptables rules, so **a port published by a container
-bypasses ufw**. That is why the backend is published on `127.0.0.1` only:
+bypasses ufw**. That is why the containers are published on `127.0.0.1` only:
 Caddy on the host can reach it, the internet can't. Keep the `127.0.0.1:` prefix
 in `compose.yml`, and do the same for any other container on the server.
 
@@ -194,9 +195,12 @@ the containers aren't running yet.
 
 In the repository settings:
 
-1. **Environments** → create `Portfolio production` (the name the workflow uses) (optionally require a review before
-   each deploy).
-2. **Secrets** (repository or `Portfolio production` environment):
+1. **Environments** → create `Portfolio production` (the name the workflow
+   uses). Under *Deployment branches and tags*, restrict it to the `main`
+   branch, so no other branch can use its secrets. Optionally require a review
+   before each deploy.
+2. **Secrets** of the `Portfolio production` environment (not repository
+   secrets: any workflow in the repository can read those):
 
    | Secret | Value |
    |---|---|
@@ -205,7 +209,7 @@ In the repository settings:
    | `VPS_SSH_KEY` | Private key used by Actions (see below) |
    | `VPS_KNOWN_HOSTS` | Output of `ssh-keyscan -H <server>` |
 
-3. **Variables** → `API_DOMAIN` = `api.example.com` and `FRONTEND_DOMAIN` =
+3. **Variables** (repository level) → `API_DOMAIN` = `api.example.com` and `FRONTEND_DOMAIN` =
    `example.com` (used for the smoke tests).
 
 Generate a key used only for deploys, and authorize it on the server:
