@@ -1,4 +1,4 @@
-import { Children, useId, useState, type ReactNode } from 'react'
+import { Children, Fragment, useId, useState, type ReactNode } from 'react'
 import './Tile.css'
 
 interface TileProps {
@@ -45,7 +45,10 @@ export function Tile({
       {metaItems.length > 0 && (
         <p className="tile__meta">
           {metaItems.map((item, index) => (
-            <span key={index}>{item}</span>
+            <Fragment key={index}>
+              {index > 0 && ' '}
+              <span>{item}</span>
+            </Fragment>
           ))}
         </p>
       )}

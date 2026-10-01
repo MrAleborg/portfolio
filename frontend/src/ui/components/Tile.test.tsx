@@ -41,6 +41,12 @@ describe('Tile', () => {
     expect(screen.getByRole('article')).not.toHaveTextContent('·')
   })
 
+  it('keeps its meta items apart in its text', () => {
+    render(<Tile title="Master’s degree" meta={['Sep 2015 – Jun 2017', 'Brittany']} />)
+
+    expect(screen.getByRole('article')).toHaveTextContent('Sep 2015 – Jun 2017 Brittany')
+  })
+
   it('leaves out empty meta items', () => {
     render(<Tile title="Master’s degree" meta={['Sep 2015 – Jun 2017', '']} />)
 
