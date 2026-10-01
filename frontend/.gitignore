@@ -26,3 +26,4 @@ dist-ssr
 # Original photos (full size, with EXIF metadata); only the cropped avatar is committed
 src/assets/*.jpg
 src/assets/profile.webp
+coverage
