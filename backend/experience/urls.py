@@ -1,10 +1,20 @@
-from rest_framework.routers import DefaultRouter
+from rest_framework.permissions import AllowAny
+from rest_framework.routers import APIRootView, DefaultRouter
 
 from experience import views
 
 app_name = "experience"
 
-router = DefaultRouter()
+
+class PublicAPIRootView(APIRootView):
+    permission_classes = [AllowAny]
+
+
+class PublicRouter(DefaultRouter):
+    APIRootView = PublicAPIRootView
+
+
+router = PublicRouter()
 router.register("education", views.EducationViewSet, basename="education")
 router.register("certifications", views.CertificationViewSet, basename="certification")
 router.register(

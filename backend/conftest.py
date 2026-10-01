@@ -1,5 +1,15 @@
 import pytest
+from django.core.cache import cache
 from rest_framework.test import APIClient
+
+
+@pytest.fixture(autouse=True)
+def fresh_cache(settings):
+    """Keep throttle counters in memory, and start every test with none."""
+    settings.CACHES = {
+        "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
+    }
+    cache.clear()
 
 
 @pytest.fixture(autouse=True)

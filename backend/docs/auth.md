@@ -31,6 +31,25 @@ An invalid or expired token, or a missing one on a route that needs it, is a
 `401`. A rejected new password (see Django's password validators) or a wrong
 current password is a `400`.
 
+## Login throttling
+
+`jwt/create/` accepts 5 attempts a minute per client address; the 6th is a
+`429`. The rate is `DEFAULT_THROTTLE_RATES` in
+[`portfolio/settings.py`](../portfolio/settings.py). The Django admin login
+(`/admin/login/`, POST only) shares the same limit and the same counter
+([`accounts/views.py`](../accounts/views.py)), so the admin form is no way
+around it.
+
+Counters live in a file-based cache (`CACHE_DIR`, `backend/.cache` by default,
+`/tmp/portfolio-cache` in the image) so that all gunicorn workers share them.
+`NUM_PROXIES = 1` makes DRF read the client address Caddy appends to
+`X-Forwarded-For`, not the value the client sent. If the app is ever served
+without exactly one proxy in front, change `NUM_PROXIES`, or the throttle can
+be bypassed.
+
+Clients are told apart by their full IPv6 address, so an attacker with a whole
+`/64` can rotate addresses past the limit; this is accepted.
+
 ## Using the tokens
 
 Send the access token in the `Authorization` header:
@@ -49,6 +68,9 @@ Authorization: Bearer <access>
   and blacklists the old one, so the frontend must store the new one.
 - **Logging out** blacklists the refresh token. The access token keeps working
   until it expires (15 minutes at most), so the frontend should drop it too.
+- **Changing the password logs out every session.** Tokens carry a hash of the
+  password (`CHECK_REVOKE_TOKEN`), so access and refresh tokens issued before
+  the change are rejected with a `401`, and the frontend must log in again.
 - **Don't send an expired token to public routes.** JWT authentication checks
   every `Authorization` header it gets, so a bad token is a `401` even on
   `/api/v1/experience/`, which needs no token.

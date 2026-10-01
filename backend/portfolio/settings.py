@@ -54,10 +54,13 @@ SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 # Start small, raise once HTTPS is known to work (browsers remember HSTS).
 SECURE_HSTS_SECONDS = env.int("SECURE_HSTS_SECONDS", default=0 if DEBUG else 3600)
+# Off by default: the server also hosts other sites, which may not have HTTPS.
 SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool(
-    "SECURE_HSTS_INCLUDE_SUBDOMAINS", default=True
+    "SECURE_HSTS_INCLUDE_SUBDOMAINS", default=False
 )
 SILENCED_SYSTEM_CHECKS = [
+    # HSTS for subdomains is opt-in: the server also hosts other sites.
+    "security.W005",
     # HSTS preload means submitting the domain to the browsers' preload list,
     # which takes months to undo. Not needed for a portfolio.
     "security.W021",
@@ -124,11 +127,26 @@ WSGI_APPLICATION = "portfolio.wsgi.application"
 DATABASES = {
     "default": env.db("DATABASE_URL", default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
 }
-# WAL mode and immediate transactions let several gunicorn workers share the
-# SQLite file without "database is locked" errors.
-DATABASES["default"]["OPTIONS"] = {
-    "transaction_mode": "IMMEDIATE",
-    "init_command": "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;",
+if DATABASES["default"]["ENGINE"].endswith("sqlite3"):
+    # WAL mode and immediate transactions let several gunicorn workers share the
+    # SQLite file without "database is locked" errors.
+    DATABASES["default"]["OPTIONS"] = {
+        "transaction_mode": "IMMEDIATE",
+        "init_command": "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;",
+    }
+
+
+# Cache
+# https://docs.djangoproject.com/en/6.1/topics/cache/
+
+# Holds the login throttle counters. The default in-memory cache is per process,
+# so each gunicorn worker would count on its own; files are shared by all of them.
+# Keep CACHE_DIR private to the app's user: cache files are pickles.
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
+        "LOCATION": env.path("CACHE_DIR", default=BASE_DIR / ".cache"),
+    }
 }
 
 
@@ -184,11 +202,16 @@ STORAGES = {
 # https://django-rest-framework-simplejwt.readthedocs.io/en/latest/settings.html
 
 REST_FRAMEWORK = {
-    # The public API stays open (default permission AllowAny); a JWT is only
-    # needed on the admin routes.
+    # Admin only by default: the public API views declare AllowAny themselves,
+    # so a new view is never open by accident.
+    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAdminUser"],
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
+    "DEFAULT_THROTTLE_RATES": {"login": "5/min"},
+    # Caddy is the only proxy in front of the app. Without this, DRF identifies
+    # clients by the whole X-Forwarded-For header, which they can set freely.
+    "NUM_PROXIES": 1,
 }
 
 SIMPLE_JWT = {
@@ -196,8 +219,11 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
+    # Tokens carry a hash of the password: changing it logs out every session.
+    "CHECK_REVOKE_TOKEN": True,
     "AUTH_HEADER_TYPES": ("Bearer",),
     "TOKEN_OBTAIN_SERIALIZER": "accounts.serializers.StaffTokenObtainPairSerializer",
+    "TOKEN_REFRESH_SERIALIZER": "accounts.serializers.RefreshSerializer",
 }
 
 
@@ -241,6 +267,7 @@ LOGGING = {
     },
     "handlers": {
         "console": {
+            "level": "WARNING",
             "class": "logging.StreamHandler",
             "filters": ["require_debug_false"],
         },

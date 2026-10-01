@@ -1,6 +1,7 @@
 from django.db.models import Exists, OuterRef, Prefetch, Q
 from rest_framework import viewsets
 from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import AllowAny
 
 from experience.models import (
     Certification,
@@ -52,12 +53,18 @@ def visible_projects():
     )
 
 
-class EducationViewSet(viewsets.ReadOnlyModelViewSet):
+class PublicReadOnlyViewSet(viewsets.ReadOnlyModelViewSet):
+    """Base of the public API: anyone can read, since the default is admin only."""
+
+    permission_classes = [AllowAny]
+
+
+class EducationViewSet(PublicReadOnlyViewSet):
     queryset = Education.objects.filter(is_visible=True)
     serializer_class = EducationSerializer
 
 
-class CertificationViewSet(viewsets.ReadOnlyModelViewSet):
+class CertificationViewSet(PublicReadOnlyViewSet):
     queryset = Certification.objects.filter(is_visible=True).prefetch_related(
         "tags",
         Prefetch(
@@ -77,7 +84,7 @@ class CertificationViewSet(viewsets.ReadOnlyModelViewSet):
         return queryset
 
 
-class ProfessionalExperienceViewSet(viewsets.ReadOnlyModelViewSet):
+class ProfessionalExperienceViewSet(PublicReadOnlyViewSet):
     queryset = ProfessionalExperience.objects.filter(is_visible=True).prefetch_related(
         Prefetch(
             "projects",
@@ -87,7 +94,7 @@ class ProfessionalExperienceViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = ProfessionalExperienceSerializer
 
 
-class ProjectViewSet(viewsets.ReadOnlyModelViewSet):
+class ProjectViewSet(PublicReadOnlyViewSet):
     queryset = (
         visible_projects()
         .select_related("experience")
@@ -115,7 +122,7 @@ class ProjectViewSet(viewsets.ReadOnlyModelViewSet):
         return queryset
 
 
-class SpecializationViewSet(viewsets.ReadOnlyModelViewSet):
+class SpecializationViewSet(PublicReadOnlyViewSet):
     queryset = Specialization.objects.filter(is_visible=True).prefetch_related(
         Prefetch(
             "certifications",
@@ -125,7 +132,7 @@ class SpecializationViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = SpecializationSerializer
 
 
-class TagViewSet(viewsets.ReadOnlyModelViewSet):
+class TagViewSet(PublicReadOnlyViewSet):
     """Base for the tag kinds; subclasses set queryset to their proxy model."""
 
     def get_queryset(self):

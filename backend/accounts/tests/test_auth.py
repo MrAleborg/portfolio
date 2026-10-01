@@ -255,3 +255,115 @@ def test_public_api_rejects_an_invalid_token(api_client):
     response = api_client.get(reverse("experience:education-list"))
 
     assert response.status_code == 401
+
+
+def test_login_is_throttled_after_five_attempts_a_minute(api_client):
+    """Guessing the admin password is slowed down: the 6th attempt is a 429."""
+    make_user()
+
+    statuses = [login(api_client, password="wrong").status_code for _ in range(6)]
+
+    assert statuses == [401] * 5 + [429]
+
+
+def test_login_throttle_ignores_a_spoofed_forwarded_for_address(api_client):
+    """Behind one proxy, only the address the proxy appended counts.
+
+    The client can put anything at the start of X-Forwarded-For, so changing it
+    must not reset the counter.
+    """
+    make_user()
+
+    statuses = [
+        api_client.post(
+            CREATE_URL,
+            {"username": "admin", "password": "wrong"},
+            format="json",
+            HTTP_X_FORWARDED_FOR=f"10.0.0.{i}, 203.0.113.7",
+        ).status_code
+        for i in range(6)
+    ]
+
+    assert statuses == [401] * 5 + [429]
+
+
+def change_password(api_client, access):
+    authenticate(api_client, access)
+    response = api_client.post(
+        SET_PASSWORD_URL,
+        {"current_password": PASSWORD, "new_password": "a-new-strong-pass-42"},
+        format="json",
+    )
+    api_client.credentials()
+    assert response.status_code == 204
+
+
+def test_access_token_stops_working_after_a_password_change(api_client):
+    """Changing the password logs out the sessions that were already open."""
+    make_user()
+    tokens = login(api_client).json()
+    change_password(api_client, tokens["access"])
+    authenticate(api_client, tokens["access"])
+
+    response = api_client.get(ME_URL)
+
+    assert response.status_code == 401
+
+
+def test_refresh_token_stops_working_after_a_password_change(api_client):
+    """A stolen refresh token does not survive a password change."""
+    make_user()
+    tokens = login(api_client).json()
+    change_password(api_client, tokens["access"])
+
+    response = api_client.post(
+        REFRESH_URL, {"refresh": tokens["refresh"]}, format="json"
+    )
+
+    assert response.status_code == 401
+
+
+def test_tokens_issued_after_a_password_change_work(api_client):
+    """Logging in again with the new password gives a usable session."""
+    make_user()
+    change_password(api_client, login(api_client).json()["access"])
+    tokens = login(api_client, password="a-new-strong-pass-42").json()
+    authenticate(api_client, tokens["access"])
+
+    me = api_client.get(ME_URL)
+    refreshed = api_client.post(
+        REFRESH_URL, {"refresh": tokens["refresh"]}, format="json"
+    )
+
+    assert me.status_code == 200
+    assert refreshed.status_code == 200
+
+
+def test_refresh_token_of_a_deleted_user_is_rejected(api_client):
+    """A token outliving its account is a 401, not a server error."""
+    user = make_user()
+    refresh = login(api_client).json()["refresh"]
+    user.delete()
+
+    response = api_client.post(REFRESH_URL, {"refresh": refresh}, format="json")
+
+    assert response.status_code == 401
+
+
+def test_login_throttle_counts_each_client_address_apart(api_client):
+    """Clients behind the proxy don't share an attempts counter."""
+    make_user()
+
+    def attempt(client_address):
+        return api_client.post(
+            CREATE_URL,
+            {"username": "admin", "password": "wrong"},
+            format="json",
+            HTTP_X_FORWARDED_FOR=f"x, {client_address}",
+        ).status_code
+
+    for _ in range(5):
+        attempt("198.51.100.1")
+
+    assert attempt("198.51.100.1") == 429
+    assert attempt("198.51.100.2") == 401
