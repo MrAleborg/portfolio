@@ -131,9 +131,10 @@ jobs:
           cd /opt/portfolio
           export TAG
           # The new backend applies migrations when it starts: back up first.
-          # Nothing to back up on the first deploy.
+          # Nothing to back up on the first deploy. </dev/null: docker compose
+          # exec forwards stdin, which here is this script, and would eat it.
           if [ -n "$(docker compose ps --quiet backend)" ]; then
-              ./backup.sh
+              ./backup.sh </dev/null
           fi
           docker compose pull
           docker compose up -d --wait --wait-timeout 180
