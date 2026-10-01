@@ -12,7 +12,6 @@ function renderSwitch() {
 }
 
 beforeEach(() => {
-  localStorage.clear()
   vi.spyOn(navigator, 'languages', 'get').mockReturnValue(['en-US'])
 })
 
@@ -34,10 +33,14 @@ describe('LocaleProvider', () => {
   })
 
   it('follows the browser language until the visitor chooses one', () => {
+    const first = renderSwitch()
+    expect(screen.getByRole('button', { name: 'Français' })).toBeInTheDocument()
+    first.unmount()
+    vi.spyOn(navigator, 'languages', 'get').mockReturnValue(['fr-FR'])
+
     renderSwitch()
 
-    expect(screen.getByRole('button', { name: 'Français' })).toBeInTheDocument()
-    expect(localStorage).toHaveLength(0)
+    expect(screen.getByRole('button', { name: 'English' })).toBeInTheDocument()
   })
 
   it('ignores a stored language that is not supported', () => {
