@@ -19,9 +19,10 @@ onto them:
 - `components/Tile`: a card for one entry (title, subtitle, meta line), whose
   title expands its details,
   and `components/TileList` to lay tiles out in a grid
-- `resume/ResumeSection`: a titled section that loads its entries with
-  `async/useAsync` and shows the loading, error, empty or tile states
-- `resume/EducationTile` and `resume/EducationSection`: the education entries
+- `resume/ResumeSection`: a titled section that shows the loading, error,
+  empty or tile states of the entries it is given
+- `resume/EducationTile` and `resume/EducationSection`: the education entries,
+  loaded with `async/useAsync`
 
 ## Commands
 
