@@ -66,7 +66,8 @@ class LocalizedField(LocalizedText):
     title_fr.
 
     The columns are named after the field, so source is the whole instance.
-    On a model serializer, max_length is that of the first language's column.
+    On a model serializer, max_length defaults to that of the first language's
+    column.
     """
 
     def __init__(self, **kwargs):
@@ -75,7 +76,7 @@ class LocalizedField(LocalizedText):
     def bind(self, field_name, parent):
         super().bind(field_name, parent)
         model = getattr(getattr(parent, "Meta", None), "model", None)
-        if model is not None:
+        if model is not None and self.max_length is None:
             column = model._meta.get_field(f"{field_name}_{LANGUAGES[0]}")
             self.max_length = column.max_length
 
