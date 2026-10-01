@@ -271,7 +271,9 @@ workflow ignores a run started from another branch).
    GHCR, tagged `sha-<commit>`. There is no `latest` tag: a bad build can't be
    pulled by accident.
 3. **deploy**: copies `compose.yml` and `backup.sh` to `/opt/portfolio/`,
-   then over SSH runs `docker compose pull` and `docker compose up -d --wait`
+   then over SSH runs `./backup.sh` (skipped when no backend is running yet:
+   the new backend applies migrations when it starts), `docker compose pull`
+   and `docker compose up -d --wait`
    with `TAG=sha-<commit>`. `--wait` fails the job if a new container doesn't
    pass its health check. A container whose image didn't change isn't
    restarted. Once the containers are healthy, the deploy writes

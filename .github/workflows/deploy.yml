@@ -122,6 +122,11 @@ jobs:
           set -eu
           cd /opt/portfolio
           export TAG
+          # The new backend applies migrations when it starts: back up first.
+          # Nothing to back up on the first deploy.
+          if [ -n "$(docker compose ps --quiet backend)" ]; then
+              ./backup.sh
+          fi
           docker compose pull
           docker compose up -d --wait
           if grep -q '^TAG=' .env; then
