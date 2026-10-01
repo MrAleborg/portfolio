@@ -68,9 +68,12 @@ describe('EducationTile', () => {
     it('does not repeat the field of study in the details', async () => {
       renderTile(masters)
 
-      await userEvent.setup().click(screen.getByRole('button'))
+      await expand('Master’s degree, Computer Science')
 
-      expect(screen.queryByText('Computer Science')).not.toBeInTheDocument()
+      const button = screen.getByRole('button')
+      const details = document.getElementById(button.getAttribute('aria-controls')!)
+      expect(details).toHaveTextContent('With honours')
+      expect(details).not.toHaveTextContent(/Computer Science/)
     })
 
     it('shows an ongoing degree as lasting until now', () => {
