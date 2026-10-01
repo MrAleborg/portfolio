@@ -23,6 +23,13 @@ onto them:
   empty or tile states of the entries it is given
 - `resume/EducationTile` and `resume/EducationSection`: the education entries,
   loaded with `async/useAsync`
+- `components/TagList`: `TagGroup`, a labelled row of tag chips, each with an optional
+  note (`Claude Code · used daily`), and `TagList`, which uses it to group an
+  entry's tags by kind (skills, tools, methodologies)
+- `resume/TagSection`: the Expertise section, one panel listing each domain
+  of the tag category tree with its categories as `TagGroup` rows;
+  `visibleDomains` (in `domain/tag/TagCategory`) leaves out empty categories
+  and domains
 
 ## Commands
 
