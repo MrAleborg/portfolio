@@ -266,12 +266,16 @@ on a push to `main`, or by hand from the Actions tab.
    is still running, this run stops and the other one's completion triggers
    the deploy. If one failed, nothing is deployed.
 2. **build**: builds the `backend` and `frontend` images and pushes them to
-   GHCR, both tagged `sha-<commit>` and `latest`.
+   GHCR, tagged `sha-<commit>`. There is no `latest` tag: a bad build can't be
+   pulled by accident.
 3. **deploy**: copies `compose.yml` and `backup.sh` to `/opt/portfolio/`,
    then over SSH runs `docker compose pull` and `docker compose up -d --wait`
    with `TAG=sha-<commit>`. `--wait` fails the job if a new container doesn't
    pass its health check. A container whose image didn't change isn't
-   restarted.
+   restarted. Once the containers are healthy, the deploy writes
+   `TAG=sha-<commit>` in `/opt/portfolio/.env`, so every later `docker compose`
+   command on the server uses the deployed images. `compose.yml` refuses to run
+   without a `TAG`.
 4. **Smoke test**: `curl` on `https://$API_DOMAIN/api/v1/experience/` and
    `https://$FRONTEND_DOMAIN/`.
 
@@ -292,14 +296,18 @@ All from `/opt/portfolio` on the server.
 | Logs | `docker compose logs -f backend` (or `frontend`); Caddy: `journalctl -u caddy -f` |
 | Django shell | `docker compose exec backend python manage.py shell` |
 | Restart | `docker compose restart backend` (or `frontend`) |
-| Change a setting | edit `.env`, then `docker compose up -d` |
+| Change a setting | edit `.env` (keep its `TAG=` line), then `docker compose up -d` |
 
 ### Rollback
 
-Every deploy keeps its image tags in GHCR. To go back to an earlier commit:
+Every deploy keeps its image tags in GHCR. To go back to an earlier commit,
+change the `TAG` in `.env`, which is what a plain `docker compose up -d` uses
+from then on:
 
 ```bash
-TAG=sha-<commit> docker compose up -d --wait
+sed -i 's/^TAG=.*/TAG=sha-<commit>/' .env
+docker compose pull
+docker compose up -d --wait
 ```
 
 The next deploy from `main` replaces it. If the bad backend version had

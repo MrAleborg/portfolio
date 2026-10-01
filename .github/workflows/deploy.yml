@@ -87,7 +87,6 @@ jobs:
           push: true
           tags: |
             ghcr.io/mraleborg/portfolio-${{ matrix.service }}:${{ needs.check.outputs.tag }}
-            ghcr.io/mraleborg/portfolio-${{ matrix.service }}:latest
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}
 
@@ -119,15 +118,23 @@ jobs:
         run: scp deploy/compose.yml deploy/backup.sh "$TARGET:/opt/portfolio/"
 
       - name: Start the new images
-        # --wait returns once every service passes its health check.
+        # --wait returns once every service passes its health check. Only then
+        # is the tag written to .env, so a manual `docker compose` command on
+        # the server uses the images that were deployed.
         run: |
-          # $TAG is expanded here on purpose, to send its value to the server.
-          # shellcheck disable=SC2029
-          ssh "$TARGET" "cd /opt/portfolio \
-            && export TAG=$TAG \
-            && docker compose pull \
-            && docker compose up -d --wait \
-            && docker image prune -f"
+          ssh "$TARGET" env TAG="$TAG" sh -s <<'EOF'
+          set -eu
+          cd /opt/portfolio
+          export TAG
+          docker compose pull
+          docker compose up -d --wait
+          if grep -q '^TAG=' .env; then
+              sed -i "s/^TAG=.*/TAG=$TAG/" .env
+          else
+              echo "TAG=$TAG" >> .env
+          fi
+          docker image prune -f
+          EOF
 
       - name: Smoke test
         run: |
