@@ -95,4 +95,43 @@ describe('ResumeSection', () => {
       expect(section().getByText('Rien à afficher pour le moment.')).toBeInTheDocument()
     })
   })
+
+  describe('with its own rendering of the items', () => {
+    function renderWithItems(state: AsyncState<Item[]>) {
+      return render(
+        <LocaleProvider initialLocale="en">
+          <ResumeSection
+            title="Things"
+            state={state}
+            renderItems={(items) => <p>{items.map((item) => item.name).join(' and ')}</p>}
+          />
+        </LocaleProvider>,
+      )
+    }
+
+    it('shows it instead of the tiles once loaded', () => {
+      renderWithItems({
+        status: 'loaded',
+        value: [
+          { id: 1, name: 'First' },
+          { id: 2, name: 'Second' },
+        ],
+      })
+
+      expect(section().getByText('First and Second')).toBeInTheDocument()
+      expect(section().queryByRole('list')).toBeNull()
+    })
+
+    it('still says there is nothing to show when there are no items', () => {
+      renderWithItems({ status: 'loaded', value: [] })
+
+      expect(section().getByText('Nothing to show yet.')).toBeInTheDocument()
+    })
+
+    it('still says it is loading', () => {
+      renderWithItems({ status: 'loading' })
+
+      expect(section().getByRole('status')).toBeInTheDocument()
+    })
+  })
 })

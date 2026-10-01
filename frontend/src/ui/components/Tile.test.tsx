@@ -112,6 +112,28 @@ describe('Tile', () => {
     expect(screen.getByRole('article')).toHaveAccessibleName('Master’s degree')
   })
 
+  it('shows its title as a level 4 heading when nested, still named and expandable', async () => {
+    render(
+      <Tile title="Project" headingLevel={4}>
+        <p>Details.</p>
+      </Tile>,
+    )
+
+    expect(screen.queryByRole('heading', { level: 3 })).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 4, name: 'Project' })).toBeInTheDocument()
+    expect(screen.getByRole('article')).toHaveAccessibleName('Project')
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Project' }))
+    expect(screen.getByText('Details.')).toBeVisible()
+  })
+
+  it('looks nested only when its title is a level 4 heading', () => {
+    const { rerender } = render(<Tile title="Project" />)
+    expect(screen.getByRole('article')).not.toHaveClass('tile--nested')
+
+    rerender(<Tile title="Project" headingLevel={4} />)
+    expect(screen.getByRole('article')).toHaveClass('tile--nested')
+  })
+
   it('has no button when it has no content to expand', () => {
     render(<Tile title="Master’s degree" subtitle="Université de Rennes" />)
 
@@ -121,6 +143,19 @@ describe('Tile', () => {
   it('has no button when its content is an empty list', () => {
     render(<Tile title="Master’s degree">{[]}</Tile>)
 
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+  })
+
+  it('has no button when its content is only empty values', () => {
+    render(
+      <Tile title="Master’s degree">
+        {''}
+        {null}
+        {false}
+      </Tile>,
+    )
+
+    expect(screen.getByRole('article')).toHaveAccessibleName('Master’s degree')
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
 

@@ -1,3 +1,4 @@
+import type { TagKind } from '@/domain/tag/Tag'
 import type { Localized } from '@/domain/i18n/Locale'
 
 /** French elides "de" before a vowel (or a mute h). */
@@ -9,6 +10,11 @@ interface Messages {
   navResume: string
   resumeTitle: string
   educationTitle: string
+  /** Said after the name of a link that opens in a new tab. */
+  opensInNewTab: string
+  /** What goes between a link's text and the colon that introduces what it is about. */
+  spaceBeforeColon: string
+  tagKinds: Record<TagKind, string>
   loading: string
   profileUnavailable: string
   sectionUnavailable: string
@@ -28,6 +34,9 @@ export const messages: Localized<Messages> = {
     navResume: 'Resume',
     resumeTitle: 'Resume',
     educationTitle: 'Education',
+    opensInNewTab: '(opens in a new tab)',
+    spaceBeforeColon: '',
+    tagKinds: { skill: 'Skills', tool: 'Tools', methodology: 'Methodologies' },
     loading: 'Loading…',
     profileUnavailable:
       'The profile could not be loaded. Please try again later.',
@@ -45,6 +54,9 @@ export const messages: Localized<Messages> = {
     navResume: 'CV',
     resumeTitle: 'CV',
     educationTitle: 'Formation',
+    opensInNewTab: '(s’ouvre dans un nouvel onglet)',
+    spaceBeforeColon: ' ',
+    tagKinds: { skill: 'Compétences', tool: 'Outils', methodology: 'Méthodologies' },
     loading: 'Chargement…',
     profileUnavailable: 'Le profil n’a pas pu être chargé. Réessayez plus tard.',
     sectionUnavailable:

@@ -3,6 +3,8 @@ import './Tile.css'
 
 interface TileProps {
   title: string
+  /** The level of the title heading; 4 for a tile nested in another. */
+  headingLevel?: 3 | 4
   subtitle?: string
   /** Short facts shown side by side, e.g. a period and a place; empty ones are left out. */
   meta?: ReactNode[]
@@ -13,6 +15,7 @@ interface TileProps {
 /** A card for one entry of a list, named by its title. */
 export function Tile({
   title,
+  headingLevel = 3,
   subtitle,
   meta = [],
   children,
@@ -21,11 +24,15 @@ export function Tile({
   const bodyId = useId()
   const [expanded, setExpanded] = useState(false)
   const metaItems = meta.filter(Boolean)
-  const hasDetails = Children.toArray(children).length > 0
+  const Heading = `h${headingLevel}` as const
+  const hasDetails = Children.toArray(children).some(Boolean)
 
   return (
-    <article className="tile" aria-labelledby={titleId}>
-      <h3 id={titleId} className="tile__title">
+    <article
+      className={headingLevel === 4 ? 'tile tile--nested' : 'tile'}
+      aria-labelledby={titleId}
+    >
+      <Heading id={titleId} className="tile__title">
         {hasDetails ? (
           <button
             type="button"
@@ -40,7 +47,7 @@ export function Tile({
         ) : (
           title
         )}
-      </h3>
+      </Heading>
       {subtitle && <p className="tile__subtitle">{subtitle}</p>}
       {metaItems.length > 0 && (
         <p className="tile__meta">

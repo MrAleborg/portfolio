@@ -90,3 +90,20 @@
 .tile__body > * + * {
   margin-top: 0.5rem;
 }
+
+.tile__body a {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.tile--nested {
+  padding: 1rem 1.25rem;
+  border-top-width: 1px;
+  border-top-color: var(--border);
+  border-radius: 0.5rem;
+  box-shadow: none;
+}
+
+.tile--nested .tile__title {
+  font-size: 1rem;
+}
