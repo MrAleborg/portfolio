@@ -12,6 +12,7 @@ interface Messages {
   navResume: string
   resumeTitle: string
   educationTitle: string
+  specializationsTitle: string
   certificationsTitle: string
   scientificCommunicationsTitle: string
   commitmentsTitle: string
@@ -48,6 +49,7 @@ export const messages: Localized<Messages> = {
     navResume: 'Resume',
     resumeTitle: 'Resume',
     educationTitle: 'Education',
+    specializationsTitle: 'Specializations',
     certificationsTitle: 'Certifications',
     scientificCommunicationsTitle: 'Scientific communications',
     commitmentsTitle: 'Commitments',
@@ -89,6 +91,7 @@ export const messages: Localized<Messages> = {
     navResume: 'CV',
     resumeTitle: 'CV',
     educationTitle: 'Formation',
+    specializationsTitle: 'Spécialisations',
     certificationsTitle: 'Certifications',
     scientificCommunicationsTitle: 'Communications scientifiques',
     commitmentsTitle: 'Engagements',

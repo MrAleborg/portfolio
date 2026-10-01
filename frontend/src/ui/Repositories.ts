@@ -4,12 +4,14 @@ import type { EducationRepository } from '@/domain/education/EducationRepository
 import type { HobbyRepository } from '@/domain/hobby/HobbyRepository'
 import type { ProfileRepository } from '@/domain/profile/ProfileRepository'
 import type { ScientificCommunicationRepository } from '@/domain/scientificCommunication/ScientificCommunicationRepository'
+import type { SpecializationRepository } from '@/domain/specialization/SpecializationRepository'
 
 /** Where each page reads its content from. */
 export interface Repositories {
   profile: ProfileRepository
   education: EducationRepository
   certification: CertificationRepository
+  specialization: SpecializationRepository
   scientificCommunication: ScientificCommunicationRepository
   commitment: CommitmentRepository
   hobby: HobbyRepository

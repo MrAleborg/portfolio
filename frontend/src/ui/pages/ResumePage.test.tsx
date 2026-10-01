@@ -32,6 +32,12 @@ const sections = [
     firstInFrench: 'Praticien du cloud',
   },
   {
+    en: 'Specializations',
+    fr: 'Spécialisations',
+    tiles: ['Cloud engineering', 'Agile delivery'],
+    firstInFrench: 'Ingénierie cloud',
+  },
+  {
     en: 'Scientific communications',
     fr: 'Communications scientifiques',
     tiles: ['Fast compilers', 'Slow compilers'],
