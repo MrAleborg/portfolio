@@ -59,7 +59,7 @@ Django reads its settings from the environment
 | `SECRET_KEY` | long random string | `python3 -c "import secrets; print(secrets.token_urlsafe(50))"` |
 | `DEBUG` | `False` | Also turns on the HTTPS settings below |
 | `ALLOWED_HOSTS` | `api.example.com,example.com,localhost` | `example.com` is for the site's API calls on `/api/`; `localhost` is for the container health check |
-| `CSRF_TRUSTED_ORIGINS` | `https://api.example.com` | Needed to log into `/admin/` |
+| `CSRF_TRUSTED_ORIGINS` | `https://api.example.com` | Optional: Django already trusts the request's own host and scheme (Caddy forwards them), so `/admin/` login works without it. Only needed if a proxy rewrites the host |
 | `CORS_ALLOWED_ORIGINS` | `https://example.com` | Where the frontend runs |
 | `DATABASE_URL` | `sqlite:////data/db.sqlite3` | Four slashes: absolute path |
 | `EMAIL_URL` | `smtp+tls://contact%40example.com:password@smtp.example.com:587` | Sends the emails people receive. `smtp+ssl://…:465` also works. URL-encode `@` and `:` in credentials |
