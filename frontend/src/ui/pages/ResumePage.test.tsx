@@ -78,13 +78,13 @@ describe('ResumePage', () => {
     ).toBeInTheDocument()
   })
 
-  it('shows the sections in order, top to bottom', () => {
+  it('shows the sections in order, from expertise to hobbies', () => {
     renderPage()
 
     const titles = screen
       .getAllByRole('heading', { level: 2 })
       .map((heading) => heading.textContent)
-    expect(titles).toEqual(sections.map((section) => section.en))
+    expect(titles).toEqual(['Expertise', ...sections.map((section) => section.en)])
   })
 
   it.each(sections)('shows one tile per entry of $en, in order', async ({ en, tiles }) => {
@@ -103,6 +103,32 @@ describe('ResumePage', () => {
 
     const section = within(screen.getByRole('region', { name: fr }))
     expect(await section.findByRole('article', { name: firstInFrench })).toBeInTheDocument()
+  })
+
+  it('shows the tags of the expertise section grouped by kind', async () => {
+    renderPage()
+
+    const expertise = within(screen.getByRole('region', { name: 'Expertise' }))
+    const skills = await expertise.findByRole('list', { name: 'Skills' })
+    expect(within(skills).getAllByRole('listitem').map((chip) => chip.textContent)).toEqual([
+      'Python',
+      'Testing',
+    ])
+    expect(within(expertise.getByRole('list', { name: 'Tools' })).getByRole('listitem')).toHaveTextContent('Git')
+    expect(
+      within(expertise.getByRole('list', { name: 'Methodologies' })).getByRole('listitem'),
+    ).toHaveTextContent('Agile')
+  })
+
+  it('shows the tags of the expertise section in French', async () => {
+    renderPage({}, 'fr')
+
+    const expertise = within(screen.getByRole('region', { name: 'Expertise' }))
+    const skills = await expertise.findByRole('list', { name: 'Compétences' })
+    expect(within(skills).getAllByRole('listitem').map((chip) => chip.textContent)).toEqual([
+      'Python',
+      'Tests',
+    ])
   })
 
   it('says the education is loading', () => {

@@ -11,11 +11,13 @@ import { createHttpProfileRepository } from '@/infrastructure/profile/httpProfil
 import { createHttpProjectRepository } from '@/infrastructure/project/httpProjectRepository'
 import { createHttpScientificCommunicationRepository } from '@/infrastructure/scientificCommunication/httpScientificCommunicationRepository'
 import { createHttpSpecializationRepository } from '@/infrastructure/specialization/httpSpecializationRepository'
+import { createHttpTagRepository } from '@/infrastructure/tag/httpTagRepository'
 
 const apiUrl = import.meta.env.VITE_API_URL
 
 const repositories = {
   profile: createHttpProfileRepository(apiUrl),
+  tag: createHttpTagRepository(apiUrl),
   experience: createHttpProfessionalExperienceRepository(apiUrl),
   project: createHttpProjectRepository(apiUrl),
   education: createHttpEducationRepository(apiUrl),

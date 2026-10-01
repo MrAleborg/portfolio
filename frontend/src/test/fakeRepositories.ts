@@ -7,12 +7,14 @@ import { fakeProfileRepository } from '@/test/fakeProfileRepository'
 import { fakeProjectRepository } from '@/test/fakeProjectRepository'
 import { fakeScientificCommunicationRepository } from '@/test/fakeScientificCommunicationRepository'
 import { fakeSpecializationRepository } from '@/test/fakeSpecializationRepository'
+import { fakeTagRepository } from '@/test/fakeTagRepository'
 import type { Repositories } from '@/ui/Repositories'
 
 /** Repositories that answer with the test fixtures, unless overridden. */
 export function fakeRepositories(overrides: Partial<Repositories> = {}) {
   return {
     profile: fakeProfileRepository(),
+    tag: fakeTagRepository(),
     experience: fakeProfessionalExperienceRepository(),
     project: fakeProjectRepository(),
     education: fakeEducationRepository(),

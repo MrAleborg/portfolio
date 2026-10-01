@@ -7,10 +7,12 @@ import type { ProfileRepository } from '@/domain/profile/ProfileRepository'
 import type { ProjectRepository } from '@/domain/project/ProjectRepository'
 import type { ScientificCommunicationRepository } from '@/domain/scientificCommunication/ScientificCommunicationRepository'
 import type { SpecializationRepository } from '@/domain/specialization/SpecializationRepository'
+import type { TagRepository } from '@/domain/tag/TagRepository'
 
 /** Where each page reads its content from. */
 export interface Repositories {
   profile: ProfileRepository
+  tag: TagRepository
   experience: ProfessionalExperienceRepository
   project: ProjectRepository
   education: EducationRepository
