@@ -248,6 +248,12 @@ SERVER_EMAIL = env("SERVER_EMAIL", default=DEFAULT_FROM_EMAIL)
 ADMINS = env("ADMINS")
 
 
+# Error reports hide passwords and tokens in the local variables of each frame.
+DEFAULT_EXCEPTION_REPORTER_FILTER = (
+    "portfolio.reporter_filter.FrameCleansingReporterFilter"
+)
+
+
 # Logging: Django's defaults, except that error reports go through the "server"
 # mailer, and warnings and errors are also printed to stdout when DEBUG is off,
 # so they show up in `docker compose logs`.
