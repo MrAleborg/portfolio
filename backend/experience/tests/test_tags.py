@@ -207,6 +207,24 @@ def test_detail_hides_projects_of_invisible_experiences(api_client, route):
     ]
 
 
+def test_detail_of_tag_used_only_by_hidden_entries_is_not_found(api_client, route):
+    """As in the list, a tag that only tags hidden entries (or nothing) does
+    not exist for visitors, so its name cannot be read by guessing ids."""
+    basename, _, model = route
+    hidden_project_tag = model.objects.create(name_en="Secret", name_fr="Secret")
+    hidden_certification_tag = model.objects.create(name_en="Old", name_fr="Old")
+    unused_tag = model.objects.create(name_en="Unused", name_fr="Unused")
+    make_project(is_visible=False).tags.add(hidden_project_tag)
+    make_certification(is_visible=False).tags.add(hidden_certification_tag)
+
+    responses = [
+        api_client.get(detail_url(basename, tag.id))
+        for tag in (hidden_project_tag, hidden_certification_tag, unused_tag)
+    ]
+
+    assert [response.status_code for response in responses] == [404, 404, 404]
+
+
 def test_detail_of_tag_of_another_kind_is_not_found(api_client, route):
     """skills/{id}/ does not serve a tool, even though both live in Tag."""
     basename, _, model = route

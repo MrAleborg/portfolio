@@ -129,16 +129,12 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
     """Base for the tag kinds; subclasses set queryset to their proxy model."""
 
     def get_queryset(self):
-        queryset = super().get_queryset()
-        if self.action == "list":
-            # Hidden entries must not leak through their tags.
-            queryset = queryset.filter(
-                Exists(visible_projects().filter(tags=OuterRef("pk")))
-                | Exists(
-                    Certification.objects.filter(is_visible=True, tags=OuterRef("pk"))
-                )
-            )
-        elif self.action == "retrieve":
+        # Hidden entries must not leak through their tags.
+        in_visible_entry = Exists(
+            visible_projects().filter(tags=OuterRef("pk"))
+        ) | Exists(Certification.objects.filter(is_visible=True, tags=OuterRef("pk")))
+        queryset = super().get_queryset().filter(in_visible_entry)
+        if self.action == "retrieve":
             queryset = queryset.prefetch_related(
                 Prefetch("projects", queryset=visible_projects()),
                 Prefetch(
