@@ -5,6 +5,7 @@ from rest_framework.permissions import AllowAny
 
 from experience.models import (
     Certification,
+    Commitment,
     Education,
     Hobby,
     Methodology,
@@ -16,6 +17,7 @@ from experience.models import (
 )
 from experience.serializers import (
     CertificationSerializer,
+    CommitmentSerializer,
     EducationSerializer,
     HobbySerializer,
     ProfessionalExperienceSerializer,
@@ -174,3 +176,8 @@ class MethodologyViewSet(TagViewSet):
 class HobbyViewSet(PublicReadOnlyViewSet):
     queryset = Hobby.objects.filter(is_visible=True)
     serializer_class = HobbySerializer
+
+
+class CommitmentViewSet(PublicReadOnlyViewSet):
+    queryset = Commitment.objects.filter(is_visible=True)
+    serializer_class = CommitmentSerializer

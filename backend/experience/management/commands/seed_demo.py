@@ -6,6 +6,7 @@ from django.db import transaction
 from experience.management.demo import has_content
 from experience.models import (
     Certification,
+    Commitment,
     Education,
     Hobby,
     Methodology,
@@ -39,6 +40,7 @@ class Command(BaseCommand):
         self.create_experiences(tags)
         self.create_credentials(tags)
         self.create_hobbies()
+        self.create_commitments()
 
         self.stdout.write(self.style.SUCCESS("Demo content created."))
 
@@ -267,6 +269,49 @@ class Command(BaseCommand):
         Hobby.objects.create(
             name_en="Hidden hobby",
             name_fr="Loisir masqué",
+            description_en="is_visible=False: must never appear in the API.",
+            description_fr="is_visible=False : ne doit jamais apparaître dans l'API.",
+            is_visible=False,
+        )
+
+    def create_commitments(self):
+        Commitment.objects.create(
+            kind=Commitment.Kind.ASSOCIATION,
+            organization="Demo Robotics Club",
+            role_en="Treasurer",
+            role_fr="Trésorier",
+            location_en="Rennes",
+            location_fr="Rennes",
+            url="https://robotics-club.example",
+            start_date=date(2019, 9, 1),
+            description_en="Ongoing (end_date is null).",
+            description_fr="En cours (end_date est null).",
+        )
+        Commitment.objects.create(
+            kind=Commitment.Kind.CONFERENCE_ORGANIZATION,
+            organization="Demo Dev Conference",
+            role_en="Program organizer",
+            role_fr="Organisateur du programme",
+            start_date=date(2022, 1, 1),
+            end_date=date(2023, 10, 31),
+            display_order=1,
+        )
+        Commitment.objects.create(
+            kind=Commitment.Kind.OTHER_EVENT,
+            organization="Demo Hackathon",
+            role_en="Mentor",
+            role_fr="Mentor",
+            start_date=date(2021, 6, 1),
+            end_date=date(2021, 6, 2),
+            display_order=2,
+        )
+        Commitment.objects.create(
+            kind=Commitment.Kind.ASSOCIATION,
+            organization="Hidden Association",
+            role_en="Hidden role",
+            role_fr="Rôle masqué",
+            start_date=date(2018, 1, 1),
+            end_date=date(2018, 12, 31),
             description_en="is_visible=False: must never appear in the API.",
             description_fr="is_visible=False : ne doit jamais apparaître dans l'API.",
             is_visible=False,

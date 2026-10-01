@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAdminUser
 from experience.admin_api import serializers
 from experience.models import (
     Certification,
+    Commitment,
     Education,
     Hobby,
     Methodology,
@@ -64,3 +65,8 @@ class MethodologyViewSet(AdminViewSet):
 class HobbyViewSet(AdminViewSet):
     queryset = Hobby.objects.all()
     serializer_class = serializers.HobbySerializer
+
+
+class CommitmentViewSet(AdminViewSet):
+    queryset = Commitment.objects.all()
+    serializer_class = serializers.CommitmentSerializer

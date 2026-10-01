@@ -15,6 +15,7 @@ from django.db import IntegrityError
 from experience.languages import LANGUAGES
 from experience.models import (
     Certification,
+    Commitment,
     Education,
     Hobby,
     ProfessionalExperience,
@@ -58,12 +59,19 @@ ROWS = {
         "issue_date": date(2024, 1, 1),
     },
     Hobby: {"name_en": "Chess", "name_fr": "Échecs"},
+    Commitment: {
+        "organization": "Red Cross",
+        "role_en": "Volunteer",
+        "role_fr": "Bénévole",
+        "start_date": date(2020, 1, 1),
+    },
 }
 OPTIONAL_TRANSLATIONS = [
     (Education, "field_of_study"),
     (Education, "grade"),
     (Education, "location"),
     (ProfessionalExperience, "location"),
+    (Commitment, "location"),
     *((model, "description") for model in ROWS),
 ]
 

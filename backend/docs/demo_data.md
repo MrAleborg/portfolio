@@ -113,6 +113,10 @@ Entries are listed by their English text.
 | Hobby | 1 | Climbing | With a description |
 | | 2 | Chess | |
 | | 3 | Hidden hobby | **Hidden** |
+| Commitment | 1 | Treasurer @ Demo Robotics Club | Association, ongoing (`end_date` null), with a location and a URL |
+| | 2 | Program organizer @ Demo Dev Conference | Conference organization, `display_order` 1 |
+| | 3 | Mentor @ Demo Hackathon | Other event, `display_order` 2 |
+| | 4 | Hidden role @ Hidden Association | **Hidden** |
 
 ## What to check
 
@@ -143,6 +147,9 @@ relative to `http://localhost:8000/api/v1/experience/`; see
 | `specializations/1/` | Certifications 2, 1, not the hidden one |
 | `hobbies/` | Chess, then Climbing (same `display_order`, so by English name). Not 3 |
 | `hobbies/3/` | `404` |
+| `commitments/` | Commitments 1, 2, 3 (by `display_order`), one of each `kind`. Not 4 |
+| `commitments/1/` | `"is_current": true`, with `location` and `url` |
+| `commitments/4/` | `404` |
 | `/api/v1/profile/` (absolute path) | Demo Owner, with headline and bio in both languages |
 
 No response should contain `is_visible`, `display_order`, `created_at` or
