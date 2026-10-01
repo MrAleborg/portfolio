@@ -11,14 +11,15 @@ interface EducationTileProps {
 export function EducationTile({ education }: EducationTileProps) {
   const { locale } = useLocale()
   const lines = [
-    education.fieldOfStudy[locale],
     education.grade[locale],
     ...paragraphs(education.description[locale]),
   ].filter(Boolean)
 
   return (
     <Tile
-      title={education.degree[locale]}
+      title={[education.degree[locale], education.fieldOfStudy[locale]]
+        .filter(Boolean)
+        .join(', ')}
       subtitle={education.institution}
       meta={[formatPeriod(education.period, locale), education.location[locale]]}
     >
