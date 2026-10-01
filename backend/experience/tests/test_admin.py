@@ -9,6 +9,8 @@ from datetime import date
 
 import pytest
 from django.contrib import admin
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
 from experience.models import (
@@ -130,3 +132,33 @@ def test_changelist_filters_tags_by_kind(admin_client):
     changelist = response.context["cl"]
     assert [spec.field_path for spec in changelist.filter_specs] == ["kind"]
     assert [tag.name_en for tag in changelist.result_list] == ["Docker"]
+
+
+def test_project_changelist_queries_do_not_grow_with_the_projects(admin_client):
+    """A project's name shows its experience, which the list loads in one query."""
+
+    def changelist_queries():
+        with CaptureQueriesContext(connection) as queries:
+            admin_client.get(admin_url(Project, "changelist"))
+        return len(queries)
+
+    def add_project(company):
+        experience = ProfessionalExperience.objects.create(
+            company=company,
+            position_en="Developer",
+            position_fr="Développeur",
+            start_date=date(2024, 1, 1),
+        )
+        Project.objects.create(
+            title_en="Portfolio",
+            title_fr="Portfolio",
+            start_date=date(2024, 1, 1),
+            experience=experience,
+        )
+
+    add_project("Acme")
+    one_project = changelist_queries()
+    add_project("Globex")
+    add_project("Initech")
+
+    assert changelist_queries() == one_project
