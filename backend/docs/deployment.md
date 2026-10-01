@@ -240,13 +240,18 @@ Docker. In another user's crontab it fails without a trace:
 
 ```bash
 sudo crontab -u deploy -e
-# 0 3 * * * /opt/portfolio/backup.sh >> /opt/portfolio/backup.log 2>&1
+# MAILTO=you@example.com
+# 0 3 * * * /opt/portfolio/backup.sh >> /opt/portfolio/backup.log
 ```
 
+`MAILTO` makes cron email the job's error output, so a failed backup doesn't go
+unnoticed. Only stdout goes to the log, since cron mails what is left on
+stderr; the server needs a mail transfer agent for that (e.g. `msmtp-mta`).
+
 `backup.sh` writes a compressed, consistent copy of the database to
-`/opt/portfolio/backups/`, unless the database hasn't changed since the latest
-backup (logging into the admin counts as a change). It then deletes backups
-older than 180 days, but always keeps the latest one, however old.
+`/opt/portfolio/backups/`, as `db-<date>-<time>.sqlite3.gz` (readable by
+`deploy` only), once per night and before each deploy. It then deletes backups
+older than 180 days; the one it just wrote is never deleted.
 `BACKUP_DIR` and `KEEP_DAYS` change the folder and the retention, at the start
 of the cron line (`0 3 * * * KEEP_DAYS=365 /opt/portfolio/backup.sh ...`).
 
