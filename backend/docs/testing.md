@@ -125,6 +125,8 @@ and timestamp helpers in
 | [`test_certifications.py`](../experience/tests/test_certifications.py) | `certifications/` (with `?tag=` filter) |
 | [`test_specializations.py`](../experience/tests/test_specializations.py) | `specializations/` |
 | [`test_tags.py`](../experience/tests/test_tags.py) | `skills/`, `tools/`, `methodologies/` |
+| [`test_tag_categories.py`](../experience/tests/test_tag_categories.py) | The tag category tree rules, the tag note, and their Django admin forms |
+| [`test_tag_categories_api.py`](../experience/tests/test_tag_categories_api.py) | `tag-categories/` |
 | [`test_hobbies.py`](../experience/tests/test_hobbies.py) | `hobbies/` |
 | [`test_commitments.py`](../experience/tests/test_commitments.py) | `commitments/` |
 | [`test_scientific_communications.py`](../experience/tests/test_scientific_communications.py) | `scientific-communications/` |
