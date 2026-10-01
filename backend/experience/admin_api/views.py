@@ -13,6 +13,7 @@ from experience.models import (
     ScientificCommunication,
     Skill,
     Specialization,
+    TagCategory,
     Tool,
 )
 
@@ -49,18 +50,23 @@ class SpecializationViewSet(AdminViewSet):
 
 
 class SkillViewSet(AdminViewSet):
-    queryset = Skill.objects.all()
+    queryset = Skill.objects.prefetch_related("categories")
     serializer_class = serializers.SkillSerializer
 
 
 class ToolViewSet(AdminViewSet):
-    queryset = Tool.objects.all()
+    queryset = Tool.objects.prefetch_related("categories")
     serializer_class = serializers.ToolSerializer
 
 
 class MethodologyViewSet(AdminViewSet):
-    queryset = Methodology.objects.all()
+    queryset = Methodology.objects.prefetch_related("categories")
     serializer_class = serializers.MethodologySerializer
+
+
+class TagCategoryViewSet(AdminViewSet):
+    queryset = TagCategory.objects.all()
+    serializer_class = serializers.TagCategorySerializer
 
 
 class HobbyViewSet(AdminViewSet):

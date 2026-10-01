@@ -16,6 +16,7 @@ from experience.models import (
     ScientificCommunication,
     Skill,
     Specialization,
+    TagCategory,
     Tool,
 )
 from owner.models import Profile
@@ -37,6 +38,7 @@ class Command(BaseCommand):
 
         self.create_profile()
         tags = self.create_tags()
+        self.create_tag_categories(tags)
         self.create_education()
         self.create_experiences(tags)
         self.create_credentials(tags)
@@ -67,6 +69,45 @@ class Command(BaseCommand):
             "scrum": Methodology.objects.create(name_en="Scrum", name_fr="Scrum"),
             "tdd": Methodology.objects.create(name_en="TDD", name_fr="TDD"),
         }
+
+    def create_tag_categories(self, tags):
+        """Two domains of categories; python is listed under several of them."""
+        python = tags["python"]
+        python.note_en = "Used daily for scripts and services."
+        python.note_fr = "Utilisé au quotidien pour les scripts et les services."
+        python.save()
+        trees = [
+            (
+                ("Software engineering", "Génie logiciel"),
+                [
+                    (
+                        ("Backend & APIs", "Backend et API"),
+                        ["python", "django", "api"],
+                    ),
+                    (("Frontend", "Frontend"), ["react"]),
+                    (
+                        ("Delivery practices", "Pratiques de livraison"),
+                        ["tdd", "scrum", "docker"],
+                    ),
+                ],
+            ),
+            (
+                ("Data", "Données"),
+                [
+                    (("Data pipelines", "Pipelines de données"), ["python", "docker"]),
+                    (("Data products", "Produits de données"), ["django", "api"]),
+                ],
+            ),
+        ]
+        for domain_position, ((name_en, name_fr), categories) in enumerate(trees):
+            domain = TagCategory.objects.create(
+                name_en=name_en, name_fr=name_fr, position=domain_position
+            )
+            for position, ((name_en, name_fr), keys) in enumerate(categories):
+                category = TagCategory.objects.create(
+                    name_en=name_en, name_fr=name_fr, parent=domain, position=position
+                )
+                category.tags.set([tags[key] for key in keys])
 
     def create_education(self):
         Education.objects.create(

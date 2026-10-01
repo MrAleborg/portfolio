@@ -3,6 +3,8 @@
 from django.urls import reverse
 from rest_framework.fields import DateTimeField
 
+from experience.models import TagCategory
+
 
 def list_url(basename):
     return reverse(f"experience-admin:{basename}-list")
@@ -24,3 +26,10 @@ def timestamps(instance):
 
 def listed_ids(response):
     return [entry["id"] for entry in response.json()]
+
+
+def make_category(name="AI", parent=None, position=0):
+    """Create a tag category (a domain when it has no parent)."""
+    return TagCategory.objects.create(
+        name_en=name, name_fr=f"{name} fr", parent=parent, position=position
+    )

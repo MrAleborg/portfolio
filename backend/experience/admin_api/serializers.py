@@ -1,5 +1,8 @@
 """Serializers of the admin API: every field, writable except timestamps."""
 
+from copy import copy
+
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from rest_framework import serializers
 
@@ -17,6 +20,7 @@ from experience.models import (
     ScientificCommunication,
     Skill,
     Specialization,
+    TagCategory,
     Tool,
 )
 from experience.serializers import CREDENTIAL_FIELDS, MissionListField
@@ -199,9 +203,10 @@ class TagSerializer(serializers.ModelSerializer):
     """
 
     name = LocalizedField()
+    note = LocalizedField(required=False, allow_blank=True)
 
     class Meta:
-        fields = ["id", "name"]
+        fields = ["id", "name", "categories", "note"]
 
     def validate_name(self, columns):
         """`columns` is {"name_en": ..., "name_fr": ...}; errors are per language."""
@@ -221,6 +226,25 @@ class TagSerializer(serializers.ModelSerializer):
         if errors:
             raise serializers.ValidationError(errors)
         return columns
+
+
+class TagCategorySerializer(serializers.ModelSerializer):
+    name = LocalizedField()
+
+    class Meta:
+        model = TagCategory
+        fields = ["id", "name", "parent", "position"]
+
+    def validate(self, attrs):
+        """Apply the model's depth rules to the instance as it would be saved."""
+        category = copy(self.instance) if self.instance else TagCategory()
+        for field, value in attrs.items():
+            setattr(category, field, value)
+        try:
+            category.clean()
+        except DjangoValidationError as error:
+            raise serializers.ValidationError(error.message_dict) from error
+        return attrs
 
 
 class SkillSerializer(TagSerializer):

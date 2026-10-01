@@ -158,8 +158,8 @@ collection:
           insomnia.expect(insomnia.response.code).to.equal(200);
         });
         const body = insomnia.response.json();
-        insomnia.test("Lists the 11 collections", () => {
-          insomnia.expect(body).to.have.all.keys("education", "professional-experiences", "projects", "certifications", "specializations", "skills", "tools", "methodologies", "hobbies", "commitments", "scientific-communications");
+        insomnia.test("Lists the 12 collections", () => {
+          insomnia.expect(body).to.have.all.keys("education", "professional-experiences", "projects", "certifications", "specializations", "skills", "tools", "methodologies", "tag-categories", "hobbies", "commitments", "scientific-communications");
         });
   - url: '{{ _.base_url }}/api/v1/admin/'
     name: Admin root without token → 401
@@ -2003,6 +2003,240 @@ collection:
       isPrivate: false
       description: ''
       sortKey: 51
+    method: DELETE
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 204", () => {
+          insomnia.expect(insomnia.response.code).to.equal(204);
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/tag-categories/'
+    name: Create tag domain → 201
+    meta:
+      id: req_cb4897a0670c7e89732907ec801ed517
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 51.1
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "name": {"en": "Insomnia domain", "fr": "Domaine Insomnia"},
+          "position": 9
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 201", () => {
+          insomnia.expect(insomnia.response.code).to.equal(201);
+        });
+        const body = insomnia.response.json();
+        insomnia.environment.set('tag_domain_id', body.id);
+        insomnia.test("Is a domain", () => {
+          insomnia.expect(body.parent).to.equal(null);
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/tag-categories/'
+    name: Create tag category under the domain → 201
+    meta:
+      id: req_e76ecf14c6b6e641a2f0384b288804c5
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 51.2
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "name": {"en": "Insomnia category", "fr": "Catégorie Insomnia"},
+          "parent": {{ _.tag_domain_id }}
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 201", () => {
+          insomnia.expect(insomnia.response.code).to.equal(201);
+        });
+        const body = insomnia.response.json();
+        insomnia.environment.set('tag_category_id', body.id);
+        insomnia.test("Sits under the domain", () => {
+          insomnia.expect(body.parent).to.equal(insomnia.environment.get('tag_domain_id'));
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/tag-categories/'
+    name: Create under a category (3 levels) → 400
+    meta:
+      id: req_a442fa5d77b639491935d225fc09bd4f
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 51.3
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "name": {"en": "Too deep", "fr": "Trop profond"},
+          "parent": {{ _.tag_category_id }}
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 400", () => {
+          insomnia.expect(insomnia.response.code).to.equal(400);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Reports the error on parent", () => {
+          insomnia.expect(body).to.have.property('parent');
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/skills/{{ _.skill_id }}/'
+    name: Put skill in the category, with a note → 200
+    meta:
+      id: req_c598038eb6cc1aa3e498e7b63f48b117
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 51.4
+    method: PATCH
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "categories": [{{ _.tag_category_id }}],
+          "note": {"en": "used daily", "fr": "utilisé au quotidien"}
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 200", () => {
+          insomnia.expect(insomnia.response.code).to.equal(200);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Returns the categories and the note", () => {
+          insomnia.expect(body.categories).to.eql([insomnia.environment.get('tag_category_id')]);
+          insomnia.expect(body.note).to.eql({"en": "used daily", "fr": "utilisé au quotidien"});
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/skills/{{ _.skill_id }}/'
+    name: Put skill in a domain → 400
+    meta:
+      id: req_ef75f2d61c5ce894f752858860010299
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 51.5
+    method: PATCH
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "categories": [{{ _.tag_domain_id }}]
+        }
+    headers:
+    - name: Content-Type
+      value: application/json
+    authentication:
+      type: bearer
+      prefix: Bearer
+      token: '{{ _.access }}'
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 400", () => {
+          insomnia.expect(insomnia.response.code).to.equal(400);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Reports the error on categories", () => {
+          insomnia.expect(body).to.have.property('categories');
+        });
+  - url: '{{ _.base_url }}/api/v1/admin/tag-categories/{{ _.tag_domain_id }}/'
+    name: Delete the domain (and its category) → 204
+    meta:
+      id: req_c3f6d7aab995e17eca6aacd908688b2a
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 51.6
     method: DELETE
     authentication:
       type: bearer

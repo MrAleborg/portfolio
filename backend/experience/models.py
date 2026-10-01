@@ -154,6 +154,8 @@ class TagCategory(models.Model):
         verbose_name_plural = "tag categories"
 
     def clean(self):
+        if self.pk and self.parent_id == self.pk:
+            raise ValidationError({"parent": "A category cannot be its own parent."})
         if self.parent and self.parent.parent_id is not None:
             raise ValidationError({"parent": "The parent must be a domain."})
         if self.parent and self.pk and self.children.exists():

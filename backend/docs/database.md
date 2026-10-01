@@ -227,7 +227,8 @@ Both levels are ordered by `position`, then English name.
   of them: a category may mix skills, tools and methodologies.
 - **The tree stays two levels deep.** `TagCategory.clean()` refuses, on
   `parent`: a parent that is not a domain, a parent on a domain that has
-  categories, and removing the parent of a category that holds tags. These are model validation rules, so the Django
+  categories, removing the parent of a category that holds tags, and a
+  category as its own parent. These are model validation rules, so the Django
   admin and the admin API enforce them; code that saves without `full_clean()`
   bypasses them.
 - **Deleting a domain deletes its categories**; deleting a category only
