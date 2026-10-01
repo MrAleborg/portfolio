@@ -4,14 +4,28 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # One pull request per week for all of them.
+    groups:
+      all:
+        patterns: ["*"]
   - package-ecosystem: docker
     directory: /backend
     schedule:
       interval: weekly
+    # Patch releases only: a new Python, Node or nginx version is upgraded on
+    # purpose.
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
   - package-ecosystem: docker
     directory: /frontend
     schedule:
       interval: weekly
+    # Patch releases only: a new Python, Node or nginx version is upgraded on
+    # purpose.
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
   # Reads backend/Pipfile and Pipfile.lock.
   - package-ecosystem: pip
     directory: /backend
