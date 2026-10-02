@@ -7,6 +7,7 @@ import { TagGroup } from '@/ui/components/TagList'
 import { messages } from '@/ui/i18n/messages'
 import { useLocale } from '@/ui/i18n/useLocale'
 import { ResumeSection } from '@/ui/resume/ResumeSection'
+import { LayersIcon } from '@/ui/resume/sectionIcons'
 import '@/ui/components/Tile.css'
 import './TagSection.css'
 
@@ -54,6 +55,7 @@ export function TagSection({ repository }: TagSectionProps) {
   return (
     <ResumeSection
       title={text.expertiseTitle}
+      icon={<LayersIcon />}
       state={state}
       renderItems={(domains) => (
         <div className="tag-summary">
