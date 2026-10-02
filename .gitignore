@@ -225,3 +225,6 @@ __marimo__/
 .mcp.json
 graphify-out/
 .claude/skills/graphify/
+
+# Dev box address and names, see deploy/.env.dev.example
+.env.dev
