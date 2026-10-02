@@ -346,6 +346,24 @@ All from `/opt/portfolio` on the server.
 | Restart | `docker compose restart backend` (or `frontend`) |
 | Change a setting | edit `.env` (keep its `TAG=` line), then `docker compose up -d` |
 
+### Profile photo
+
+The photo never goes in git or in an image: it lives in `/opt/portfolio/media`,
+which the frontend serves at `/media/`. Without it, the site shows a generic
+placeholder. Use a square webp, at least 400 px wide:
+
+```bash
+# On the server, once, as the deploy user (else Docker creates it as root):
+mkdir -p /opt/portfolio/media
+# From your machine:
+scp avatar.webp <user>@<host>:/opt/portfolio/media/avatar.webp
+# On the server: nginx runs as another user and must be able to read it.
+chmod 644 /opt/portfolio/media/avatar.webp
+```
+
+To replace it, copy over the file again: no restart needed, and visitors get
+the new one on their next visit.
+
 ### Rollback
 
 Every deploy keeps its image tags in GHCR. To go back to an earlier commit,

@@ -30,6 +30,10 @@ services:
     ports:
       # Loopback only, like the backend.
       - "127.0.0.1:${FRONTEND_PORT:-8080}:8080"
+    volumes:
+      # The profile photo, kept on the server only (see "Profile photo" in
+      # backend/docs/deployment.md).
+      - ./media:/usr/share/nginx/html/media:ro
     restart: unless-stopped
     logging: *logging
 

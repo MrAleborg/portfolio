@@ -4106,8 +4106,8 @@ collection:
       mimeType: application/json
       text: |-
         {
-          "full_name": "Alexandre Le Borgne",
-          "headline": {"en": "Senior Software Engineer, PhD", "fr": "Ingénieur logiciel senior, PhD"},
+          "full_name": "Demo Owner",
+          "headline": {"en": "Software engineer", "fr": "Ingénieur logiciel"},
           "bio": {"en": "Created from Insomnia.", "fr": "Créé depuis Insomnia."}
         }
     headers:
@@ -4132,8 +4132,8 @@ collection:
         });
         const body = insomnia.response.json();
         insomnia.test("Returns the sent profile", () => {
-          insomnia.expect(body.full_name).to.eql("Alexandre Le Borgne");
-          insomnia.expect(body.headline).to.eql({"en": "Senior Software Engineer, PhD", "fr": "Ingénieur logiciel senior, PhD"});
+          insomnia.expect(body.full_name).to.eql("Demo Owner");
+          insomnia.expect(body.headline).to.eql({"en": "Software engineer", "fr": "Ingénieur logiciel"});
           insomnia.expect(body.bio).to.eql({"en": "Created from Insomnia.", "fr": "Créé depuis Insomnia."});
         });
         insomnia.test("Returns the timestamps, without id", () => {
@@ -4180,8 +4180,8 @@ collection:
           insomnia.expect(body.bio).to.eql({"en": "Updated from Insomnia.", "fr": "Modifié depuis Insomnia."});
         });
         insomnia.test("Other fields keep their value", () => {
-          insomnia.expect(body.full_name).to.eql("Alexandre Le Borgne");
-          insomnia.expect(body.headline).to.eql({"en": "Senior Software Engineer, PhD", "fr": "Ingénieur logiciel senior, PhD"});
+          insomnia.expect(body.full_name).to.eql("Demo Owner");
+          insomnia.expect(body.headline).to.eql({"en": "Software engineer", "fr": "Ingénieur logiciel"});
         });
   - url: '{{ _.base_url }}/api/v1/admin/profile/'
     name: Replace with a headline missing its French text → 400
@@ -4197,8 +4197,8 @@ collection:
       mimeType: application/json
       text: |-
         {
-          "full_name": "Alexandre Le Borgne",
-          "headline": {"en": "Senior Software Engineer, PhD", "fr": ""}
+          "full_name": "Demo Owner",
+          "headline": {"en": "Software engineer", "fr": ""}
         }
     headers:
     - name: Content-Type

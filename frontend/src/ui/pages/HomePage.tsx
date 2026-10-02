@@ -1,4 +1,4 @@
-import avatarSrc from '@/assets/avatar.webp'
+import avatarSrc from '@/assets/avatar.svg?no-inline'
 import type { ProfileRepository } from '@/domain/profile/ProfileRepository'
 import { useAsync } from '@/ui/async/useAsync'
 import { Avatar } from '@/ui/components/Avatar'
@@ -26,7 +26,8 @@ export function HomePage({ profileRepository }: HomePageProps) {
   return (
     <>
       <Avatar
-        src={avatarSrc}
+        src="/media/avatar.webp"
+        fallbackSrc={avatarSrc}
         alt={messages[locale].avatarAlt(state.value.fullName)}
       />
       <h1>{state.value.fullName}</h1>
