@@ -16,7 +16,6 @@ interface Messages {
   professionalExperienceTitle: string
   sideProjectsTitle: string
   educationTitle: string
-  specializationsTitle: string
   certificationsTitle: string
   scientificCommunicationsTitle: string
   commitmentsTitle: string
@@ -32,7 +31,6 @@ interface Messages {
   issued: string
   expires: string
   seeCredential: string
-  partOf: string
   missions: string
   achievements: string
   projectsLabel: string
@@ -65,7 +63,6 @@ export const messages: Localized<Messages> = {
     professionalExperienceTitle: 'Professional experience',
     sideProjectsTitle: 'Personal projects',
     educationTitle: 'Education',
-    specializationsTitle: 'Specializations',
     certificationsTitle: 'Certifications',
     scientificCommunicationsTitle: 'Scientific communications',
     commitmentsTitle: 'Commitments',
@@ -88,7 +85,6 @@ export const messages: Localized<Messages> = {
     issued: 'Issued',
     expires: 'Expires',
     seeCredential: 'See credential',
-    partOf: 'Part of',
     missions: 'Missions',
     achievements: 'Achievements',
     projectsLabel: 'Projects',
@@ -124,7 +120,6 @@ export const messages: Localized<Messages> = {
     professionalExperienceTitle: 'Expérience professionnelle',
     sideProjectsTitle: 'Projets personnels',
     educationTitle: 'Formation',
-    specializationsTitle: 'Spécialisations',
     certificationsTitle: 'Certifications',
     scientificCommunicationsTitle: 'Communications scientifiques',
     commitmentsTitle: 'Engagements',
@@ -147,7 +142,6 @@ export const messages: Localized<Messages> = {
     issued: 'Obtenue en',
     expires: 'Expire en',
     seeCredential: 'Voir le certificat',
-    partOf: 'Fait partie de',
     missions: 'Missions',
     achievements: 'Réalisations',
     projectsLabel: 'Projets',

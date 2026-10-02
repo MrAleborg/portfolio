@@ -6,6 +6,9 @@ import {
   failingEducationRepository,
   pendingEducationRepository,
 } from '@/test/fakeEducationRepository'
+import type { Certification } from '@/domain/certification/Certification'
+import type { Specialization } from '@/domain/specialization/Specialization'
+import { failing } from '@/test/fakeList'
 import { fakeRepositories } from '@/test/fakeRepositories'
 import { engineering, fakeTagRepository } from '@/test/fakeTagRepository'
 import { LocaleProvider } from '@/ui/i18n/LocaleProvider'
@@ -55,13 +58,7 @@ const sections = [
   {
     en: 'Certifications',
     fr: 'Certifications',
-    tiles: ['Cloud Practitioner', 'Scrum Master'],
-    firstInFrench: 'Praticien du cloud',
-  },
-  {
-    en: 'Specializations',
-    fr: 'Spécialisations',
-    tiles: ['Cloud engineering', 'Agile delivery'],
+    tiles: ['Cloud engineering', 'Agile delivery', 'Scrum Master'],
     firstInFrench: 'Ingénierie cloud',
   },
   {
@@ -219,6 +216,33 @@ describe('ResumePage', () => {
     expect(expertise.getAllByRole('heading', { level: 3 })).toHaveLength(1)
     expect(expertise.queryByText('Unused')).not.toBeInTheDocument()
     expect(expertise.queryByRole('heading', { name: 'Management' })).not.toBeInTheDocument()
+  })
+
+  it('has no Specializations section: they are tiles of the Certifications section', () => {
+    renderPage()
+
+    expect(screen.queryByRole('heading', { name: 'Specializations' })).not.toBeInTheDocument()
+  })
+
+  it('shows a certification part of a specialization inside it, not as a tile of its own', async () => {
+    renderPage()
+
+    const section = within(screen.getByRole('region', { name: 'Certifications' }))
+    await section.findAllByRole('article')
+    expect(section.queryByRole('article', { name: 'Cloud Practitioner' })).not.toBeInTheDocument()
+    await userEvent.setup().click(section.getByRole('button', { name: 'Cloud engineering' }))
+    expect(section.getByRole('heading', { level: 4, name: 'Cloud Practitioner' })).toBeVisible()
+  })
+
+  it.each([
+    ['certifications', { certification: { list: failing<Certification>() } }],
+    ['specializations', { specialization: { list: failing<Specialization>() } }],
+  ])('says when the %s could not be loaded', async (_, overrides) => {
+    renderPage(overrides)
+
+    expect(
+      await within(screen.getByRole('region', { name: 'Certifications' })).findByRole('alert'),
+    ).toBeInTheDocument()
   })
 
   it('says the education is loading', () => {

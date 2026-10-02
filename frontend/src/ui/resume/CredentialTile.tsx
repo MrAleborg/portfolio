@@ -9,17 +9,20 @@ import { paragraphs } from '@/ui/text/paragraphs'
 
 interface CredentialTileProps {
   credential: Credential
+  /** The level of the title heading; 4 for a tile nested in another. */
+  headingLevel?: 3 | 4
   /** Extra details shown after the description and the link. */
   children?: ReactNode
 }
 
-export function CredentialTile({ credential, children }: CredentialTileProps) {
+export function CredentialTile({ credential, headingLevel, children }: CredentialTileProps) {
   const { locale } = useLocale()
   const text = messages[locale]
 
   return (
     <Tile
       title={credential.name[locale]}
+      headingLevel={headingLevel}
       subtitle={credential.issuer}
       meta={[
         <>

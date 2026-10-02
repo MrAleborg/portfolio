@@ -1,25 +1,16 @@
 import type { Certification } from '@/domain/certification/Certification'
-import { LabelledList } from '@/ui/components/LabelledList'
 import { TagList } from '@/ui/components/TagList'
-import { messages } from '@/ui/i18n/messages'
-import { useLocale } from '@/ui/i18n/useLocale'
 import { CredentialTile } from '@/ui/resume/CredentialTile'
 
 interface CertificationTileProps {
   certification: Certification
+  /** The level of the title heading; 4 for a tile nested in another. */
+  headingLevel?: 3 | 4
 }
 
-export function CertificationTile({ certification }: CertificationTileProps) {
-  const { locale } = useLocale()
-
+export function CertificationTile({ certification, headingLevel }: CertificationTileProps) {
   return (
-    <CredentialTile credential={certification}>
-      {certification.specializations.length > 0 ? (
-        <LabelledList
-          label={messages[locale].partOf}
-          items={certification.specializations.map((specialization) => specialization.name[locale])}
-        />
-      ) : null}
+    <CredentialTile credential={certification} headingLevel={headingLevel}>
       {certification.tags.length > 0 ? <TagList tags={certification.tags} /> : null}
     </CredentialTile>
   )
