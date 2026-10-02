@@ -289,6 +289,33 @@ collection:
         insomnia.test("Status is 405", () => {
           insomnia.expect(insomnia.response.code).to.equal(405);
         });
+  - url: '{{ _.base_url }}/api/v1/resume/'
+    name: Public resume without token → 200
+    meta:
+      id: req_c96e9dd81304288088a106de2c069d6b
+      created: 1790700000000
+      modified: 1790700000000
+      isPrivate: false
+      description: ''
+      sortKey: 9
+    method: GET
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+    scripts:
+      afterResponse: |-
+        insomnia.test("Status is 200", () => {
+          insomnia.expect(insomnia.response.code).to.equal(200);
+        });
+        const body = insomnia.response.json();
+        insomnia.test("Has the profile and every section", () => {
+          insomnia.expect(body).to.have.all.keys('profile', 'education', 'certifications', 'professional_experiences', 'projects', 'specializations', 'skills', 'tools', 'methodologies', 'tag_categories', 'hobbies', 'commitments', 'scientific_communications');
+        });
 - name: 03. Education
   meta:
     id: fld_259ef50950a35400b15c8ef5222a4634

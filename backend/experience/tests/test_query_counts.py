@@ -157,3 +157,14 @@ def test_endpoint_runs_a_fixed_number_of_queries(
         response = api_client.get(url)
 
     assert response.status_code == 200
+
+
+def test_resume_runs_a_fixed_number_of_queries(
+    api_client, django_assert_num_queries, portfolio
+):
+    # The profile, plus the queries of the list endpoints it combines.
+    expected = 1 + sum(queries for _, action, queries in CASES if action == "list")
+    with django_assert_num_queries(expected):
+        response = api_client.get("/api/v1/resume/")
+
+    assert response.status_code == 200
