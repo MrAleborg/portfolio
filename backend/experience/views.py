@@ -2,6 +2,8 @@ from django.db.models import Exists, OuterRef, Prefetch, Q
 from rest_framework import viewsets
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from experience.models import (
     Certification,
@@ -31,6 +33,8 @@ from experience.serializers import (
     TagDetailSerializer,
     TagSerializer,
 )
+from owner.models import Profile
+from owner.serializers import ProfileSerializer
 
 # Largest value of a bigint primary key.
 MAX_ID = 2**63 - 1
@@ -63,7 +67,11 @@ def visible_projects():
 
 
 class PublicReadOnlyViewSet(viewsets.ReadOnlyModelViewSet):
-    """Base of the public API: anyone can read, since the default is admin only."""
+    """Base of the public API: anyone can read, since the default is admin only.
+
+    ResumeView reuses these viewsets with a non-"list" action: list-only
+    branches (filters, prefetches) are skipped there.
+    """
 
     permission_classes = [AllowAny]
 
@@ -207,3 +215,33 @@ class CommitmentViewSet(PublicReadOnlyViewSet):
 class ScientificCommunicationViewSet(PublicReadOnlyViewSet):
     queryset = ScientificCommunication.objects.filter(is_visible=True)
     serializer_class = ScientificCommunicationSerializer
+
+
+class ResumeView(APIView):
+    """The profile and every public section, each as its list endpoint returns it."""
+
+    permission_classes = [AllowAny]
+    sections = {
+        "education": EducationViewSet,
+        "certifications": CertificationViewSet,
+        "professional_experiences": ProfessionalExperienceViewSet,
+        "projects": ProjectViewSet,
+        "specializations": SpecializationViewSet,
+        "skills": SkillViewSet,
+        "tools": ToolViewSet,
+        "methodologies": MethodologyViewSet,
+        "tag_categories": TagCategoryViewSet,
+        "hobbies": HobbyViewSet,
+        "commitments": CommitmentViewSet,
+        "scientific_communications": ScientificCommunicationViewSet,
+    }
+
+    def get(self, request):
+        profile = Profile.objects.first()
+        data = {"profile": profile and ProfileSerializer(profile).data}
+        for key, viewset in self.sections.items():
+            # A non-"list" action skips the list filters; not "retrieve",
+            # so tags keep their list serializer.
+            view = viewset(request=request, action="resume", format_kwarg=None)
+            data[key] = view.get_serializer(view.get_queryset(), many=True).data
+        return Response(data)

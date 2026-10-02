@@ -8,7 +8,8 @@ managed through the [admin API](admin_api.md) (`/api/v1/admin/`, for the
 frontend) or the Django admin (`/admin/`).
 
 Every path below is relative to the base URL `/api/v1/experience/`, except the
-owner's [profile](#profile-apiv1profile), which is in the `owner` app.
+owner's [profile](#profile-apiv1profile), which is in the `owner` app, and the
+[whole resume](#resume-apiv1resume).
 
 ## Endpoints
 
@@ -360,3 +361,32 @@ so the route has no id, and no list.
 - `404` until the profile is created through the
   [admin API](admin_api.md#profile-apiv1adminprofile). Write methods are
   `405`.
+
+## Resume: `/api/v1/resume/`
+
+The profile and every section in one response, for clients that need the
+whole resume at once ([`ResumeView`](../experience/views.py)).
+
+```json
+{
+  "profile": {"full_name": "Ada Lovelace", "headline": {…}, "bio": {…}},
+  "education": […],
+  "certifications": […],
+  "professional_experiences": […],
+  "projects": […],
+  "specializations": […],
+  "skills": […],
+  "tools": […],
+  "methodologies": […],
+  "tag_categories": […],
+  "hobbies": […],
+  "commitments": […],
+  "scientific_communications": […]
+}
+```
+
+- Each section is exactly what its list endpoint returns, with the same
+  hidden-entry rules. `profile` is as in [Profile](#profile-apiv1profile), or
+  `null` until it is created.
+- List filters (`?tag=`, `?side_project=`, `?experience=`) are ignored. Write
+  methods are `405`.
