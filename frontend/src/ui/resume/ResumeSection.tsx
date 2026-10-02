@@ -23,18 +23,27 @@ type Rendering<T> =
 
 type ResumeSectionProps<T> = {
   title: string
+  /** A decorative icon shown before the title; hidden from assistive technology. */
+  icon?: ReactNode
   state: AsyncState<readonly T[]>
 } & Rendering<T>
 
 /** A titled part of the resume that shows its entries as tiles, or its own way, once loaded. */
 export function ResumeSection<T>(props: ResumeSectionProps<T>) {
-  const { title, state } = props
+  const { title, icon, state } = props
   const text = messages[useLocale().locale]
   const titleId = useId()
 
   return (
     <section className="resume-section" aria-labelledby={titleId}>
-      <h2 id={titleId}>{title}</h2>
+      <h2 id={titleId}>
+        {icon && (
+          <span className="resume-section-icon" aria-hidden="true">
+            {icon}
+          </span>
+        )}
+        <span>{title}</span>
+      </h2>
       {state.status === 'loading' && <p role="status">{text.loading}</p>}
       {state.status === 'error' && <p role="alert">{text.sectionUnavailable}</p>}
       {state.status === 'loaded' &&

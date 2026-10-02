@@ -1,4 +1,5 @@
-import { render, screen, within } from '@testing-library/react'
+import { isInaccessible, render, screen, within } from '@testing-library/react'
+import type { ReactNode } from 'react'
 import type { Locale } from '@/domain/i18n/Locale'
 import type { AsyncState } from '@/ui/async/useAsync'
 import { Tile } from '@/ui/components/Tile'
@@ -93,6 +94,44 @@ describe('ResumeSection', () => {
       renderSection({ status: 'loaded', value: [] }, 'fr')
 
       expect(section().getByText('Rien à afficher pour le moment.')).toBeInTheDocument()
+    })
+  })
+
+  describe('with an icon', () => {
+    function renderWithIcon(icon?: ReactNode) {
+      return render(
+        <LocaleProvider initialLocale="en">
+          <ResumeSection
+            title="Things"
+            icon={icon}
+            state={{ status: 'loaded', value: [] }}
+            getKey={(item: Item) => item.id}
+            renderTile={(item: Item) => <Tile title={item.name} />}
+          />
+        </LocaleProvider>,
+      )
+    }
+
+    it('shows it inside the heading, hidden from assistive technology', () => {
+      renderWithIcon(<svg data-testid="icon" />)
+
+      const heading = section().getByRole('heading', { level: 2 })
+      const icon = within(heading).getByTestId('icon')
+      expect(isInaccessible(icon)).toBe(true)
+    })
+
+    it('keeps the title alone as the heading name', () => {
+      renderWithIcon(<svg data-testid="icon" role="img" aria-label="Decoration" />)
+
+      expect(screen.getByTestId('icon')).toBeInTheDocument()
+      expect(section().getByRole('heading', { level: 2, name: 'Things' })).toBeInTheDocument()
+    })
+
+    it('shows no hidden wrapper in the heading when there is no icon', () => {
+      renderWithIcon()
+
+      const heading = section().getByRole('heading', { level: 2, name: 'Things' })
+      expect(heading.querySelector('[aria-hidden]')).toBeNull()
     })
   })
 
