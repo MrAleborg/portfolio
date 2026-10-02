@@ -1,20 +1,27 @@
 import type { Hobby } from '@/domain/hobby/Hobby'
-import { Tile } from '@/ui/components/Tile'
+import { messages } from '@/ui/i18n/messages'
 import { useLocale } from '@/ui/i18n/useLocale'
 import { paragraphs } from '@/ui/text/paragraphs'
+import '@/ui/components/Tile.css'
+import './HobbyTile.css'
 
 interface HobbyTileProps {
-  hobby: Hobby
+  hobbies: readonly Hobby[]
 }
 
-export function HobbyTile({ hobby }: HobbyTileProps) {
+export function HobbyTile({ hobbies }: HobbyTileProps) {
   const { locale } = useLocale()
 
   return (
-    <Tile title={hobby.name[locale]}>
-      {paragraphs(hobby.description[locale]).map((paragraph, index) => (
-        <p key={index}>{paragraph}</p>
+    <article className="tile" aria-label={messages[locale].hobbiesTitle}>
+      {hobbies.map((hobby) => (
+        <div key={hobby.id} className="hobby-tile__hobby">
+          <h3 className="tile__title">{hobby.name[locale]}</h3>
+          {paragraphs(hobby.description[locale]).map((paragraph, index) => (
+            <p key={index}>{paragraph}</p>
+          ))}
+        </div>
       ))}
-    </Tile>
+    </article>
   )
 }

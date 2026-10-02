@@ -1,0 +1,17 @@
+.hobby-tile__hobby + .hobby-tile__hobby {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.hobby-tile__hobby p {
+  margin: 0;
+}
+
+.hobby-tile__hobby .tile__title + p {
+  margin-top: 0.25rem;
+}
+
+.hobby-tile__hobby p + p {
+  margin-top: 0.5rem;
+}

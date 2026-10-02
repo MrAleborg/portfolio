@@ -79,8 +79,8 @@ const sections = [
   {
     en: 'Hobbies',
     fr: 'Loisirs',
-    tiles: ['Climbing', 'Chess'],
-    firstInFrench: 'Escalade',
+    tiles: ['Hobbies'],
+    firstInFrench: 'Loisirs',
   },
 ]
 
