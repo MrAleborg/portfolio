@@ -99,6 +99,15 @@ describe('ResumePage', () => {
     expect(titles).toEqual(['Expertise', ...sections.map((section) => section.en)])
   })
 
+  const titlesWithIcon = ['Expertise', ...sections.map((section) => section.en)]
+
+  it.each(titlesWithIcon)('shows an icon in the %s heading', (title) => {
+    renderPage()
+
+    const heading = screen.getByRole('heading', { level: 2, name: title })
+    expect(heading.querySelector('svg')).not.toBeNull()
+  })
+
   it.each(sections)('shows one tile per entry of $en, in order', async ({ en, tiles }) => {
     renderPage()
 

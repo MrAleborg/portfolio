@@ -7,6 +7,7 @@ import { messages } from '@/ui/i18n/messages'
 import { useLocale } from '@/ui/i18n/useLocale'
 import { CertificationTile } from '@/ui/resume/CertificationTile'
 import { ResumeSection } from '@/ui/resume/ResumeSection'
+import { AwardIcon } from '@/ui/resume/sectionIcons'
 import { SpecializationTile } from '@/ui/resume/SpecializationTile'
 
 interface CertificationSectionProps {
@@ -32,6 +33,7 @@ export function CertificationSection({
   return (
     <ResumeSection
       title={text.certificationsTitle}
+      icon={<AwardIcon />}
       state={state}
       getKey={(entry) =>
         entry.kind === 'specialization'
