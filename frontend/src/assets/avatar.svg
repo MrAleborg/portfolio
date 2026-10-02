@@ -1,13 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
-  <style>
-    .bg { fill: #d1d9e0 }
-    .fg { fill: #8c959f }
-    @media (prefers-color-scheme: dark) {
-      .bg { fill: #3d444d }
-      .fg { fill: #9198a1 }
-    }
-  </style>
-  <rect class="bg" width="200" height="200"/>
-  <circle class="fg" cx="100" cy="78" r="38"/>
-  <path class="fg" d="M28 200a72 66 0 0 1 144 0z"/>
+  <!-- Mid greys: an <img> SVG can't follow the theme switch, so one palette fits both. -->
+  <rect fill="#afb8c1" width="200" height="200"/>
+  <circle fill="#6e7781" cx="100" cy="78" r="38"/>
+  <path fill="#6e7781" d="M28 200a72 66 0 0 1 144 0z"/>
 </svg>

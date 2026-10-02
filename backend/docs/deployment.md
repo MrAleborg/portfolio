@@ -357,6 +357,8 @@ placeholder. Use a square webp, at least 400 px wide:
 mkdir -p /opt/portfolio/media
 # From your machine:
 scp avatar.webp <user>@<host>:/opt/portfolio/media/avatar.webp
+# On the server: nginx runs as another user and must be able to read it.
+chmod 644 /opt/portfolio/media/avatar.webp
 ```
 
 To replace it, copy over the file again: no restart needed, and visitors get

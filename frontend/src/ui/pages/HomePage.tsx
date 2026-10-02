@@ -1,4 +1,4 @@
-import avatarSrc from '@/assets/avatar.svg'
+import avatarSrc from '@/assets/avatar.svg?no-inline'
 import type { ProfileRepository } from '@/domain/profile/ProfileRepository'
 import { useAsync } from '@/ui/async/useAsync'
 import { Avatar } from '@/ui/components/Avatar'

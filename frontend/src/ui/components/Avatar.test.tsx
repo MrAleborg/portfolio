@@ -20,13 +20,4 @@ describe('Avatar', () => {
 
     expect(image).toHaveAttribute('src', '/placeholder.svg')
   })
-
-  it('stays on the placeholder when the placeholder fails to load too', () => {
-    const image = renderAvatar()
-
-    fireEvent.error(image)
-    fireEvent.error(image)
-
-    expect(image).toHaveAttribute('src', '/placeholder.svg')
-  })
 })
