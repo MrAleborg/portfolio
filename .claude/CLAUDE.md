@@ -22,3 +22,6 @@ After both approvals, delegate each task to `frontend-implementer` for `frontend
 
 # Reviewing
 After a green step or before a commit/PR, delegate a read-only review to `reviewer` (bugs, security, over-engineering, test quality, and frontend design for UI changes). The main session decides which findings to act on and sends fixes back to the implementer.
+
+# Dev deploy
+After creating a PR, and after each push of new commits to a PR, deploy the branch to the dev box: `deploy/dev-deploy.sh` (its address is in the uncommitted `deploy/.env.dev`). Then check `http://$DEV_HOST:8080` and `/api/v1/experience/` answer (the containers reinstall their dependencies first, which takes a few minutes), and report the result.
