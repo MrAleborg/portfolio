@@ -6,10 +6,10 @@ import { cloudPractitioner, scrumMaster } from '@/test/fakeCertificationReposito
 import { LocaleProvider } from '@/ui/i18n/LocaleProvider'
 import { CertificationTile } from '@/ui/resume/CertificationTile'
 
-function renderTile(certification: Certification, locale: Locale = 'en') {
+function renderTile(certification: Certification, locale: Locale = 'en', headingLevel?: 3 | 4) {
   return render(
     <LocaleProvider initialLocale={locale}>
-      <CertificationTile certification={certification} />
+      <CertificationTile certification={certification} headingLevel={headingLevel} />
     </LocaleProvider>,
   )
 }
@@ -28,16 +28,6 @@ describe('CertificationTile', () => {
       expect(screen.getByText('Amazon')).toBeInTheDocument()
     })
 
-    it('lists the specializations it is part of once expanded', async () => {
-      renderTile(cloudPractitioner)
-
-      await expand('Cloud Practitioner')
-
-      const list = screen.getByRole('list', { name: 'Part of' })
-      expect(list).toBeVisible()
-      expect(within(list).getByRole('listitem')).toHaveTextContent('Cloud engineering')
-    })
-
     it('shows the tags grouped by kind once expanded', async () => {
       renderTile(cloudPractitioner)
 
@@ -51,12 +41,14 @@ describe('CertificationTile', () => {
       ).toHaveTextContent('Terraform')
     })
 
-    it('has no list of specializations when it is part of none', async () => {
-      renderTile({ ...cloudPractitioner, specializations: [] })
+    it('is a level 3 heading by default and a level 4 one when nested', () => {
+      const { unmount } = renderTile(cloudPractitioner)
+      expect(screen.getByRole('heading', { level: 3, name: 'Cloud Practitioner' })).toBeInTheDocument()
+      unmount()
 
-      await expand('Cloud Practitioner')
+      renderTile(cloudPractitioner, 'en', 4)
 
-      expect(screen.queryByRole('list', { name: 'Part of' })).toBeNull()
+      expect(screen.getByRole('heading', { level: 4, name: 'Cloud Practitioner' })).toBeInTheDocument()
     })
 
     it('can be expanded to reach its tags when it has nothing else', async () => {
@@ -67,7 +59,7 @@ describe('CertificationTile', () => {
       expect(screen.getByRole('list', { name: 'Skills' })).toBeVisible()
     })
 
-    it('has no expand button without description, link, specializations and tags', () => {
+    it('has no expand button without description, link and tags', () => {
       renderTile(scrumMaster)
 
       expect(screen.getByRole('article')).toHaveAccessibleName('Scrum Master')
@@ -76,15 +68,6 @@ describe('CertificationTile', () => {
   })
 
   describe('in French', () => {
-    it('lists the specializations it is part of once expanded', async () => {
-      renderTile(cloudPractitioner, 'fr')
-
-      await expand('Praticien du cloud')
-
-      const list = screen.getByRole('list', { name: 'Fait partie de' })
-      expect(within(list).getByRole('listitem')).toHaveTextContent('Ingénierie cloud')
-    })
-
     it('shows the tag groups in French', async () => {
       renderTile(cloudPractitioner, 'fr')
 

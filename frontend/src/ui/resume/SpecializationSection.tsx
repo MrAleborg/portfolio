@@ -18,7 +18,7 @@ export function SpecializationSection({ repository }: SpecializationSectionProps
       title={text.specializationsTitle}
       state={state}
       getKey={(specialization) => specialization.id}
-      renderTile={(specialization) => <SpecializationTile specialization={specialization} />}
+      renderTile={(specialization) => <SpecializationTile specialization={specialization} certifications={[]} />}
     />
   )
 }
