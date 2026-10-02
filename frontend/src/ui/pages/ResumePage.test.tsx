@@ -100,7 +100,14 @@ describe('ResumePage', () => {
   })
 
   /** The sections whose title has an icon; extend it as the other sections get theirs. */
-  const titlesWithIcon = ['Expertise', 'Professional experience', 'Personal projects']
+  const titlesWithIcon = [
+    'Expertise',
+    'Professional experience',
+    'Personal projects',
+    'Education',
+    'Certifications',
+    'Scientific communications',
+  ]
 
   it.each(titlesWithIcon)('shows an icon in the %s heading', (title) => {
     renderPage()
