@@ -1,5 +1,5 @@
 import { isInaccessible, render, screen, within } from '@testing-library/react'
-import type { ReactNode } from 'react'
+import type { ReactElement } from 'react'
 import type { Locale } from '@/domain/i18n/Locale'
 import type { AsyncState } from '@/ui/async/useAsync'
 import { Tile } from '@/ui/components/Tile'
@@ -99,7 +99,7 @@ describe('ResumeSection', () => {
   })
 
   describe('with an icon', () => {
-    function renderWithIcon(icon: ReactNode) {
+    function renderWithIcon(icon: ReactElement) {
       return render(
         <LocaleProvider initialLocale="en">
           <ResumeSection

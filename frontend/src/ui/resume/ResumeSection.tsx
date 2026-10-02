@@ -1,4 +1,4 @@
-import { useId, type Key, type ReactNode } from 'react'
+import { useId, type Key, type ReactElement, type ReactNode } from 'react'
 import type { AsyncState } from '@/ui/async/useAsync'
 import { TileList } from '@/ui/components/TileList'
 import { messages } from '@/ui/i18n/messages'
@@ -24,7 +24,7 @@ type Rendering<T> =
 type ResumeSectionProps<T> = {
   title: string
   /** A decorative icon shown before the title; hidden from assistive technology. */
-  icon: ReactNode
+  icon: ReactElement
   state: AsyncState<readonly T[]>
 } & Rendering<T>
 

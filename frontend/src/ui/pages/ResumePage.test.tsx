@@ -99,17 +99,7 @@ describe('ResumePage', () => {
     expect(titles).toEqual(['Expertise', ...sections.map((section) => section.en)])
   })
 
-  /** The sections whose title has an icon; extend it as the other sections get theirs. */
-  const titlesWithIcon = [
-    'Expertise',
-    'Professional experience',
-    'Personal projects',
-    'Education',
-    'Certifications',
-    'Scientific communications',
-    'Commitments',
-    'Hobbies',
-  ]
+  const titlesWithIcon = ['Expertise', ...sections.map((section) => section.en)]
 
   it.each(titlesWithIcon)('shows an icon in the %s heading', (title) => {
     renderPage()
