@@ -7,7 +7,6 @@ import { ExperienceSection } from '@/ui/resume/ExperienceSection'
 import { HobbySection } from '@/ui/resume/HobbySection'
 import { ScientificCommunicationSection } from '@/ui/resume/ScientificCommunicationSection'
 import { SideProjectSection } from '@/ui/resume/SideProjectSection'
-import { SpecializationSection } from '@/ui/resume/SpecializationSection'
 import { TagSection } from '@/ui/resume/TagSection'
 import type { Repositories } from '@/ui/Repositories'
 import './ResumePage.css'
@@ -26,8 +25,10 @@ export function ResumePage({ repositories }: ResumePageProps) {
       <ExperienceSection repository={repositories.experience} />
       <SideProjectSection repository={repositories.project} />
       <EducationSection repository={repositories.education} />
-      <CertificationSection repository={repositories.certification} />
-      <SpecializationSection repository={repositories.specialization} />
+      <CertificationSection
+        certificationRepository={repositories.certification}
+        specializationRepository={repositories.specialization}
+      />
       <ScientificCommunicationSection repository={repositories.scientificCommunication} />
       <CommitmentSection repository={repositories.commitment} />
       <HobbySection repository={repositories.hobby} />
