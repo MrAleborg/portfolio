@@ -107,6 +107,8 @@ describe('ResumePage', () => {
     'Education',
     'Certifications',
     'Scientific communications',
+    'Commitments',
+    'Hobbies',
   ]
 
   it.each(titlesWithIcon)('shows an icon in the %s heading', (title) => {

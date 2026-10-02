@@ -16,6 +16,7 @@ function renderSection(state: AsyncState<Item[]>, locale: Locale = 'en') {
     <LocaleProvider initialLocale={locale}>
       <ResumeSection
         title="Things"
+        icon={<svg />}
         state={state}
         getKey={(item) => item.id}
         renderTile={(item) => <Tile title={item.name} />}
@@ -98,7 +99,7 @@ describe('ResumeSection', () => {
   })
 
   describe('with an icon', () => {
-    function renderWithIcon(icon?: ReactNode) {
+    function renderWithIcon(icon: ReactNode) {
       return render(
         <LocaleProvider initialLocale="en">
           <ResumeSection
@@ -126,13 +127,6 @@ describe('ResumeSection', () => {
       expect(screen.getByTestId('icon')).toBeInTheDocument()
       expect(section().getByRole('heading', { level: 2, name: 'Things' })).toBeInTheDocument()
     })
-
-    it('shows no hidden wrapper in the heading when there is no icon', () => {
-      renderWithIcon()
-
-      const heading = section().getByRole('heading', { level: 2, name: 'Things' })
-      expect(heading.querySelector('[aria-hidden]')).toBeNull()
-    })
   })
 
   describe('with its own rendering of the items', () => {
@@ -141,6 +135,7 @@ describe('ResumeSection', () => {
         <LocaleProvider initialLocale="en">
           <ResumeSection
             title="Things"
+            icon={<svg />}
             state={state}
             renderItems={(items) => <p>{items.map((item) => item.name).join(' and ')}</p>}
           />

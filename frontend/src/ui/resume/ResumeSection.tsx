@@ -24,7 +24,7 @@ type Rendering<T> =
 type ResumeSectionProps<T> = {
   title: string
   /** A decorative icon shown before the title; hidden from assistive technology. */
-  icon?: ReactNode
+  icon: ReactNode
   state: AsyncState<readonly T[]>
 } & Rendering<T>
 
@@ -37,11 +37,9 @@ export function ResumeSection<T>(props: ResumeSectionProps<T>) {
   return (
     <section className="resume-section" aria-labelledby={titleId}>
       <h2 id={titleId}>
-        {icon && (
-          <span className="resume-section-icon" aria-hidden="true">
-            {icon}
-          </span>
-        )}
+        <span className="resume-section-icon" aria-hidden="true">
+          {icon}
+        </span>
         <span>{title}</span>
       </h2>
       {state.status === 'loading' && <p role="status">{text.loading}</p>}
