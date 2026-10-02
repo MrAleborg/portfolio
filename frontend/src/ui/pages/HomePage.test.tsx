@@ -56,6 +56,14 @@ describe('HomePage', () => {
       ).toBeInTheDocument()
     })
 
+    it('first requests the avatar photo served from /media', async () => {
+      renderPage(fakeProfileRepository())
+
+      expect(
+        await screen.findByRole('img', { name: 'Portrait of Ada Lovelace' }),
+      ).toHaveAttribute('src', '/media/avatar.webp')
+    })
+
     it('says when the profile could not be loaded', async () => {
       renderPage(failingProfileRepository())
 

@@ -26,7 +26,8 @@ export function HomePage({ profileRepository }: HomePageProps) {
   return (
     <>
       <Avatar
-        src={avatarSrc}
+        src="/media/avatar.webp"
+        fallbackSrc={avatarSrc}
         alt={messages[locale].avatarAlt(state.value.fullName)}
       />
       <h1>{state.value.fullName}</h1>
