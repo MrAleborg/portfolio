@@ -1,83 +1,83 @@
 import { render, screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import type { Hobby } from '@/domain/hobby/Hobby'
 import type { Locale } from '@/domain/i18n/Locale'
 import { chess, climbing } from '@/test/fakeHobbyRepository'
 import { LocaleProvider } from '@/ui/i18n/LocaleProvider'
 import { HobbyTile } from '@/ui/resume/HobbyTile'
 
-function renderTile(hobby: Hobby, locale: Locale = 'en') {
+function renderTile(hobbies: readonly Hobby[] = [climbing, chess], locale: Locale = 'en') {
   return render(
     <LocaleProvider initialLocale={locale}>
-      <HobbyTile hobby={hobby} />
+      <HobbyTile hobbies={hobbies} />
     </LocaleProvider>,
   )
 }
 
-/** Clicks the tile's title to show its details. */
-async function expand(name: string) {
-  await userEvent.setup().click(screen.getByRole('button', { name }))
-}
-
 describe('HobbyTile', () => {
   describe('in English', () => {
-    it('is a tile named by the hobby', () => {
-      renderTile(climbing)
+    it('is a single tile named after the section', () => {
+      renderTile()
 
-      expect(
-        screen.getByRole('heading', { level: 3, name: 'Climbing' }),
-      ).toBeInTheDocument()
-      expect(screen.getByRole('article')).toHaveAccessibleName('Climbing')
+      expect(screen.getAllByRole('article')).toHaveLength(1)
+      expect(screen.getByRole('article')).toHaveAccessibleName('Hobbies')
     })
 
-    it('shows the description once expanded', async () => {
-      renderTile(climbing)
+    it('names each hobby with a heading, in order', () => {
+      renderTile()
 
-      await expand('Climbing')
-
-      expect(screen.getByText('Bouldering twice a week.')).toBeVisible()
+      const names = screen
+        .getAllByRole('heading', { level: 3 })
+        .map((heading) => heading.textContent)
+      expect(names).toEqual(['Climbing', 'Chess'])
     })
 
-    it('has no expand button without a description', () => {
-      renderTile(chess)
+    it('shows the descriptions without any click', () => {
+      renderTile()
 
       expect(screen.queryByRole('button')).toBeNull()
-      expect(screen.getByRole('article')).toHaveTextContent(/^Chess$/)
+      expect(screen.getByText('Bouldering twice a week.')).toBeVisible()
     })
   })
 
   describe('in French', () => {
-    it('is a tile named by the hobby', () => {
-      renderTile(climbing, 'fr')
+    it('is a single tile named after the section', () => {
+      renderTile([climbing, chess], 'fr')
 
-      expect(screen.getByRole('article')).toHaveAccessibleName('Escalade')
+      expect(screen.getByRole('article')).toHaveAccessibleName('Loisirs')
     })
 
-    it('shows the description once expanded', async () => {
-      renderTile(climbing, 'fr')
+    it('names each hobby with a heading, in order', () => {
+      renderTile([climbing, chess], 'fr')
 
-      await expand('Escalade')
+      const names = screen
+        .getAllByRole('heading', { level: 3 })
+        .map((heading) => heading.textContent)
+      expect(names).toEqual(['Escalade', 'Échecs'])
+    })
+
+    it('shows the descriptions without any click', () => {
+      renderTile([climbing, chess], 'fr')
 
       expect(screen.getByText('De la bloc deux fois par semaine.')).toBeVisible()
     })
-
-    it('has no expand button without a description', () => {
-      renderTile(chess, 'fr')
-
-      expect(screen.queryByRole('button')).toBeNull()
-      expect(screen.getByRole('article')).toHaveTextContent(/^Échecs$/)
-    })
   })
 
-  it('shows each paragraph of the description apart', async () => {
-    renderTile({
-      ...climbing,
-      description: { en: 'First paragraph.\n\nSecond paragraph.', fr: '' },
-    })
-
-    await expand('Climbing')
+  it('shows each paragraph of a description apart', () => {
+    renderTile([
+      {
+        ...climbing,
+        description: { en: 'First paragraph.\n\nSecond paragraph.', fr: '' },
+      },
+    ])
 
     expect(screen.getByText('First paragraph.')).toBeVisible()
     expect(screen.getByText('Second paragraph.')).toBeVisible()
+  })
+
+  it('shows only the name of a hobby without a description', () => {
+    renderTile([chess])
+
+    expect(screen.getByRole('article')).toHaveTextContent(/^Chess$/)
+    expect(screen.queryByText('', { selector: 'p' })).toBeNull()
   })
 })

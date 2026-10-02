@@ -17,8 +17,7 @@ export function HobbySection({ repository }: HobbySectionProps) {
     <ResumeSection
       title={text.hobbiesTitle}
       state={state}
-      getKey={(hobby) => hobby.id}
-      renderTile={(hobby) => <HobbyTile hobby={hobby} />}
+      renderItems={(hobbies) => <HobbyTile hobbies={hobbies} />}
     />
   )
 }
