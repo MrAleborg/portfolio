@@ -411,6 +411,62 @@ means submitting the domain to browser vendors, which takes months to undo.
 HSTS doesn't cover subdomains by default, so other sites on the same domain or
 server are unaffected (`SECURE_HSTS_INCLUDE_SUBDOMAINS`).
 
+## Dev box
+
+A machine on your tailnet (e.g. a Raspberry Pi with Docker) runs a dev
+environment, Django runserver + Vite (`deploy/compose.dev.yml`), on
+`http://<dev-box>:8080`, with the Django admin on `http://<dev-box>:8000/admin/`
+(create its user once: `docker compose exec backend python manage.py
+createsuperuser` in `~/portfolio-dev` on the box). A pull request (not a
+draft) deploys its branch to it when opened and on each push to it
+(`.github/workflows/dev-deploy.yml`); pushes to a branch without one don't, as
+the box is slow. Deploy by hand from Actions → Dev deploy → Run workflow. The
+runner joins the tailnet as an ephemeral node tagged `tag:ci`, then runs
+`deploy/dev-deploy.sh` over SSH. There is one dev box: the last deploy wins,
+whatever its branch. The box's `db.sqlite3` and a hand-made `backend/.env` are
+kept across deploys. `deploy/dev-deploy.sh` also deploys by hand from your
+machine (see `deploy/.env.dev.example`).
+
+One-time setup:
+
+1. **Tailscale policy** (admin console → Access controls): let CI own the
+   `tag:ci` tag and reach the box on SSH and the site's port, e.g.
+   ```json
+   "tagOwners": {"tag:ci": ["autogroup:admin"]},
+   "grants": [
+     {"src": ["tag:ci"], "dst": ["<dev-box>"], "ip": ["tcp:22", "tcp:8080"]}
+   ]
+   ```
+   `<dev-box>` is the box's Tailscale IP, or a tag you give it, e.g. `tag:dev`.
+   Leave Tailscale SSH off on the box: it would take over port 22 and ignore the
+   key below (or add an `ssh` rule for `tag:ci` to the policy).
+2. **Tailscale OAuth client** (Settings → Trust credentials): scope
+   *Auth Keys*, write, with tag `tag:ci`.
+3. **SSH key** used only for these deploys, authorized for the box's user (who
+   must be able to run `docker`):
+   ```bash
+   ssh-keygen -t ed25519 -f portfolio-dev-deploy -N "" -C "github-actions-dev-deploy"
+   ssh-copy-id -i portfolio-dev-deploy.pub <user>@<dev-box>
+   # DEV_SSH_KEY = contents of portfolio-dev-deploy; then delete the local copy
+   ```
+4. **GitHub**: create the `Portfolio dev` environment (any branch may deploy;
+   the workflow skips drafts, forks and Dependabot) with these secrets and
+   variables. `DEV_HOST` is the name or IP the runner
+   reaches the box by; `DEV_KNOWN_HOSTS` must be scanned with that same value.
+
+   | Secret | Value |
+   |---|---|
+   | `TS_OAUTH_CLIENT_ID` | OAuth client ID |
+   | `TS_OAUTH_SECRET` | OAuth client secret |
+   | `DEV_SSH_KEY` | Private key above |
+   | `DEV_KNOWN_HOSTS` | Output of `ssh-keyscan -H <DEV_HOST>`, run on the tailnet |
+
+   | Variable | Value |
+   |---|---|
+   | `DEV_HOST` | The box's MagicDNS name (e.g. `dev-box.example.ts.net`) or Tailscale IP |
+   | `DEV_USER` | The box's user |
+   | `DEV_ALLOWED_HOSTS` | Host names Vite answers to besides IPs, e.g. `.example.ts.net`; must cover `DEV_HOST` if it is a name |
+
 ## Trying the stack locally
 
 ```bash

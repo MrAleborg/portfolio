@@ -1,0 +1,97 @@
+name: Dev deploy
+
+# Deploys a branch to the dev box (Django runserver + Vite, see
+# deploy/compose.dev.yml) for pull requests: when one is opened, reopened or
+# marked ready for review, and on each push to it. Pushes to a branch without a
+# pull request don't deploy (the box is slow). Also by hand: Actions → Dev
+# deploy → Run workflow.
+# The box is only on the tailnet: the runner joins it for the job.
+# There is one dev box: the last deploy wins, whatever its branch.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    # Not for drafts, nor for pull requests from forks or Dependabot: their
+    # runs get no secrets, so they would only fail.
+    if: >-
+      github.event_name == 'workflow_dispatch' || (
+        !github.event.pull_request.draft
+        && github.event.pull_request.head.repo.full_name == github.repository
+        && github.actor != 'dependabot[bot]')
+    # Only the newest deploy matters: cancel one still running. At job level,
+    # so a skipped run cancels nothing. A cancelled deploy may leave the box
+    # stopped until the newer one finishes.
+    concurrency:
+      group: dev-deploy
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment:
+      name: Portfolio dev
+      url: http://${{ vars.DEV_HOST }}:8080
+    env:
+      DEV_HOST: ${{ vars.DEV_HOST }}
+      DEV_USER: ${{ vars.DEV_USER }}
+      DEV_ALLOWED_HOSTS: ${{ vars.DEV_ALLOWED_HOSTS }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The branch itself, not the merge with the base a pull request
+          # checks out by default.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Join the tailnet
+        # An ephemeral node tagged tag:ci, removed when the job ends. The
+        # tailnet policy lets tag:ci reach the dev box (see "Dev box" in
+        # backend/docs/deployment.md).
+        uses: tailscale/github-action@d1b6cd204f8dceda5b3eaad7f1f767be390056cd # v4.2.0
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+          ping: ${{ vars.DEV_HOST }}
+
+      - name: Set up SSH
+        # As in deploy.yml: secrets through the environment, and the key file
+        # created private before the key is written to it.
+        env:
+          KEY: ${{ secrets.DEV_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEV_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          install -m 600 /dev/null ~/.ssh/id_ed25519
+          printf '%s\n' "$KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          # ssh only says "Host key verification failed" when DEV_HOST has no
+          # entry: say which secret to fix.
+          if ! ssh-keygen -F "$DEV_HOST" > /dev/null; then
+            echo "::error::DEV_KNOWN_HOSTS has no key for '$DEV_HOST'. Regenerate it with: ssh-keyscan -H $DEV_HOST"
+            exit 1
+          fi
+
+      - name: Deploy
+        run: deploy/dev-deploy.sh
+
+      - name: Smoke test
+        id: smoke
+        # The containers reinstall their dependencies before they answer, which
+        # takes a long time on the box (a Raspberry Pi 3): retry for up to 40
+        # minutes. The API first: Vite answers before the backend, and once the
+        # API answers the site should follow quickly.
+        run: |
+          for path in /api/v1/experience/ /; do
+            curl --fail --silent --show-error --connect-timeout 5 --max-time 30 \
+              --retry 1000 --retry-delay 15 --retry-max-time 2400 --retry-all-errors \
+              "http://$DEV_HOST:8080$path" > /dev/null
+          done
+
+      - name: Show the containers' state and logs
+        if: failure() && steps.smoke.outcome == 'failure'
+        run: |
+          ssh "$DEV_USER@$DEV_HOST" 'cd ~/portfolio-dev && docker compose ps -a && docker compose logs --tail 80'

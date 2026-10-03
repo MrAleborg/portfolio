@@ -1,12 +1,17 @@
 #!/bin/sh
 # Deploy a dev environment (Django runserver + Vite) to a LAN box with Docker,
-# e.g. a Raspberry Pi. The site is then on http://<host>:8080.
+# e.g. a Raspberry Pi. The site is then on http://<host>:8080, and the Django
+# admin on http://<host>:8000/admin/.
 #   deploy/dev-deploy.sh [<ip-or-hostname> <user>]
 # The box's address, user and hostnames come from deploy/.env.dev (see
 # .env.dev.example, never committed); arguments override them.
-# Copies frontend/ and backend/ (with the local db.sqlite3, which replaces the
-# remote one) to ~/portfolio-dev and restarts the containers, which reinstall
-# the dependencies. Stop it with: ssh <user>@<host> 'cd ~/portfolio-dev && docker compose down'
+# Replaces frontend/ and backend/ in ~/portfolio-dev with the local ones and
+# restarts the containers, which reinstall the dependencies. The box's
+# db.sqlite3 is kept, unless there is a local one: it then replaces it.
+# The dev-deploy workflow runs it for pull requests (when opened, and on each
+# push to them), with DEV_HOST, DEV_USER and DEV_ALLOWED_HOSTS set in the
+# environment.
+# Stop it with: ssh <user>@<host> 'cd ~/portfolio-dev && docker compose down'
 set -eu
 
 cd "$(dirname "$0")/.."
@@ -22,13 +27,30 @@ if [ -z "$HOST" ] || [ -z "$USER_NAME" ]; then
 fi
 TARGET="$USER_NAME@$HOST"
 
-# No rsync on the Pi: stream a tarball. Files deleted locally stay on the box.
+# Empty the old frontend/ and backend/ first, so files deleted locally (or
+# absent from the branch) don't stay on the box. Keep the box's backend/.env and
+# its database, unless a local db.sqlite3 replaces it: then drop the old one's
+# -wal and -shm too, or SQLite would replay them onto the new file. The
+# containers create files as root (__pycache__, the database...): delete from
+# a container, with the image the backend already uses. The directories are
+# created first as the user, so the tarball can be extracted into them. Then
+# stream a tarball (no rsync on the Pi).
+if [ -f backend/db.sqlite3 ]; then KEEP=.env; else KEEP='db.sqlite3*'; fi
+ssh "$TARGET" "KEEP='$KEEP' sh -s" <<'EOF'
+set -eu
+mkdir -p ~/portfolio-dev/frontend ~/portfolio-dev/backend
+cd ~/portfolio-dev
+# </dev/null: docker would otherwise read this script from stdin.
+if [ -f compose.yml ]; then docker compose stop </dev/null; fi
+docker run --rm -e KEEP -v "$PWD:/w" python:3.12-slim </dev/null \
+    sh -c 'find /w/frontend /w/backend -mindepth 1 ! -path /w/backend/.env ! -path "/w/backend/$KEEP" -delete'
+EOF
 tar czf - \
     --exclude=node_modules --exclude=dist --exclude=coverage \
     --exclude=__pycache__ --exclude=.pytest_cache --exclude=.venv \
     --exclude=backend/.env \
     frontend backend \
-    | ssh "$TARGET" 'mkdir -p ~/portfolio-dev && tar xzf - -C ~/portfolio-dev'
+    | ssh "$TARGET" 'tar xzf - -C ~/portfolio-dev'
 scp -q deploy/compose.dev.yml "$TARGET:portfolio-dev/compose.yml"
 ssh "$TARGET" "cd ~/portfolio-dev && DEV_HOST='$HOST' DEV_ALLOWED_HOSTS='${DEV_ALLOWED_HOSTS:-}' docker compose up -d --force-recreate"
 
