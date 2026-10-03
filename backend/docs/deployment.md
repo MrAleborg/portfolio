@@ -415,12 +415,15 @@ server are unaffected (`SECURE_HSTS_INCLUDE_SUBDOMAINS`).
 
 A machine on your tailnet (e.g. a Raspberry Pi with Docker) runs a dev
 environment, Django runserver + Vite (`deploy/compose.dev.yml`), on
-`http://<dev-box>:8080`. Each push to a branch other than `main` deploys that
-branch to it (`.github/workflows/dev-deploy.yml`): the runner joins the tailnet
-as an ephemeral node tagged `tag:ci`, then runs `deploy/dev-deploy.sh` over SSH.
-There is one dev box: the last push wins, whatever its branch. The box's
-`db.sqlite3` and a hand-made `backend/.env` are kept across deploys. `deploy/dev-deploy.sh` also deploys by hand
-from your machine (see `deploy/.env.dev.example`).
+`http://<dev-box>:8080`, with the Django admin on `http://<dev-box>:8000/admin/`
+(create its user once: `docker compose exec backend python manage.py
+createsuperuser` in `~/portfolio-dev` on the box). Each push to a branch other
+than `main` deploys that branch to it (`.github/workflows/dev-deploy.yml`): the
+runner joins the tailnet as an ephemeral node tagged `tag:ci`, then runs
+`deploy/dev-deploy.sh` over SSH. There is one dev box: the last push wins,
+whatever its branch. The box's `db.sqlite3` and a hand-made `backend/.env` are
+kept across deploys. `deploy/dev-deploy.sh` also deploys by hand from your
+machine (see `deploy/.env.dev.example`).
 
 One-time setup:
 

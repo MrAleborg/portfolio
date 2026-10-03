@@ -1,6 +1,7 @@
 #!/bin/sh
 # Deploy a dev environment (Django runserver + Vite) to a LAN box with Docker,
-# e.g. a Raspberry Pi. The site is then on http://<host>:8080.
+# e.g. a Raspberry Pi. The site is then on http://<host>:8080, and the Django
+# admin on http://<host>:8000/admin/.
 #   deploy/dev-deploy.sh [<ip-or-hostname> <user>]
 # The box's address, user and hostnames come from deploy/.env.dev (see
 # .env.dev.example, never committed); arguments override them.
