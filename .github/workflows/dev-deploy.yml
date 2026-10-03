@@ -56,6 +56,12 @@ jobs:
           install -m 600 /dev/null ~/.ssh/id_ed25519
           printf '%s\n' "$KEY" > ~/.ssh/id_ed25519
           printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          # ssh only says "Host key verification failed" when DEV_HOST has no
+          # entry: say which secret to fix.
+          if ! ssh-keygen -F "$DEV_HOST" > /dev/null; then
+            echo "::error::DEV_KNOWN_HOSTS has no key for '$DEV_HOST'. Regenerate it with: ssh-keyscan -H $DEV_HOST"
+            exit 1
+          fi
 
       - name: Deploy
         run: deploy/dev-deploy.sh
