@@ -4,9 +4,12 @@
 #   deploy/dev-deploy.sh [<ip-or-hostname> <user>]
 # The box's address, user and hostnames come from deploy/.env.dev (see
 # .env.dev.example, never committed); arguments override them.
-# Copies frontend/ and backend/ (with the local db.sqlite3, which replaces the
-# remote one) to ~/portfolio-dev and restarts the containers, which reinstall
-# the dependencies. Stop it with: ssh <user>@<host> 'cd ~/portfolio-dev && docker compose down'
+# Replaces frontend/ and backend/ in ~/portfolio-dev with the local ones and
+# restarts the containers, which reinstall the dependencies. The box's
+# db.sqlite3 is kept, unless there is a local one: it then replaces it.
+# The dev-deploy workflow runs it for each push to a branch other than main,
+# with DEV_HOST, DEV_USER and DEV_ALLOWED_HOSTS set in the environment.
+# Stop it with: ssh <user>@<host> 'cd ~/portfolio-dev && docker compose down'
 set -eu
 
 cd "$(dirname "$0")/.."
@@ -22,13 +25,21 @@ if [ -z "$HOST" ] || [ -z "$USER_NAME" ]; then
 fi
 TARGET="$USER_NAME@$HOST"
 
-# No rsync on the Pi: stream a tarball. Files deleted locally stay on the box.
+# Empty the old frontend/ and backend/ first, except the database, so files
+# deleted locally (or absent from the branch) don't stay on the box. The
+# containers create files as root (__pycache__, the database...): delete from
+# a container, with the image the backend already uses. Then stream a tarball
+# (no rsync on the Pi).
+ssh "$TARGET" 'set -eu
+mkdir -p ~/portfolio-dev && cd ~/portfolio-dev
+if [ -f compose.yml ]; then docker compose stop; fi
+docker run --rm -v "$PWD:/w" python:3.12-slim sh -c "mkdir -p /w/frontend /w/backend && find /w/frontend /w/backend -mindepth 1 ! -path \"/w/backend/db.sqlite3*\" -delete"'
 tar czf - \
     --exclude=node_modules --exclude=dist --exclude=coverage \
     --exclude=__pycache__ --exclude=.pytest_cache --exclude=.venv \
     --exclude=backend/.env \
     frontend backend \
-    | ssh "$TARGET" 'mkdir -p ~/portfolio-dev && tar xzf - -C ~/portfolio-dev'
+    | ssh "$TARGET" 'tar xzf - -C ~/portfolio-dev'
 scp -q deploy/compose.dev.yml "$TARGET:portfolio-dev/compose.yml"
 ssh "$TARGET" "cd ~/portfolio-dev && DEV_HOST='$HOST' DEV_ALLOWED_HOSTS='${DEV_ALLOWED_HOSTS:-}' docker compose up -d --force-recreate"
 
