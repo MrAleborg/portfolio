@@ -8,8 +8,9 @@
 # Replaces frontend/ and backend/ in ~/portfolio-dev with the local ones and
 # restarts the containers, which reinstall the dependencies. The box's
 # db.sqlite3 is kept, unless there is a local one: it then replaces it.
-# The dev-deploy workflow runs it for each push to a branch other than main,
-# with DEV_HOST, DEV_USER and DEV_ALLOWED_HOSTS set in the environment.
+# The dev-deploy workflow runs it for pull requests (when opened, and on each
+# push to them), with DEV_HOST, DEV_USER and DEV_ALLOWED_HOSTS set in the
+# environment.
 # Stop it with: ssh <user>@<host> 'cd ~/portfolio-dev && docker compose down'
 set -eu
 

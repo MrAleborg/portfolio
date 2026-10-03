@@ -417,10 +417,12 @@ A machine on your tailnet (e.g. a Raspberry Pi with Docker) runs a dev
 environment, Django runserver + Vite (`deploy/compose.dev.yml`), on
 `http://<dev-box>:8080`, with the Django admin on `http://<dev-box>:8000/admin/`
 (create its user once: `docker compose exec backend python manage.py
-createsuperuser` in `~/portfolio-dev` on the box). Each push to a branch other
-than `main` deploys that branch to it (`.github/workflows/dev-deploy.yml`): the
+createsuperuser` in `~/portfolio-dev` on the box). A pull request (not a
+draft) deploys its branch to it when opened and on each push to it
+(`.github/workflows/dev-deploy.yml`); pushes to a branch without one don't, as
+the box is slow. Deploy by hand from Actions → Dev deploy → Run workflow. The
 runner joins the tailnet as an ephemeral node tagged `tag:ci`, then runs
-`deploy/dev-deploy.sh` over SSH. There is one dev box: the last push wins,
+`deploy/dev-deploy.sh` over SSH. There is one dev box: the last deploy wins,
 whatever its branch. The box's `db.sqlite3` and a hand-made `backend/.env` are
 kept across deploys. `deploy/dev-deploy.sh` also deploys by hand from your
 machine (see `deploy/.env.dev.example`).
@@ -448,7 +450,7 @@ One-time setup:
    # DEV_SSH_KEY = contents of portfolio-dev-deploy; then delete the local copy
    ```
 4. **GitHub**: create the `Portfolio dev` environment (any branch may deploy;
-   the workflow skips `main` and Dependabot's branches) with these secrets and
+   the workflow skips drafts, forks and Dependabot) with these secrets and
    variables. `DEV_HOST` is the name or IP the runner
    reaches the box by; `DEV_KNOWN_HOSTS` must be scanned with that same value.
 
