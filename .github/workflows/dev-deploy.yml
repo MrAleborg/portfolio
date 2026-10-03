@@ -6,14 +6,16 @@ name: Dev deploy
 # There is one dev box: the last push wins, whatever its branch.
 on:
   push:
-    branches-ignore: [main]
+    # Dependabot's runs get no secrets: they would only fail, and cancel a real
+    # deploy (see concurrency).
+    branches-ignore: [main, "dependabot/**"]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 # Only the newest push matters: cancel a deploy still running for an older one.
-# The next deploy recreates everything, so a cancelled one leaves nothing behind.
+# A cancelled deploy may leave the box stopped until the newer one finishes.
 concurrency:
   group: dev-deploy
   cancel-in-progress: true
@@ -60,10 +62,11 @@ jobs:
 
       - name: Smoke test
         # The containers reinstall their dependencies before they answer: retry
-        # for up to 10 minutes. The API first: Vite answers before the backend.
+        # for up to 10 minutes per URL. The API first: Vite answers before the
+        # backend.
         run: |
           for path in /api/v1/experience/ /; do
-            curl --fail --silent --show-error --max-time 10 \
-              --retry 60 --retry-delay 10 --retry-all-errors \
+            curl --fail --silent --show-error --connect-timeout 5 --max-time 10 \
+              --retry 60 --retry-delay 10 --retry-max-time 600 --retry-all-errors \
               "http://$DEV_HOST:8080$path" > /dev/null
           done

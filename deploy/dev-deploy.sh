@@ -25,15 +25,24 @@ if [ -z "$HOST" ] || [ -z "$USER_NAME" ]; then
 fi
 TARGET="$USER_NAME@$HOST"
 
-# Empty the old frontend/ and backend/ first, except the database, so files
-# deleted locally (or absent from the branch) don't stay on the box. The
+# Empty the old frontend/ and backend/ first, so files deleted locally (or
+# absent from the branch) don't stay on the box. Keep the box's backend/.env and
+# its database, unless a local db.sqlite3 replaces it: then drop the old one's
+# -wal and -shm too, or SQLite would replay them onto the new file. The
 # containers create files as root (__pycache__, the database...): delete from
-# a container, with the image the backend already uses. Then stream a tarball
-# (no rsync on the Pi).
-ssh "$TARGET" 'set -eu
-mkdir -p ~/portfolio-dev && cd ~/portfolio-dev
-if [ -f compose.yml ]; then docker compose stop; fi
-docker run --rm -v "$PWD:/w" python:3.12-slim sh -c "mkdir -p /w/frontend /w/backend && find /w/frontend /w/backend -mindepth 1 ! -path \"/w/backend/db.sqlite3*\" -delete"'
+# a container, with the image the backend already uses. The directories are
+# created first as the user, so the tarball can be extracted into them. Then
+# stream a tarball (no rsync on the Pi).
+if [ -f backend/db.sqlite3 ]; then KEEP=.env; else KEEP='db.sqlite3*'; fi
+ssh "$TARGET" "KEEP='$KEEP' sh -s" <<'EOF'
+set -eu
+mkdir -p ~/portfolio-dev/frontend ~/portfolio-dev/backend
+cd ~/portfolio-dev
+# </dev/null: docker would otherwise read this script from stdin.
+if [ -f compose.yml ]; then docker compose stop </dev/null; fi
+docker run --rm -e KEEP -v "$PWD:/w" python:3.12-slim </dev/null \
+    sh -c 'find /w/frontend /w/backend -mindepth 1 ! -path /w/backend/.env ! -path "/w/backend/$KEEP" -delete'
+EOF
 tar czf - \
     --exclude=node_modules --exclude=dist --exclude=coverage \
     --exclude=__pycache__ --exclude=.pytest_cache --exclude=.venv \

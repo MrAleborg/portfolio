@@ -419,7 +419,7 @@ environment, Django runserver + Vite (`deploy/compose.dev.yml`), on
 branch to it (`.github/workflows/dev-deploy.yml`): the runner joins the tailnet
 as an ephemeral node tagged `tag:ci`, then runs `deploy/dev-deploy.sh` over SSH.
 There is one dev box: the last push wins, whatever its branch. The box's
-`db.sqlite3` is kept across deploys. `deploy/dev-deploy.sh` also deploys by hand
+`db.sqlite3` and a hand-made `backend/.env` are kept across deploys. `deploy/dev-deploy.sh` also deploys by hand
 from your machine (see `deploy/.env.dev.example`).
 
 One-time setup:
@@ -433,6 +433,8 @@ One-time setup:
    ]
    ```
    `<dev-box>` is the box's Tailscale IP, or a tag you give it, e.g. `tag:dev`.
+   Leave Tailscale SSH off on the box: it would take over port 22 and ignore the
+   key below (or add an `ssh` rule for `tag:ci` to the policy).
 2. **Tailscale OAuth client** (Settings → Trust credentials): scope
    *Auth Keys*, write, with tag `tag:ci`.
 3. **SSH key** used only for these deploys, authorized for the box's user (who
@@ -442,8 +444,9 @@ One-time setup:
    ssh-copy-id -i portfolio-dev-deploy.pub <user>@<dev-box>
    # DEV_SSH_KEY = contents of portfolio-dev-deploy; then delete the local copy
    ```
-4. **GitHub**: create the `Portfolio dev` environment (any branch may deploy)
-   with these secrets and variables. `DEV_HOST` is the name or IP the runner
+4. **GitHub**: create the `Portfolio dev` environment (any branch may deploy;
+   the workflow skips `main` and Dependabot's branches) with these secrets and
+   variables. `DEV_HOST` is the name or IP the runner
    reaches the box by; `DEV_KNOWN_HOSTS` must be scanned with that same value.
 
    | Secret | Value |
