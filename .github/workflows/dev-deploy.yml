@@ -23,7 +23,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 60
     environment:
       name: Portfolio dev
       url: http://${{ vars.DEV_HOST }}:8080
@@ -67,12 +67,19 @@ jobs:
         run: deploy/dev-deploy.sh
 
       - name: Smoke test
-        # The containers reinstall their dependencies before they answer: retry
-        # for up to 10 minutes per URL. The API first: Vite answers before the
-        # backend.
+        id: smoke
+        # The containers reinstall their dependencies before they answer, which
+        # takes a long time on the box (a Raspberry Pi 3): retry for up to 40
+        # minutes. The API first: Vite answers before the backend, and once the
+        # API answers the site should follow quickly.
         run: |
           for path in /api/v1/experience/ /; do
-            curl --fail --silent --show-error --connect-timeout 5 --max-time 10 \
-              --retry 60 --retry-delay 10 --retry-max-time 600 --retry-all-errors \
+            curl --fail --silent --show-error --connect-timeout 5 --max-time 30 \
+              --retry 1000 --retry-delay 15 --retry-max-time 2400 --retry-all-errors \
               "http://$DEV_HOST:8080$path" > /dev/null
           done
+
+      - name: Show the containers' state and logs
+        if: failure() && steps.smoke.outcome == 'failure'
+        run: |
+          ssh "$DEV_USER@$DEV_HOST" 'cd ~/portfolio-dev && docker compose ps -a && docker compose logs --tail 80'
