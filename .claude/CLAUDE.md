@@ -25,3 +25,7 @@ After a green step or before a commit/PR, delegate a read-only review to `review
 
 # Dev deploy
 A PR (not a draft) deploys its branch to the dev box when it is opened and on each push to it (the `Dev deploy` workflow, `.github/workflows/dev-deploy.yml`), which also checks `http://$DEV_HOST:8080` and `/api/v1/experience/` answer. After creating a PR, and after each push of new commits to a PR, wait for that run and report its result (the box is slow: allow up to 40 minutes). Pushes to a branch without a PR don't deploy. `deploy/dev-deploy.sh` (address in the uncommitted `deploy/.env.dev`) still deploys by hand, e.g. uncommitted changes.
+
+# Commits and PRs
+- Author each commit as the user, not as Claude: `git commit --author="<name> <email>"`, with the name and email the user's own commits on main use (e.g. `git log -1 --format='%an <%ae>' origin/main`). Leave the committer as configured, so the commit signature still verifies.
+- No attribution in commit messages (no `Co-Authored-By`, no `Claude-Session` line) nor in PR descriptions (no "Generated with Claude Code" footer or session link).
