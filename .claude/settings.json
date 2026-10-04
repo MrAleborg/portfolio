@@ -20,6 +20,17 @@
     "chrome-devtools-mcp@chrome-devtools-plugins": true
   },
   "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "command -v graphify >/dev/null || exit 0; cd \"$CLAUDE_PROJECT_DIR\" && graphify update . >/dev/null 2>&1 || true",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Bash|Grep",
