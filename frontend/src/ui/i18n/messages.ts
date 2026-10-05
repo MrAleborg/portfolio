@@ -20,6 +20,9 @@ interface Messages {
   contactEmail: string
   contactMessage: string
   contactSend: string
+  contactFieldErrors: { name: string; email: string; message: string }
+  /** Label of the field only bots fill. */
+  contactTrap: string
   contactSending: string
   contactSent: (email: string) => string
   contactThrottled: string
@@ -80,10 +83,16 @@ export const messages: Localized<Messages> = {
     contactEmail: 'Email',
     contactMessage: 'Message',
     contactSend: 'Send message',
+    contactFieldErrors: {
+      name: 'Enter your name (100 characters at most).',
+      email: 'Enter a valid email address.',
+      message: 'Write between 10 and 5000 characters.',
+    },
+    contactTrap: 'Website',
     contactSending: 'Sending…',
     contactSent: (email) => `Message sent. I’ll reply to ${email}.`,
     contactThrottled: 'Too many messages; try again in an hour.',
-    contactUnavailable: 'Messages can’t be sent right now; use the links above.',
+    contactUnavailable: 'Messages can’t be sent right now; try again later.',
     expertiseTitle: 'Expertise',
     professionalExperienceTitle: 'Professional experience',
     sideProjectsTitle: 'Personal projects',
@@ -150,11 +159,17 @@ export const messages: Localized<Messages> = {
     contactEmail: 'E-mail',
     contactMessage: 'Message',
     contactSend: 'Envoyer le message',
+    contactFieldErrors: {
+      name: 'Indiquez votre nom (100 caractères au plus).',
+      email: 'Indiquez une adresse e-mail valide.',
+      message: 'Écrivez entre 10 et 5000 caractères.',
+    },
+    contactTrap: 'Site web',
     contactSending: 'Envoi…',
     contactSent: (email) => `Message envoyé. Je vous répondrai à ${email}.`,
     contactThrottled: 'Trop de messages ; réessayez dans une heure.',
     contactUnavailable:
-      'Les messages ne peuvent pas être envoyés pour le moment ; utilisez les liens ci-dessus.',
+      'Les messages ne peuvent pas être envoyés pour le moment ; réessayez plus tard.',
     expertiseTitle: 'Expertise',
     professionalExperienceTitle: 'Expérience professionnelle',
     sideProjectsTitle: 'Projets personnels',

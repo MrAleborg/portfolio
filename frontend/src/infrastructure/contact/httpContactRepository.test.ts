@@ -57,6 +57,20 @@ describe('httpContactRepository', () => {
       })
     })
 
+    it('posts the honeypot value when the message carries one', async () => {
+      const fetchFn = respondWithNoContent()
+
+      await createHttpContactRepository('https://api.example.com', fetchFn).send({
+        ...message,
+        website: 'http://spam.example',
+      })
+
+      expect(fetchFn).toHaveBeenCalledWith(
+        'https://api.example.com/api/v1/profile/contact/',
+        expect.objectContaining({ body: JSON.stringify({ ...message, website: 'http://spam.example' }) }),
+      )
+    })
+
     it('resolves once the server accepts the message', async () => {
       const repository = createHttpContactRepository(
         'https://api.example.com',
@@ -85,6 +99,15 @@ describe('httpContactRepository', () => {
           message: ['Ensure this field has at least 10 characters.'],
         },
       })
+    })
+
+    it('rejects as unavailable when the server refuses the values without explaining', async () => {
+      const refusal = vi.fn<typeof fetch>(() =>
+        Promise.resolve(new Response('<h1>Bad Request</h1>', { status: 400 })),
+      )
+      const repository = createHttpContactRepository('https://api.example.com', refusal)
+
+      await expect(repository.send(message)).rejects.toMatchObject({ reason: 'unavailable' })
     })
 
     it('rejects as throttled when the server answers 429', async () => {

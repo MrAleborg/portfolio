@@ -18,14 +18,14 @@ export function createHttpContactRepository(
         response = await postJson(
           apiUrl,
           '/api/v1/profile/contact/',
-          { ...message, website: '' },
+          { ...message, website: message.website ?? '' },
           fetchFn,
         )
       } catch {
         throw new ContactSendError('unavailable')
       }
       if (response.status === 400) {
-        throw new ContactSendError('invalid', await response.json())
+        throw new ContactSendError('invalid', await refusedFields(response))
       }
       if (response.status === 429) {
         throw new ContactSendError('throttled')
@@ -34,5 +34,14 @@ export function createHttpContactRepository(
         throw new ContactSendError('unavailable')
       }
     },
+  }
+}
+
+/** The field errors of a refusal; a refusal that does not explain itself is not one the visitor can fix. */
+async function refusedFields(response: Response) {
+  try {
+    return await response.json()
+  } catch {
+    throw new ContactSendError('unavailable')
   }
 }

@@ -27,20 +27,28 @@ export function ContactLinks({ links }: ContactLinksProps) {
 
   return (
     <>
-      <div className="contact-links__emails">
-        {emails.map((link) => (
-          <a key={link.url} href={link.url} className="contact-links__link--large">
-            {link.url.replace(/^mailto:/, '')}
-          </a>
-        ))}
-      </div>
-      <div className="contact-links__others">
-        {others.map((link) => (
-          <ExternalLink key={link.url} href={link.url}>
-            {label(link)}
-          </ExternalLink>
-        ))}
-      </div>
+      {emails.length > 0 && (
+        <div className="contact-links__emails">
+          {emails.map((link) => (
+            <a
+              key={`${link.kind}:${link.url}`}
+              href={link.url}
+              className="contact-links__link--large"
+            >
+              {link.url.replace(/^mailto:/, '')}
+            </a>
+          ))}
+        </div>
+      )}
+      {others.length > 0 && (
+        <div className="contact-links__others">
+          {others.map((link) => (
+            <ExternalLink key={`${link.kind}:${link.url}`} href={link.url}>
+              {label(link)}
+            </ExternalLink>
+          ))}
+        </div>
+      )}
     </>
   )
 }

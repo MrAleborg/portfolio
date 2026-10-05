@@ -87,6 +87,36 @@ describe('ContactPage', () => {
       ])
     })
 
+    it('shows no row of other links when there are only email links', async () => {
+      const { container } = renderPage(fakeContactRepository([email]))
+
+      await screen.findByRole('link', { name: 'ada@example.com' })
+      expect(container.querySelector('.contact-links__others')).toBeNull()
+    })
+
+    it('shows no line of email links when there are none', async () => {
+      const { container } = renderPage(fakeContactRepository([github]))
+
+      await linkStartingWith('GitHub')
+      expect(container.querySelector('.contact-links__emails')).toBeNull()
+    })
+
+    it('shows two links to the same address of different kinds, each once', async () => {
+      const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+      renderPage(
+        fakeContactRepository([
+          { kind: 'website', url: 'https://ada.example.com' },
+          { kind: 'other', url: 'https://ada.example.com' },
+        ]),
+      )
+
+      await linkStartingWith('Website')
+      const complaints = error.mock.calls.length
+      error.mockRestore()
+      expect(screen.getAllByRole('link')).toHaveLength(2)
+      expect(complaints).toBe(0)
+    })
+
     it('shows an email link as its address, without the mailto scheme', async () => {
       renderPage(fakeContactRepository([email]))
 
@@ -141,6 +171,42 @@ describe('ContactPage', () => {
   })
 
   describe('form', () => {
+    it('asks the browser to check the name, email and message', () => {
+      renderPage(fakeContactRepository())
+
+      const name = screen.getByRole('textbox', { name: 'Name' })
+      expect(name).toBeRequired()
+      expect(name).toHaveAttribute('maxlength', '100')
+      const email = screen.getByRole('textbox', { name: 'Email' })
+      expect(email).toBeRequired()
+      expect(email).toHaveAttribute('type', 'email')
+      const message = screen.getByRole('textbox', { name: 'Message' })
+      expect(message).toBeRequired()
+      expect(message).toHaveAttribute('minlength', '10')
+      expect(message).toHaveAttribute('maxlength', '5000')
+    })
+
+    it('lets the browser autofill the name and the email', () => {
+      renderPage(fakeContactRepository())
+
+      expect(screen.getByRole('textbox', { name: 'Name' })).toHaveAttribute('autocomplete', 'name')
+      expect(screen.getByRole('textbox', { name: 'Email' })).toHaveAttribute('autocomplete', 'email')
+    })
+
+    it.each<[Locale, string]>([
+      ['en', 'Website'],
+      ['fr', 'Site web'],
+    ])('hides a trap field for bots, labelled %s', (locale, label) => {
+      const { container } = renderPage(fakeContactRepository(), locale)
+
+      const trap = screen.getByLabelText(label, { selector: 'input' })
+      expect(trap).toHaveAttribute('aria-hidden', 'true')
+      expect(trap).toHaveAttribute('tabindex', '-1')
+      expect(trap).toHaveAttribute('autocomplete', 'off')
+      expect(trap.closest('.visually-hidden')).not.toBeNull()
+      expect(container.querySelectorAll('input')).toHaveLength(3)
+    })
+
     it('has labelled fields and a send button in English', () => {
       renderPage(fakeContactRepository())
 
@@ -181,7 +247,21 @@ describe('ContactPage', () => {
         name: 'Grace',
         email: 'grace@example.com',
         message: 'Hello, I would like to talk.',
+        website: '',
       })
+    })
+
+    it('passes the honeypot field along when it is filled', async () => {
+      const user = userEvent.setup()
+      const repository = fakeContactRepository()
+      renderPage(repository)
+
+      await user.type(screen.getByLabelText('Website', { selector: 'input' }), 'http://spam.example')
+      await fillAndSend(user)
+
+      expect(repository.send).toHaveBeenCalledWith(
+        expect.objectContaining({ website: 'http://spam.example' }),
+      )
     })
 
     it('disables the button and says it is sending while the message is on its way', async () => {
@@ -229,15 +309,15 @@ describe('ContactPage', () => {
     describe('when the server refuses the values', () => {
       const fieldErrors = {
         name: ['This field may not be blank.'],
-        email: ['Enter a valid email address.', 'A second email problem.'],
+        email: ['The server’s own email wording.', 'A second email problem.'],
         message: ['Ensure this field has at least 10 characters.'],
       }
 
       it.each([
-        ['Name', 'This field may not be blank.'],
+        ['Name', 'Enter your name (100 characters at most).'],
         ['Email', 'Enter a valid email address.'],
-        ['Message', 'Ensure this field has at least 10 characters.'],
-      ])('shows the first error of the %s field under it', async (field, error) => {
+        ['Message', 'Write between 10 and 5000 characters.'],
+      ])('shows our message for the %s field under it', async (field, error) => {
         const user = userEvent.setup()
         renderPage(refusingContactRepository('invalid', fieldErrors))
 
@@ -248,14 +328,29 @@ describe('ContactPage', () => {
         expect(input).toHaveAccessibleDescription(error)
       })
 
-      it('shows only the first error of a field', async () => {
+      it.each([
+        ['Nom', 'Indiquez votre nom (100 caractères au plus).'],
+        ['E-mail', 'Indiquez une adresse e-mail valide.'],
+        ['Message', 'Écrivez entre 10 et 5000 caractères.'],
+      ])('shows our message for the %s field in French', async (field, error) => {
+        const user = userEvent.setup()
+        renderPage(refusingContactRepository('invalid', fieldErrors), 'fr')
+
+        await fillAndSend(user, 'Envoyer le message')
+
+        expect(await screen.findByRole('textbox', { name: field })).toHaveAccessibleDescription(error)
+      })
+
+      it('shows none of the wording of the server', async () => {
         const user = userEvent.setup()
         renderPage(refusingContactRepository('invalid', fieldErrors))
 
         await fillAndSend(user)
 
         await screen.findByText('Enter a valid email address.')
+        expect(screen.queryByText('The server’s own email wording.')).not.toBeInTheDocument()
         expect(screen.queryByText('A second email problem.')).not.toBeInTheDocument()
+        expect(screen.queryByText('This field may not be blank.')).not.toBeInTheDocument()
       })
 
       it('marks only the fields that have an error', async () => {
@@ -320,14 +415,14 @@ describe('ContactPage', () => {
     })
 
     describe('when messages cannot be sent', () => {
-      it('points to the links in an alert above the button, and keeps what was typed', async () => {
+      it('says so in an alert above the button, and keeps what was typed', async () => {
         const user = userEvent.setup()
         renderPage(refusingContactRepository('unavailable'))
 
         await fillAndSend(user)
 
         const alert = await screen.findByRole('alert')
-        expect(alert).toHaveTextContent('Messages can’t be sent right now; use the links above.')
+        expect(alert).toHaveTextContent('Messages can’t be sent right now; try again later.')
         expect(
           alert.compareDocumentPosition(screen.getByRole('button', { name: 'Send message' })),
         ).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
@@ -342,9 +437,47 @@ describe('ContactPage', () => {
         await fillAndSend(user, 'Envoyer le message')
 
         expect(await screen.findByRole('alert')).toHaveTextContent(
-          'Les messages ne peuvent pas être envoyés pour le moment ; utilisez les liens ci-dessus.',
+          'Les messages ne peuvent pas être envoyés pour le moment ; réessayez plus tard.',
         )
       })
+    })
+
+    describe('when the failure is unexpected', () => {
+      it('says messages cannot be sent when the request fails for another reason', async () => {
+        const user = userEvent.setup()
+        const send = vi.fn().mockRejectedValue(new Error('boom'))
+        renderPage({ links: () => Promise.resolve(contactLinks), send })
+
+        await fillAndSend(user)
+
+        expect(await screen.findByRole('alert')).toHaveTextContent(
+          'Messages can’t be sent right now; try again later.',
+        )
+        expect(screen.getByRole('button', { name: 'Send message' })).toBeEnabled()
+      })
+
+      it.each([
+        ['no field error', {}],
+        ['only an error on a field the form does not show', { website: ['Invalid.'] }],
+      ])('says messages cannot be sent when the values are refused with %s', async (_, fieldErrors) => {
+        const user = userEvent.setup()
+        renderPage(refusingContactRepository('invalid', fieldErrors))
+
+        await fillAndSend(user)
+
+        expect(await screen.findByRole('alert')).toHaveTextContent(
+          'Messages can’t be sent right now; try again later.',
+        )
+      })
+    })
+
+    it('moves the focus to the confirmation once the message is sent', async () => {
+      const user = userEvent.setup()
+      renderPage(fakeContactRepository())
+
+      await fillAndSend(user)
+
+      expect(await screen.findByRole('status')).toHaveFocus()
     })
 
     describe('when sending again after a failure', () => {
