@@ -1,3 +1,4 @@
+from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import Q
 
@@ -5,6 +6,12 @@ from experience.models import translated_together
 
 # The portfolio has a single owner, so a single profile row, with this id.
 PROFILE_ID = 1
+
+# Links are opened from the public site: no javascript:, data:, ftp:... urls.
+validate_contact_url = RegexValidator(
+    r"^(https?://|mailto:)",
+    message="Enter a URL starting with https://, http:// or mailto:.",
+)
 
 
 class Profile(models.Model):
@@ -31,3 +38,24 @@ class Profile(models.Model):
 
     def __str__(self):
         return self.full_name
+
+
+class ContactLink(models.Model):
+    """Where visitors can reach the owner."""
+
+    class Kind(models.TextChoices):
+        EMAIL = "email", "Email"
+        LINKEDIN = "linkedin", "LinkedIn"
+        GITHUB = "github", "GitHub"
+        WEBSITE = "website", "Website"
+        OTHER = "other", "Other"
+
+    kind = models.CharField(max_length=20, choices=Kind.choices)
+    url = models.CharField(max_length=500, validators=[validate_contact_url])
+    display_order = models.PositiveIntegerField(default=0)
+    is_visible = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["display_order", "id"]
