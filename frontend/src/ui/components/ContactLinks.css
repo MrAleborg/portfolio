@@ -1,4 +1,5 @@
 .contact-links__emails {
+  max-width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -12,6 +13,7 @@
 }
 
 .contact-links__link--large {
+  overflow-wrap: anywhere;
   font-size: 1.5rem;
   color: var(--accent);
 }

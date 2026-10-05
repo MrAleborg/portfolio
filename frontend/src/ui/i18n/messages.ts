@@ -20,6 +20,10 @@ interface Messages {
   contactEmail: string
   contactMessage: string
   contactSend: string
+  contactSending: string
+  contactSent: (email: string) => string
+  contactThrottled: string
+  contactUnavailable: string
   expertiseTitle: string
   professionalExperienceTitle: string
   sideProjectsTitle: string
@@ -76,6 +80,10 @@ export const messages: Localized<Messages> = {
     contactEmail: 'Email',
     contactMessage: 'Message',
     contactSend: 'Send message',
+    contactSending: 'Sending…',
+    contactSent: (email) => `Message sent. I’ll reply to ${email}.`,
+    contactThrottled: 'Too many messages; try again in an hour.',
+    contactUnavailable: 'Messages can’t be sent right now; use the links above.',
     expertiseTitle: 'Expertise',
     professionalExperienceTitle: 'Professional experience',
     sideProjectsTitle: 'Personal projects',
@@ -142,6 +150,11 @@ export const messages: Localized<Messages> = {
     contactEmail: 'E-mail',
     contactMessage: 'Message',
     contactSend: 'Envoyer le message',
+    contactSending: 'Envoi…',
+    contactSent: (email) => `Message envoyé. Je vous répondrai à ${email}.`,
+    contactThrottled: 'Trop de messages ; réessayez dans une heure.',
+    contactUnavailable:
+      'Les messages ne peuvent pas être envoyés pour le moment ; utilisez les liens ci-dessus.',
     expertiseTitle: 'Expertise',
     professionalExperienceTitle: 'Expérience professionnelle',
     sideProjectsTitle: 'Projets personnels',

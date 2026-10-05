@@ -48,7 +48,7 @@
   align-self: flex-end;
   padding: 0.5rem 1rem;
   font: inherit;
-  color: #fff;
+  color: var(--bg);
   background: var(--accent);
   border: 0;
   border-radius: 0.5rem;

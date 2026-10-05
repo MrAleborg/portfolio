@@ -20,7 +20,7 @@ export function ContactPage({ contactRepository }: ContactPageProps) {
       {links.status === 'loaded' && <ContactLinks links={links.value} />}
       {links.status === 'loading' && <p role="status">{text.loading}</p>}
       {links.status === 'error' && <p role="alert">{text.contactLinksUnavailable}</p>}
-      <ContactForm />
+      <ContactForm repository={contactRepository} />
     </>
   )
 }

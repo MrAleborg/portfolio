@@ -2,11 +2,15 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ContactLink } from '@/domain/contact/ContactLink'
 import type { ContactRepository } from '@/domain/contact/ContactRepository'
+import { ContactSendError } from '@/domain/contact/ContactSendError'
 import type { Locale } from '@/domain/i18n/Locale'
 import {
+  contactLinks,
   failingContactRepository,
   fakeContactRepository,
   pendingContactRepository,
+  pendingSendContactRepository,
+  refusingContactRepository,
 } from '@/test/fakeContactRepository'
 import { LanguageSwitch } from '@/ui/components/LanguageSwitch'
 import { LocaleProvider } from '@/ui/i18n/LocaleProvider'
@@ -153,6 +157,232 @@ describe('ContactPage', () => {
       expect(screen.getByRole('textbox', { name: 'E-mail' })).toBeInTheDocument()
       expect(screen.getByRole('textbox', { name: 'Message' })).toBeInTheDocument()
       expect(screen.getByRole('button', { name: 'Envoyer le message' })).toBeInTheDocument()
+    })
+  })
+
+  describe('sending a message', () => {
+    /** Fills the form with a valid message, then sends it. */
+    async function fillAndSend(user: ReturnType<typeof userEvent.setup>, button = 'Send message') {
+      await user.clear(screen.getByRole('textbox', { name: /^(Name|Nom)$/ }))
+      await user.type(screen.getByRole('textbox', { name: /^(Name|Nom)$/ }), 'Grace')
+      await user.type(screen.getByRole('textbox', { name: /^(Email|E-mail)$/ }), 'grace@example.com')
+      await user.type(screen.getByRole('textbox', { name: 'Message' }), 'Hello, I would like to talk.')
+      await user.click(screen.getByRole('button', { name: button }))
+    }
+
+    it('sends the name, email and message that were typed', async () => {
+      const user = userEvent.setup()
+      const repository = fakeContactRepository()
+      renderPage(repository)
+
+      await fillAndSend(user)
+
+      expect(repository.send).toHaveBeenCalledWith({
+        name: 'Grace',
+        email: 'grace@example.com',
+        message: 'Hello, I would like to talk.',
+      })
+    })
+
+    it('disables the button and says it is sending while the message is on its way', async () => {
+      const user = userEvent.setup()
+      renderPage(pendingSendContactRepository())
+
+      await fillAndSend(user)
+
+      expect(await screen.findByRole('button', { name: 'Sending…' })).toBeDisabled()
+    })
+
+    it('says it is sending in French', async () => {
+      const user = userEvent.setup()
+      renderPage(pendingSendContactRepository(), 'fr')
+
+      await fillAndSend(user, 'Envoyer le message')
+
+      expect(await screen.findByRole('button', { name: 'Envoi…' })).toBeDisabled()
+    })
+
+    it('replaces the form with a confirmation naming the address it will reply to', async () => {
+      const user = userEvent.setup()
+      renderPage(fakeContactRepository())
+
+      await fillAndSend(user)
+
+      expect(await screen.findByRole('status')).toHaveTextContent(
+        'Message sent. I’ll reply to grace@example.com.',
+      )
+      expect(screen.queryByRole('textbox', { name: 'Message' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Send message' })).not.toBeInTheDocument()
+    })
+
+    it('confirms in French', async () => {
+      const user = userEvent.setup()
+      renderPage(fakeContactRepository(), 'fr')
+
+      await fillAndSend(user, 'Envoyer le message')
+
+      expect(await screen.findByRole('status')).toHaveTextContent(
+        'Message envoyé. Je vous répondrai à grace@example.com.',
+      )
+    })
+
+    describe('when the server refuses the values', () => {
+      const fieldErrors = {
+        name: ['This field may not be blank.'],
+        email: ['Enter a valid email address.', 'A second email problem.'],
+        message: ['Ensure this field has at least 10 characters.'],
+      }
+
+      it.each([
+        ['Name', 'This field may not be blank.'],
+        ['Email', 'Enter a valid email address.'],
+        ['Message', 'Ensure this field has at least 10 characters.'],
+      ])('shows the first error of the %s field under it', async (field, error) => {
+        const user = userEvent.setup()
+        renderPage(refusingContactRepository('invalid', fieldErrors))
+
+        await fillAndSend(user)
+
+        const input = await screen.findByRole('textbox', { name: field })
+        expect(input).toBeInvalid()
+        expect(input).toHaveAccessibleDescription(error)
+      })
+
+      it('shows only the first error of a field', async () => {
+        const user = userEvent.setup()
+        renderPage(refusingContactRepository('invalid', fieldErrors))
+
+        await fillAndSend(user)
+
+        await screen.findByText('Enter a valid email address.')
+        expect(screen.queryByText('A second email problem.')).not.toBeInTheDocument()
+      })
+
+      it('marks only the fields that have an error', async () => {
+        const user = userEvent.setup()
+        renderPage(refusingContactRepository('invalid', { email: ['Enter a valid email address.'] }))
+
+        await fillAndSend(user)
+
+        expect(await screen.findByRole('textbox', { name: 'Email' })).toHaveAttribute(
+          'aria-invalid',
+          'true',
+        )
+        expect(screen.getByRole('textbox', { name: 'Name' })).not.toHaveAttribute('aria-invalid', 'true')
+        expect(screen.getByRole('textbox', { name: 'Message' })).not.toHaveAttribute(
+          'aria-invalid',
+          'true',
+        )
+      })
+
+      it('keeps what was typed', async () => {
+        const user = userEvent.setup()
+        renderPage(refusingContactRepository('invalid', fieldErrors))
+
+        await fillAndSend(user)
+
+        await screen.findByText('Enter a valid email address.')
+        expect(screen.getByRole('textbox', { name: 'Name' })).toHaveValue('Grace')
+        expect(screen.getByRole('textbox', { name: 'Email' })).toHaveValue('grace@example.com')
+        expect(screen.getByRole('textbox', { name: 'Message' })).toHaveValue(
+          'Hello, I would like to talk.',
+        )
+      })
+    })
+
+    describe('when too many messages were sent', () => {
+      it('says so in an alert above the button, and keeps what was typed', async () => {
+        const user = userEvent.setup()
+        renderPage(refusingContactRepository('throttled'))
+
+        await fillAndSend(user)
+
+        const alert = await screen.findByRole('alert')
+        expect(alert).toHaveTextContent('Too many messages; try again in an hour.')
+        expect(
+          alert.compareDocumentPosition(screen.getByRole('button', { name: 'Send message' })),
+        ).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+        expect(screen.getByRole('textbox', { name: 'Message' })).toHaveValue(
+          'Hello, I would like to talk.',
+        )
+      })
+
+      it('says so in French', async () => {
+        const user = userEvent.setup()
+        renderPage(refusingContactRepository('throttled'), 'fr')
+
+        await fillAndSend(user, 'Envoyer le message')
+
+        expect(await screen.findByRole('alert')).toHaveTextContent(
+          'Trop de messages ; réessayez dans une heure.',
+        )
+      })
+    })
+
+    describe('when messages cannot be sent', () => {
+      it('points to the links in an alert above the button, and keeps what was typed', async () => {
+        const user = userEvent.setup()
+        renderPage(refusingContactRepository('unavailable'))
+
+        await fillAndSend(user)
+
+        const alert = await screen.findByRole('alert')
+        expect(alert).toHaveTextContent('Messages can’t be sent right now; use the links above.')
+        expect(
+          alert.compareDocumentPosition(screen.getByRole('button', { name: 'Send message' })),
+        ).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+        expect(screen.getByRole('textbox', { name: 'Name' })).toHaveValue('Grace')
+        expect(screen.getByRole('textbox', { name: 'Email' })).toHaveValue('grace@example.com')
+      })
+
+      it('says so in French', async () => {
+        const user = userEvent.setup()
+        renderPage(refusingContactRepository('unavailable'), 'fr')
+
+        await fillAndSend(user, 'Envoyer le message')
+
+        expect(await screen.findByRole('alert')).toHaveTextContent(
+          'Les messages ne peuvent pas être envoyés pour le moment ; utilisez les liens ci-dessus.',
+        )
+      })
+    })
+
+    describe('when sending again after a failure', () => {
+      it('clears the field errors of the previous attempt', async () => {
+        const user = userEvent.setup()
+        const send = vi
+          .fn()
+          .mockRejectedValueOnce(
+            new ContactSendError('invalid', { email: ['Enter a valid email address.'] }),
+          )
+          .mockImplementationOnce(() => new Promise<void>(() => {}))
+        renderPage({ links: () => Promise.resolve(contactLinks), send })
+        await fillAndSend(user)
+        await screen.findByText('Enter a valid email address.')
+
+        await user.click(screen.getByRole('button', { name: 'Send message' }))
+
+        expect(screen.queryByText('Enter a valid email address.')).not.toBeInTheDocument()
+        expect(screen.getByRole('textbox', { name: 'Email' })).not.toHaveAttribute(
+          'aria-invalid',
+          'true',
+        )
+      })
+
+      it('clears the alert of the previous attempt', async () => {
+        const user = userEvent.setup()
+        const send = vi
+          .fn()
+          .mockRejectedValueOnce(new ContactSendError('throttled'))
+          .mockImplementationOnce(() => new Promise<void>(() => {}))
+        renderPage({ links: () => Promise.resolve(contactLinks), send })
+        await fillAndSend(user)
+        await screen.findByRole('alert')
+
+        await user.click(screen.getByRole('button', { name: 'Send message' }))
+
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+      })
     })
   })
 
