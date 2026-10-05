@@ -1,0 +1,34 @@
+{% extends "admin/base_site.html" %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Home</a> &rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  <p>Nothing is written unless the whole file is valid. Records absent from the file are kept.</p>
+  {% if import_errors %}
+  <p class="errornote">Nothing was imported. Fix these records and try again.</p>
+  <ul class="errorlist">
+    {% for line in import_errors %}<li>{{ line }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    <fieldset class="module aligned">
+      <div class="form-row">
+        {{ form.file.errors }}
+        <div class="flex-container">
+          {{ form.file.label_tag }} {{ form.file }}
+        </div>
+        <div class="help">{{ form.file.help_text }}</div>
+      </div>
+    </fieldset>
+    <div class="submit-row">
+      <input type="submit" value="Import" class="default">
+    </div>
+  </form>
+</div>
+{% endblock %}

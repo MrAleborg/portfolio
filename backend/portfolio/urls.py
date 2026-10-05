@@ -2,10 +2,16 @@ from django.contrib import admin
 from django.urls import include, path
 
 from accounts.views import throttle_login_posts
+from experience.admin_import import import_resume_view
 from experience.views import ResumeView
 
 urlpatterns = [
     path("admin/login/", throttle_login_posts(admin.site.login)),
+    path(
+        "admin/import-resume/",
+        admin.site.admin_view(import_resume_view),
+        name="admin-import-resume",
+    ),
     path("admin/", admin.site.urls),
     path("api/v1/resume/", ResumeView.as_view(), name="resume"),
     path("api/v1/experience/", include("experience.urls")),

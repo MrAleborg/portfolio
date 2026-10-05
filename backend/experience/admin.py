@@ -14,6 +14,9 @@ from experience.models import (
     TagCategory,
 )
 
+# Adds the link to the resume import page (see experience.admin_import).
+admin.site.index_template = "experience/admin/index.html"
+
 
 class MissionInline(admin.TabularInline):
     model = Mission
