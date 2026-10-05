@@ -6,6 +6,13 @@ resume of another environment. The code is in
 [`experience/resume_import.py`](../experience/resume_import.py) (the import)
 and [`experience/admin_import.py`](../experience/admin_import.py) (the page).
 
+The file may also be in the shape of the admin API (see
+[admin_api.md](admin_api.md)): relations given as ids (`"experience": 5`,
+`"tags": [1, 2]`), tag categories listed flat with their `parent` id and
+`position`, and tags listing their own `categories` and `note`. Both shapes
+may be mixed. Fields the file gives that the resume does not show
+(`is_visible`, `display_order`, `position`) are then written too.
+
 ## Use
 
 1. As a superuser, open `/admin/` and follow **Import resume**
@@ -26,8 +33,8 @@ To copy one environment to another:
 - All or nothing: every record is validated by the admin API serializers, so
   with the same rules as an edit, and a single invalid record cancels the
   whole import.
-- Fields the resume does not show are kept on update and take their default
-  on create: `is_visible`, `display_order`, the position of tag categories and
+- Fields the resume does not show, unless the file gives them, are kept on
+  update and take their default on create: `is_visible`, `display_order`, the position of tag categories and
   the description of scientific communications. `is_current` is computed, so
   ignored.
 - Each piece of data is read from one place, since the resume repeats some:

@@ -1268,8 +1268,9 @@ def test_an_invalid_category_is_reported_under_its_domain():
     assert TagCategory.objects.count() == 0
 
 
-def test_a_nested_tag_without_a_valid_id_is_refused():
-    data = resume(projects=[project(1, tags=[{"name": text("Python")}])])
+@pytest.mark.parametrize("nested", [{"name": text("Python")}, "Python"])
+def test_a_nested_tag_without_a_valid_id_is_refused(nested):
+    data = resume(projects=[project(1, tags=[nested])])
 
     errors = import_error(data)
 
@@ -1284,3 +1285,72 @@ def test_a_nested_tag_with_an_unknown_kind_is_refused():
 
     assert "kind" in errors["tags"][1]
     assert Tag.objects.count() == 0
+
+
+# The admin API's shape: relations as ids, categories listed flat
+
+
+def test_a_file_in_the_admin_api_shape_is_imported():
+    data = {
+        "tag_categories": [
+            {"id": 1, "name": text("Engineering"), "parent": None, "position": 3},
+            {"id": 2, "name": text("Languages"), "parent": 1, "position": 1},
+        ],
+        "skills": [
+            {"id": 1, "name": text("Python"), "categories": [2], "note": text("Daily")},
+            {"id": 2, "name": text("Go"), "categories": [], "note": BLANK},
+        ],
+        "professional_experiences": [{**experience(5), "display_order": 4}],
+        "projects": [
+            {**project(1), "experience": 5, "tags": [1, 2], "is_visible": False}
+        ],
+        "certifications": [certification(1, tags=[2])],
+        "specializations": [{**specialization(1), "certifications": [1]}],
+    }
+
+    import_resume(data)
+
+    assert TagCategory.objects.get(pk=2).parent_id == 1
+    assert TagCategory.objects.get(pk=1).position == 3
+    python = Tag.objects.get(pk=1)
+    assert list(python.categories.values_list("pk", flat=True)) == [2]
+    assert python.note_en == "Daily"
+    stored = Project.objects.get(pk=1)
+    assert stored.experience_id == 5
+    assert set(stored.tags.values_list("pk", flat=True)) == {1, 2}
+    assert stored.is_visible is False
+    assert ProfessionalExperience.objects.get(pk=5).display_order == 4
+    assert list(Certification.objects.get(pk=1).tags.values_list("pk", flat=True)) == [
+        2
+    ]
+    assert list(
+        Specialization.objects.get(pk=1).certifications.values_list("pk", flat=True)
+    ) == [1]
+
+
+def test_a_tag_id_that_is_nowhere_is_refused():
+    errors = import_error(resume(projects=[project(1, tags=[404])]))
+
+    assert "tags" in errors["projects"][0]
+
+
+def test_tag_categories_that_are_not_a_list_are_refused():
+    data = resume(skills=[{**tag(1), "categories": 2}])
+
+    errors = import_error(data)
+
+    assert "categories" in errors["tags"][1]
+    assert Tag.objects.count() == 0
+
+
+def test_an_invalid_flat_category_is_reported_at_its_index():
+    data = resume(
+        tag_categories=[
+            domain(1, "D"),
+            {"id": 2, "name": {"en": "No French"}, "parent": 1},
+        ]
+    )
+
+    errors = import_error(data)
+
+    assert "name" in errors["tag_categories"][1]

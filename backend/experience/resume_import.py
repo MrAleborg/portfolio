@@ -280,12 +280,16 @@ class _Importer:
     # Tag categories and tags
 
     def category_nodes(self):
-        """(domain index, id, parent id, name) of each well-formed category,
-        domains first; each problem is reported under its domain's index."""
-        section = "tag_categories"
-        domains, children, seen = [], [], set()
+        """The well-formed categories of the file, as (where, id, data) where
+        `where` locates its errors; domains first.
 
-        def check(index, node, where):
+        A category is nested under its domain's children (the resume's shape),
+        or listed with its parent's id (the admin API's).
+        """
+        section = "tag_categories"
+        domains, others, seen = [], [], set()
+
+        def add(node, parent, where):
             id_ = node.get("id") if isinstance(node, dict) else None
             problem = None
             if not _is_id(id_):
@@ -293,53 +297,51 @@ class _Importer:
             elif id_ in seen:
                 problem = f"Category {id_} is listed twice."
             if problem:
-                errors = self.errors.setdefault(section, {}).setdefault(index, {})
-                if where is None:
-                    errors.setdefault("id", []).append(problem)
-                else:
-                    errors.setdefault("children", {})[where] = {"id": [problem]}
+                self.category_error(where, {"id": [problem]})
                 return None
             seen.add(id_)
+            data = {"name": node.get("name"), "parent": parent}
+            if "position" in node:
+                data["position"] = node["position"]
+            (domains if parent is None else others).append((where, id_, data))
             return id_
 
-        for index, domain in enumerate(self.section(section)):
-            domain_id = check(index, domain, None)
+        for index, node in enumerate(self.section(section)):
+            parent = _ref(node.get("parent")) if isinstance(node, dict) else None
+            domain_id = add(node, parent, (index, None))
             if domain_id is None:
                 continue
-            domains.append((index, domain_id, None, domain.get("name")))
-            kids = domain.get("children", [])
+            kids = node.get("children", [])
             if not isinstance(kids, list):
                 self.add_error(section, index, {"children": ["Expected a list."]})
                 continue
             for position, child in enumerate(kids):
-                child_id = check(index, child, position)
-                if child_id is not None:
-                    children.append(
-                        (index, child_id, domain_id, child.get("name"), position)
-                    )
-        return domains, children
+                add(child, domain_id, (index, position))
+        return domains + others
+
+    def category_error(self, where, errors):
+        """Report a category's errors; a nested one's go under its domain."""
+        index, position = where
+        if position is None:
+            self.add_error("tag_categories", index, errors)
+        else:
+            domain_errors = self.errors.setdefault("tag_categories", {}).setdefault(
+                index, {}
+            )
+            domain_errors.setdefault("children", {})[position] = errors
 
     def import_tag_categories(self):
         """Save the domains, then their categories. The depth rules are
         checked on the whole tree once the tags are saved (check_tree)."""
-        section = "tag_categories"
-        domains, children = self.category_nodes()
-        existing = TagCategory.objects.in_bulk([node[1] for node in domains + children])
-        for index, id_, parent_id, name in domains:
-            data = {"name": name, "parent": parent_id}
-            errors = self.save(section, _TagCategoryInput, existing.get(id_), id_, data)
+        nodes = self.category_nodes()
+        existing = TagCategory.objects.in_bulk([id_ for _, id_, _ in nodes])
+        for where, id_, data in nodes:
+            errors = self.save(
+                "tag_categories", _TagCategoryInput, existing.get(id_), id_, data
+            )
             if errors:
-                self.add_error(section, index, errors)
-        for index, id_, parent_id, name, position in children:
-            data = {"name": name, "parent": parent_id}
-            errors = self.save(section, _TagCategoryInput, existing.get(id_), id_, data)
-            if errors:
-                # A category's errors are reported under its domain.
-                domain_errors = self.errors.setdefault(section, {}).setdefault(
-                    index, {}
-                )
-                domain_errors.setdefault("children", {})[position] = errors
-        self.file_categories = {node[1] for node in domains + children}
+                self.category_error(where, errors)
+        self.file_categories = {id_ for _, id_, _ in nodes}
 
     def check_tree(self):
         """The depth rules of TagCategory.clean, on the tree as imported."""
@@ -365,14 +367,16 @@ class _Importer:
         """Merge the tags the file shows into id -> fields, from every place.
 
         Fields: name, kind and note when known, and categories (the ids of the
-        categories listing the tag). Disagreeing places are errors.
+        categories listing the tag, or that it lists). Disagreeing places are
+        errors. A tag nested as a bare id (the admin API's shape) only refers
+        to a tag.
         """
         tags = {}
 
-        def add(source, tag, **fields):
+        def add(source, tag, categories=(), **fields):
             if not isinstance(tag, dict) or not _is_id(tag.get("id")):
                 self.add_error(source, "tags", ["Each tag needs a valid id."])
-                return False
+                return
             merged = tags.setdefault(tag["id"], {"categories": []})
             for name, value in [("name", tag.get("name")), *fields.items()]:
                 if name in merged and merged[name] != value:
@@ -382,32 +386,37 @@ class _Importer:
                         {name: [f"The file gives this tag two {name}s."]},
                     )
                 merged[name] = value
-            return True
+            if not isinstance(categories, list | tuple):
+                self.add_error("tags", tag["id"], {"categories": ["Expected a list."]})
+                return
+            merged["categories"] += [_ref(id_) for id_ in categories]
 
         def nested(record, key):
             values = record.get(key, []) if isinstance(record, dict) else []
             return values if isinstance(values, list) else []
 
-        def given(tag, key):
-            return {key: tag[key]} if isinstance(tag, dict) and key in tag else {}
+        def given(tag, *keys):
+            if not isinstance(tag, dict):
+                return {}
+            return {key: tag[key] for key in keys if key in tag}
 
         for section, kind in TAG_SECTIONS.items():
             for tag in self.section(section):
-                add(section, tag, kind=kind)
+                add(section, tag, kind=kind, **given(tag, "note", "categories"))
         for section in ("projects", "certifications"):
             for record in self.section(section):
                 for tag in nested(record, "tags"):
-                    add(section, tag, **given(tag, "kind"))
+                    if not _is_id(tag):
+                        add(section, tag, **given(tag, "kind"))
         for domain in self.section("tag_categories"):
             for child in nested(domain, "children"):
                 for tag in nested(child, "tags"):
-                    if add(
+                    add(
                         "tag_categories",
                         tag,
-                        **given(tag, "kind"),
-                        **given(tag, "note"),
-                    ):
-                        tags[tag["id"]]["categories"].append(child.get("id"))
+                        categories=[child.get("id")],
+                        **given(tag, "kind", "note"),
+                    )
         return tags
 
     def import_tags(self):
@@ -437,7 +446,10 @@ class _Importer:
                     for category in instance.categories.all()
                     if category.pk not in self.file_categories
                 ]
-            data = {"name": fields["name"], "categories": categories}
+            data = {
+                "name": fields["name"],
+                "categories": list(dict.fromkeys(categories)),
+            }
             if "note" in fields:
                 data["note"] = fields["note"]
             errors = self.save("tags", serializer_class, instance, id_, data)
