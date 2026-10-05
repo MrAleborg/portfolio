@@ -1,0 +1,16 @@
+{% extends "admin/index.html" %}
+
+{% block content %}
+{% if user.is_superuser %}
+<div class="module">
+  <table>
+    <caption>Data</caption>
+    <tr>
+      <th scope="row"><a href="{% url 'admin-import-resume' %}">Import resume</a></th>
+      <td></td>
+    </tr>
+  </table>
+</div>
+{% endif %}
+{{ block.super }}
+{% endblock %}
