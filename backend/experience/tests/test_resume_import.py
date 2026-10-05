@@ -214,9 +214,9 @@ def kinded_tag(id, name="Python", kind="skill"):
     return {**tag(id, name), "kind": kind}
 
 
-def noted_tag(id, name="Python", note=BLANK):
+def noted_tag(id, name="Python", note=BLANK, kind="skill"):
     """A tag as the tag categories list it."""
-    return {**tag(id, name), "note": note}
+    return {**kinded_tag(id, name, kind), "note": note}
 
 
 def category(id, name="Languages", tags=()):
@@ -340,7 +340,9 @@ def portfolio():
         name_en="Practices", name_fr="Pratiques", parent=engineering
     )
     languages.tags.add(python)
-    practices.tags.add(python, tdd)
+    # Used by no entry: only tag_categories shows it.
+    leadership = Skill.objects.create(name_en="Leadership", name_fr="Leadership")
+    practices.tags.add(python, tdd, leadership)
     TagCategory.objects.create(name_en="Data", name_fr="Données")
 
 
@@ -769,9 +771,26 @@ def test_a_tag_in_the_file_but_in_no_category_is_cleared_from_its_categories():
     TagCategory.objects.create(id=2, name_en="C", name_fr="C", parent_id=1)
     Skill.objects.create(id=1, name_en="Python", name_fr="Python").categories.add(2)
 
-    import_resume(resume(skills=[tag(1)], tag_categories=[domain(1, "D")]))
+    import_resume(
+        resume(skills=[tag(1)], tag_categories=[domain(1, "D", [category(2, "C")])])
+    )
 
     assert Tag.objects.get(pk=1).categories.count() == 0
+
+
+def test_a_tag_keeps_its_links_to_categories_absent_from_the_file():
+    TagCategory.objects.create(id=1, name_en="D", name_fr="D")
+    TagCategory.objects.create(id=2, name_en="Local", name_fr="Local", parent_id=1)
+    Skill.objects.create(id=1, name_en="Python", name_fr="Python").categories.add(2)
+    data = resume(
+        skills=[tag(1)],
+        tag_categories=[domain(3, "D2", [category(4, "C", [noted_tag(1)])])],
+    )
+
+    import_resume(data)
+
+    stored = set(Tag.objects.get(pk=1).categories.values_list("pk", flat=True))
+    assert stored == {2, 4}
 
 
 def test_a_tag_not_in_the_file_keeps_its_categories():
@@ -798,15 +817,36 @@ def test_tag_note_comes_from_the_categories():
     assert (stored.note_en, stored.note_fr) == ("Daily driver", "Outil quotidien")
 
 
-def test_a_tag_only_listed_in_the_categories_must_already_exist():
+def test_a_tag_only_listed_in_the_categories_is_created_with_its_kind():
     data = resume(
-        tag_categories=[domain(1, "D", [category(2, "C", [noted_tag(9, "Ghost")])])]
+        tag_categories=[
+            domain(1, "D", [category(2, "C", [noted_tag(9, "Lead", kind="skill")])])
+        ]
     )
+
+    import_resume(data)
+
+    created = Tag.objects.get(pk=9)
+    assert created.kind == "skill"
+    assert list(created.categories.values_list("pk", flat=True)) == [2]
+
+
+def test_a_new_tag_the_file_gives_no_kind_for_is_refused():
+    ghost = {"id": 9, "name": text("Ghost"), "note": BLANK}  # an older export
+    data = resume(tag_categories=[domain(1, "D", [category(2, "C", [ghost])])])
 
     errors = import_error(data)
 
-    assert "tag_categories" in errors
+    assert "kind" in errors["tags"][9]
     assert row_counts()[TagCategory] == 0
+
+
+def test_an_existing_tag_can_change_kind():
+    Skill.objects.create(id=5, name_en="Docker", name_fr="Docker")
+
+    import_resume(resume(tools=[tag(5, "Docker")]))
+
+    assert Tag.objects.get(pk=5).kind == "tool"
 
 
 def test_an_existing_tag_can_be_categorized_without_being_defined_in_the_file():
@@ -821,6 +861,30 @@ def test_an_existing_tag_can_be_categorized_without_being_defined_in_the_file():
 
 
 # Certifications and specializations
+
+
+def test_specialization_keeps_its_links_to_hidden_certifications():
+    shown = Certification.objects.create(
+        id=1, name_en="A", name_fr="A", issuer="I", issue_date="2024-01-01"
+    )
+    hidden = Certification.objects.create(
+        id=2,
+        name_en="H",
+        name_fr="H",
+        issuer="I",
+        issue_date="2024-01-01",
+        is_visible=False,
+    )
+    Specialization.objects.create(
+        id=1, name_en="S", name_fr="S", issuer="I", issue_date="2024-01-01"
+    ).certifications.add(shown, hidden)
+
+    import_resume(resume(specializations=[specialization(1, "S", certifications=[1])]))
+
+    stored = Specialization.objects.get(pk=1).certifications.values_list(
+        "pk", flat=True
+    )
+    assert set(stored) == {1, 2}
 
 
 def test_certification_tags_are_the_listed_ones():
@@ -891,6 +955,81 @@ def test_specialization_can_list_a_certification_created_by_the_same_file():
         "pk", flat=True
     )
     assert list(stored) == [1]
+
+
+# Moving categories
+
+
+def test_a_category_can_become_a_domain_when_the_file_moves_its_tags_out():
+    TagCategory.objects.create(id=1, name_en="D", name_fr="D")
+    TagCategory.objects.create(id=2, name_en="C", name_fr="C", parent_id=1)
+    Skill.objects.create(id=1, name_en="Python", name_fr="Python").categories.add(2)
+    data = resume(
+        skills=[tag(1)],
+        tag_categories=[
+            domain(2, "C"),
+            domain(1, "D", [category(3, "New", [noted_tag(1)])]),
+        ],
+    )
+
+    import_resume(data)
+
+    assert TagCategory.objects.get(pk=2).parent_id is None
+    assert list(Tag.objects.get(pk=1).categories.values_list("pk", flat=True)) == [3]
+
+
+@pytest.mark.parametrize("order", [[1, 2], [2, 1]], ids=["domain-first", "child-first"])
+def test_a_domain_can_move_under_another_whatever_the_order(order):
+    TagCategory.objects.create(id=1, name_en="D1", name_fr="D1")
+    TagCategory.objects.create(id=2, name_en="C", name_fr="C", parent_id=1)
+    TagCategory.objects.create(id=3, name_en="D2", name_fr="D2")
+    children = {1: category(1, "D1"), 2: category(2, "C")}
+    data = resume(tag_categories=[domain(3, "D2", [children[id_] for id_ in order])])
+
+    import_resume(data)
+
+    parents = dict(TagCategory.objects.values_list("pk", "parent_id"))
+    assert parents == {1: 3, 2: 3, 3: None}
+
+
+def test_a_tree_three_levels_deep_is_refused():
+    TagCategory.objects.create(id=1, name_en="D1", name_fr="D1")
+    TagCategory.objects.create(id=2, name_en="Local", name_fr="Local", parent_id=1)
+    data = resume(tag_categories=[domain(3, "D2", [category(1, "D1")])])
+
+    errors = import_error(data)
+
+    assert "non_field_errors" in errors["tag_categories"]
+    assert TagCategory.objects.get(pk=1).parent_id is None
+
+
+def test_a_domain_with_tags_is_refused():
+    TagCategory.objects.create(id=1, name_en="D", name_fr="D")
+    TagCategory.objects.create(id=2, name_en="C", name_fr="C", parent_id=1)
+    Skill.objects.create(id=1, name_en="Kept", name_fr="Gardé").categories.add(2)
+
+    errors = import_error(resume(tag_categories=[domain(2, "C")]))
+
+    assert "non_field_errors" in errors["tag_categories"]
+    assert TagCategory.objects.get(pk=2).parent_id == 1
+
+
+@pytest.mark.parametrize(
+    "tree",
+    [
+        pytest.param(
+            [domain(1, "A", [category(7, "X")]), domain(2, "B", [category(7, "X")])],
+            id="category-under-two-domains",
+        ),
+        pytest.param([domain(5, "D", [category(5, "C")])], id="domain-its-own-child"),
+        pytest.param([domain(1, "A"), domain(1, "B")], id="domain-twice"),
+    ],
+)
+def test_a_category_id_listed_twice_is_refused(tree):
+    errors = import_error(resume(tag_categories=tree))
+
+    assert "tag_categories" in errors
+    assert TagCategory.objects.count() == 0
 
 
 # Refused files
@@ -1071,6 +1210,7 @@ def test_a_project_with_missions_and_tags_costs_a_bounded_number_of_queries(exis
         pytest.param({**hobby(1), "id": "1"}, "id", id="id-not-an-integer"),
         pytest.param({**hobby(1), "id": 0}, "id", id="id-not-positive"),
         pytest.param({**hobby(1), "id": True}, "id", id="id-a-boolean"),
+        pytest.param({**hobby(1), "id": 2**63}, "id", id="id-too-large"),
     ],
 )
 def test_a_malformed_record_is_refused(record, field):
@@ -1085,6 +1225,13 @@ def test_an_id_listed_twice_in_a_section_is_refused():
 
     assert "id" in errors["hobbies"][1]
     assert Hobby.objects.count() == 0
+
+
+@pytest.mark.parametrize("node", ["Engineering", {**domain(1), "id": None}])
+def test_a_domain_without_a_valid_id_is_refused(node):
+    errors = import_error(resume(tag_categories=[node]))
+
+    assert "id" in errors["tag_categories"][0]
 
 
 def test_domain_children_that_are_not_a_list_are_refused():

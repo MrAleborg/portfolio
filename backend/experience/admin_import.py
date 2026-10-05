@@ -23,19 +23,14 @@ class ResumeFileForm(forms.Form):
     )
 
     def clean_file(self):
-        """The file's JSON object."""
+        """The file's JSON."""
         file = self.cleaned_data["file"]
         if file.size > MAX_FILE_SIZE:
             raise forms.ValidationError("The file is larger than 5 MB.")
         try:
-            data = json.load(file)
-        except (UnicodeDecodeError, ValueError) as error:
+            return json.load(file)
+        except ValueError as error:
             raise forms.ValidationError(f"The file is not valid JSON: {error}")
-        if not isinstance(data, dict):
-            raise forms.ValidationError(
-                "Expected a JSON object, as GET /api/v1/resume/ gives."
-            )
-        return data
 
 
 def error_lines(errors, path=""):

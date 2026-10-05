@@ -36,14 +36,19 @@ To copy one environment to another:
 |---|---|---|
 | A project, its experience, missions, achievements and tags | `projects` | `professional_experiences[].projects` |
 | The certifications of a specialization | `specializations[].certifications` | `certifications[].specializations` |
-| A tag's name and kind | `skills`, `tools`, `methodologies`, and the tags nested in `projects` and `certifications` | |
+| A tag's name and kind | `skills`, `tools`, `methodologies`, and the tags nested in `projects`, `certifications` and `tag_categories` | |
 | A tag's note and categories | `tag_categories` | |
 
 - Lists are replaced by what the file lists: missions (in the file's order),
-  achievements, the tags of projects and certifications, the certifications
-  of specializations, and the categories of every tag in the file (a tag in
-  the file but in no category loses its categories).
+  achievements and the tags of projects and certifications. Two lists keep
+  their links to records the file cannot show: a specialization keeps its
+  hidden certifications, and a tag in the file keeps its categories absent
+  from the file (a tag in the file but in none of the file's categories loses
+  those).
 - A reference (experience, tag or certification id) must be in the file or
-  already in the database. A tag only listed in `tag_categories` must already
-  exist, since only the other places give its kind. A tag given two different
-  names or kinds is refused.
+  already in the database. A new tag needs a kind, which every export gives.
+  A tag given two different names or kinds is refused; an existing tag given
+  another kind changes kind.
+- Categories may move between domains, or become domains, in one import. The
+  tree as imported must keep two levels: a category's parent is a domain, and
+  only categories (not domains) have tags.

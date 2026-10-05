@@ -56,6 +56,7 @@ def test_list_nests_domains_categories_and_tags(api_client):
                         {
                             "id": tag.id,
                             "name": {"en": "LLMs", "fr": "LLMs fr"},
+                            "kind": tag.kind,
                             "note": {"en": "Daily", "fr": "Au quotidien"},
                         }
                     ],

@@ -258,7 +258,7 @@ The tag tree for the resume's Expertise section (see
 returns the domains, each with its categories under `children`, each with its
 tags. Domains and categories are ordered by position, then English name; tags
 by English name. A tag in several categories appears under each of them, with
-its `note` (empty in every language when unset):
+its `kind` and its `note` (empty in every language when unset):
 
 ```json
 [
@@ -273,6 +273,7 @@ its `note` (empty in every language when unset):
           {
             "id": 7,
             "name": {"en": "Claude Code", "fr": "Claude Code"},
+            "kind": "tool",
             "note": {"en": "used daily for agentic coding", "fr": "utilisé au quotidien pour le développement agentique"}
           }
         ]

@@ -59,11 +59,18 @@ class TagSerializer(serializers.ModelSerializer):
         fields = ["id", "name"]
 
 
-class NotedTagSerializer(TagSerializer):
-    note = LocalizedField()
+class TagWithKindSerializer(TagSerializer):
+    """For entries that mix tag kinds, so the frontend can group them."""
 
     class Meta(TagSerializer.Meta):
-        fields = [*TagSerializer.Meta.fields, "note"]
+        fields = [*TagSerializer.Meta.fields, "kind"]
+
+
+class NotedTagSerializer(TagWithKindSerializer):
+    note = LocalizedField()
+
+    class Meta(TagWithKindSerializer.Meta):
+        fields = [*TagWithKindSerializer.Meta.fields, "note"]
 
 
 class TagSubcategorySerializer(serializers.ModelSerializer):
@@ -84,13 +91,6 @@ class TagCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = TagCategory
         fields = ["id", "name", "children"]
-
-
-class TagWithKindSerializer(TagSerializer):
-    """For entries that mix tag kinds, so the frontend can group them."""
-
-    class Meta(TagSerializer.Meta):
-        fields = [*TagSerializer.Meta.fields, "kind"]
 
 
 class SpecializationSummarySerializer(serializers.ModelSerializer):

@@ -115,7 +115,6 @@ def test_invalid_record_is_reported_and_nothing_is_written(admin_client):
     [
         pytest.param(b"{not json", "not valid JSON", id="invalid-json"),
         pytest.param(b"\xff\xfe\xfa", "not valid JSON", id="not-text"),
-        pytest.param(b"[]", "Expected a JSON object", id="not-an-object"),
     ],
 )
 def test_unreadable_file_is_refused(admin_client, content, message):
@@ -123,6 +122,15 @@ def test_unreadable_file_is_refused(admin_client, content, message):
 
     assert response.status_code == 200
     assert message in str(response.context["form"].errors["file"])
+
+
+def test_file_that_is_not_an_object_is_refused(admin_client):
+    response = admin_client.post(URL, {"file": upload(b"[]")})
+
+    assert response.status_code == 200
+    assert response.context["import_errors"] == [
+        "Expected an object, as GET /api/v1/resume/ gives."
+    ]
 
 
 def test_file_over_the_size_limit_is_refused(admin_client):

@@ -34,6 +34,7 @@ from experience.models import (
     Tag,
     TagCategory,
 )
+from experience.views import MAX_ID
 from owner.admin_api.serializers import ProfileSerializer
 from owner.models import Profile
 
@@ -128,7 +129,17 @@ def _ref(value):
 
 
 def _is_id(value):
-    return isinstance(value, int) and not isinstance(value, bool) and value > 0
+    return (
+        isinstance(value, int) and not isinstance(value, bool) and 1 <= value <= MAX_ID
+    )
+
+
+class _TagCategoryInput(serializers.TagCategorySerializer):
+    """Skips TagCategory.clean: it reads the tree as stored, mid-import.
+    _Importer.check_tree checks the same rules on the imported tree."""
+
+    def validate(self, attrs):
+        return attrs
 
 
 class _Importer:
@@ -226,77 +237,119 @@ class _Importer:
         records = list(self.records(section))
         existing = model.objects.in_bulk([id_ for _, id_, _ in records])
         for index, id_, record in records:
+            instance = existing.get(id_)
             data = {
                 name: value
                 for name, value in record.items()
                 if name not in DERIVED_FIELDS and name not in ignored
             }
             if convert:
-                data = convert(data)
-            errors = self.save(section, serializer_class, existing.get(id_), id_, data)
+                data = convert(data, instance)
+            errors = self.save(section, serializer_class, instance, id_, data)
             if errors:
                 self.add_error(section, index, errors)
 
     # Conversions from the resume shape to the admin API's
 
     @staticmethod
-    def project_input(data):
+    def project_input(data, instance):
         data["experience"] = _ref(data.get("experience"))
         data["tags"] = _refs(data.get("tags", []))
         return data
 
     @staticmethod
-    def certification_input(data):
+    def certification_input(data, instance):
         data.pop("specializations", None)
         data["tags"] = _refs(data.get("tags", []))
         return data
 
     @staticmethod
-    def specialization_input(data):
-        data["certifications"] = _refs(data.get("certifications", []))
+    def specialization_input(data, instance):
+        certifications = _refs(data.get("certifications", []))
+        if instance is not None and isinstance(certifications, list):
+            # The resume hides hidden certifications: keep the links to them.
+            hidden = instance.certifications.filter(is_visible=False)
+            certifications += [
+                id_
+                for id_ in hidden.values_list("pk", flat=True)
+                if id_ not in certifications
+            ]
+        data["certifications"] = certifications
         return data
 
     # Tag categories and tags
 
-    def import_tag_categories(self):
-        """Save the domains, then their categories."""
+    def category_nodes(self):
+        """(domain index, id, parent id, name) of each well-formed category,
+        domains first; each problem is reported under its domain's index."""
         section = "tag_categories"
-        domains = list(self.records(section))
-        children = []
-        for index, parent_id, domain in domains:
+        domains, children, seen = [], [], set()
+
+        def check(index, node, where):
+            id_ = node.get("id") if isinstance(node, dict) else None
+            problem = None
+            if not _is_id(id_):
+                problem = "A valid id is required."
+            elif id_ in seen:
+                problem = f"Category {id_} is listed twice."
+            if problem:
+                errors = self.errors.setdefault(section, {}).setdefault(index, {})
+                if where is None:
+                    errors.setdefault("id", []).append(problem)
+                else:
+                    errors.setdefault("children", {})[where] = {"id": [problem]}
+                return None
+            seen.add(id_)
+            return id_
+
+        for index, domain in enumerate(self.section(section)):
+            domain_id = check(index, domain, None)
+            if domain_id is None:
+                continue
+            domains.append((index, domain_id, None, domain.get("name")))
             kids = domain.get("children", [])
             if not isinstance(kids, list):
                 self.add_error(section, index, {"children": ["Expected a list."]})
                 continue
-            children.extend(
-                (index, position, parent_id, child)
-                for position, child in enumerate(kids)
-            )
-        ids = [id_ for _, id_, _ in domains] + [
-            child.get("id") for *_, child in children if isinstance(child, dict)
-        ]
-        existing = TagCategory.objects.in_bulk([id_ for id_ in ids if _is_id(id_)])
-        serializer_class = serializers.TagCategorySerializer
-        for index, id_, domain in domains:
-            data = {"name": domain.get("name"), "parent": None}
-            errors = self.save(section, serializer_class, existing.get(id_), id_, data)
+            for position, child in enumerate(kids):
+                child_id = check(index, child, position)
+                if child_id is not None:
+                    children.append(
+                        (index, child_id, domain_id, child.get("name"), position)
+                    )
+        return domains, children
+
+    def import_tag_categories(self):
+        """Save the domains, then their categories. The depth rules are
+        checked on the whole tree once the tags are saved (check_tree)."""
+        section = "tag_categories"
+        domains, children = self.category_nodes()
+        existing = TagCategory.objects.in_bulk([node[1] for node in domains + children])
+        for index, id_, parent_id, name in domains:
+            data = {"name": name, "parent": parent_id}
+            errors = self.save(section, _TagCategoryInput, existing.get(id_), id_, data)
             if errors:
                 self.add_error(section, index, errors)
-        for index, position, parent_id, child in children:
-            id_ = child.get("id") if isinstance(child, dict) else None
-            if not _is_id(id_):
-                errors = {"id": ["A valid id is required."]}
-            else:
-                data = {"name": child.get("name"), "parent": parent_id}
-                errors = self.save(
-                    section, serializer_class, existing.get(id_), id_, data
-                )
+        for index, id_, parent_id, name, position in children:
+            data = {"name": name, "parent": parent_id}
+            errors = self.save(section, _TagCategoryInput, existing.get(id_), id_, data)
             if errors:
                 # A category's errors are reported under its domain.
                 domain_errors = self.errors.setdefault(section, {}).setdefault(
                     index, {}
                 )
                 domain_errors.setdefault("children", {})[position] = errors
+        self.file_categories = {node[1] for node in domains + children}
+
+    def check_tree(self):
+        """The depth rules of TagCategory.clean, on the tree as imported."""
+        problems = []
+        if TagCategory.objects.filter(parent__parent__isnull=False).exists():
+            problems.append("A category's parent must be a domain.")
+        if TagCategory.objects.filter(parent__isnull=True, tags__isnull=False).exists():
+            problems.append("A category with tags must stay under a domain.")
+        if problems:
+            self.errors.setdefault("tag_categories", {})["non_field_errors"] = problems
 
     def collect_tags(self):
         """Merge the tags the file shows into id -> fields, from every place.
@@ -321,55 +374,66 @@ class _Importer:
                 merged[name] = value
             return True
 
+        def nested(record, key):
+            values = record.get(key, []) if isinstance(record, dict) else []
+            return values if isinstance(values, list) else []
+
+        def given(tag, key):
+            return {key: tag[key]} if isinstance(tag, dict) and key in tag else {}
+
         for section, kind in TAG_SECTIONS.items():
             for tag in self.section(section):
                 add(section, tag, kind=kind)
         for section in ("projects", "certifications"):
             for record in self.section(section):
-                nested = record.get("tags", []) if isinstance(record, dict) else []
-                for tag in nested if isinstance(nested, list) else []:
-                    add(
-                        section,
-                        tag,
-                        kind=tag.get("kind") if isinstance(tag, dict) else None,
-                    )
+                for tag in nested(record, "tags"):
+                    add(section, tag, **given(tag, "kind"))
         for domain in self.section("tag_categories"):
-            children = domain.get("children", []) if isinstance(domain, dict) else []
-            for child in children if isinstance(children, list) else []:
-                listed = child.get("tags", []) if isinstance(child, dict) else []
-                for tag in listed if isinstance(listed, list) else []:
-                    note = tag.get("note") if isinstance(tag, dict) else None
-                    if add("tag_categories", tag, note=note):
+            for child in nested(domain, "children"):
+                for tag in nested(child, "tags"):
+                    if add(
+                        "tag_categories",
+                        tag,
+                        **given(tag, "kind"),
+                        **given(tag, "note"),
+                    ):
                         tags[tag["id"]]["categories"].append(child.get("id"))
         return tags
 
     def import_tags(self):
         tags = self.collect_tags()
-        existing = Tag.objects.in_bulk(list(tags))
+        existing = Tag.objects.prefetch_related("categories").in_bulk(list(tags))
         for id_, fields in tags.items():
-            if "tags" in self.errors and id_ in self.errors["tags"]:
+            if id_ in self.errors.get("tags", {}):
                 continue
             instance = existing.get(id_)
             kind = fields.get("kind", instance and instance.kind)
-            if kind is None:
-                self.add_error(
-                    "tag_categories",
-                    id_,
-                    {"tags": [f"Unknown tag {id_}: no section gives its kind."]},
-                )
-                continue
             serializer_class = TAG_SERIALIZERS.get(kind)
             if serializer_class is None:
-                self.add_error(
-                    "tags", id_, {"kind": [f'"{kind}" is not a valid kind.']}
+                message = (
+                    f'"{kind}" is not a valid kind.'
+                    if kind
+                    else "This tag is not in the database and the file gives no kind."
                 )
+                self.add_error("tags", id_, {"kind": [message]})
                 continue
-            data = {"name": fields["name"], "categories": fields["categories"]}
+            categories = fields["categories"]
+            if instance is not None:
+                # Saved through the proxy of its kind, which sets the kind.
+                instance.__class__ = serializer_class.Meta.model
+                # Keep the links to the categories the file does not show.
+                categories += [
+                    category.pk
+                    for category in instance.categories.all()
+                    if category.pk not in self.file_categories
+                ]
+            data = {"name": fields["name"], "categories": categories}
             if "note" in fields:
                 data["note"] = fields["note"]
             errors = self.save("tags", serializer_class, instance, id_, data)
             if errors:
                 self.add_error("tags", id_, errors)
+        self.check_tree()
 
     # Profile
 
