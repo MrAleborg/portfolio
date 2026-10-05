@@ -17,8 +17,9 @@ class ResumeFileForm(forms.Form):
     file = forms.FileField(
         label="Resume file",
         help_text=(
-            "JSON in the format of GET /api/v1/resume/, up to 5 MB. Records are "
-            "matched by id: a known id is overwritten, a new id is created."
+            "JSON in the format of GET /api/v1/resume/ or of the admin API, up "
+            "to 5 MB (see backend/docs/resume_import.md). Records are matched "
+            "by id: a known id is overwritten, a new id is created."
         ),
     )
 
