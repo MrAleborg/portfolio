@@ -23,6 +23,7 @@ from django.db import transaction
 
 from experience.admin_api import serializers
 from experience.models import (
+    MAX_ID,
     Certification,
     Commitment,
     Education,
@@ -34,7 +35,6 @@ from experience.models import (
     Tag,
     TagCategory,
 )
-from experience.views import MAX_ID
 from owner.admin_api.serializers import ProfileSerializer
 from owner.models import Profile
 
@@ -343,11 +343,21 @@ class _Importer:
 
     def check_tree(self):
         """The depth rules of TagCategory.clean, on the tree as imported."""
+        rules = [
+            (
+                TagCategory.objects.filter(parent__parent__isnull=False),
+                "The parent of a category must be a domain",
+            ),
+            (
+                TagCategory.objects.filter(parent__isnull=True, tags__isnull=False),
+                "A category with tags must stay under a domain",
+            ),
+        ]
         problems = []
-        if TagCategory.objects.filter(parent__parent__isnull=False).exists():
-            problems.append("A category's parent must be a domain.")
-        if TagCategory.objects.filter(parent__isnull=True, tags__isnull=False).exists():
-            problems.append("A category with tags must stay under a domain.")
+        for queryset, rule in rules:
+            ids = sorted(set(queryset.values_list("pk", flat=True)))
+            if ids:
+                problems.append(f"{rule}: categories {', '.join(map(str, ids))}.")
         if problems:
             self.errors.setdefault("tag_categories", {})["non_field_errors"] = problems
 

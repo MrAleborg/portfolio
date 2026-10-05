@@ -7,6 +7,9 @@ from django.db.models import F, Q
 
 from experience.languages import LANGUAGES
 
+# Largest value of a bigint primary key.
+MAX_ID = 2**63 - 1
+
 
 def translated_together(field):
     """Constraint: optional text `field` is empty in every language or in none.

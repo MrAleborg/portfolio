@@ -999,7 +999,9 @@ def test_a_tree_three_levels_deep_is_refused():
 
     errors = import_error(data)
 
-    assert "non_field_errors" in errors["tag_categories"]
+    assert errors["tag_categories"]["non_field_errors"] == [
+        "The parent of a category must be a domain: categories 2."
+    ]
     assert TagCategory.objects.get(pk=1).parent_id is None
 
 
@@ -1010,7 +1012,9 @@ def test_a_domain_with_tags_is_refused():
 
     errors = import_error(resume(tag_categories=[domain(2, "C")]))
 
-    assert "non_field_errors" in errors["tag_categories"]
+    assert errors["tag_categories"]["non_field_errors"] == [
+        "A category with tags must stay under a domain: categories 2."
+    ]
     assert TagCategory.objects.get(pk=2).parent_id == 1
 
 

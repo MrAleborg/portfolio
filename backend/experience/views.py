@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from experience.models import (
+    MAX_ID,
     Certification,
     Commitment,
     Education,
@@ -35,9 +36,6 @@ from experience.serializers import (
 )
 from owner.models import Profile
 from owner.serializers import ProfileSerializer
-
-# Largest value of a bigint primary key.
-MAX_ID = 2**63 - 1
 
 
 def parse_id(request, name):
