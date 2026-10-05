@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import Q
@@ -59,3 +60,12 @@ class ContactLink(models.Model):
 
     class Meta:
         ordering = ["display_order", "id"]
+
+    def clean(self):
+        # An email link is a mailto: address, and no other kind is.
+        if self.kind and self.url:
+            is_mailto = self.url.startswith("mailto:")
+            if (self.kind == self.Kind.EMAIL) != is_mailto:
+                raise ValidationError(
+                    {"url": "Use a mailto: address for an email link, and only then."}
+                )

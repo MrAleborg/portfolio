@@ -5,9 +5,9 @@ from django.core.mail import EmailMessage
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.exceptions import APIException
+from rest_framework.parsers import JSONParser
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from owner.models import ContactLink, Profile
@@ -16,6 +16,9 @@ from owner.serializers import (
     ContactMessageSerializer,
     ProfileSerializer,
 )
+from owner.throttles import CountValidRequestsThrottle
+
+logger = logging.getLogger(__name__)
 
 
 class ProfileView(generics.RetrieveAPIView):
@@ -36,9 +39,6 @@ class ContactLinkListView(generics.ListAPIView):
     serializer_class = ContactLinkSerializer
 
 
-logger = logging.getLogger(__name__)
-
-
 class ContactUnavailable(APIException):
     status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     default_detail = "Messages cannot be sent right now. Please try again later."
@@ -49,12 +49,18 @@ class ContactMessageView(APIView):
     """Receive a message from a visitor; 204 when it is accepted."""
 
     permission_classes = [AllowAny]
-    throttle_classes = [ScopedRateThrottle]
+    # JSON only: a plain cross-site HTML form cannot send it.
+    parser_classes = [JSONParser]
     throttle_scope = "contact"
 
     def post(self, request):
+        # Refuse over the limit up front, but count only valid messages.
+        throttle = CountValidRequestsThrottle()
+        if not throttle.allow_request(request, self):
+            self.throttled(request, throttle.wait())
         serializer = ContactMessageSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        throttle.record()
         message = serializer.validated_data
         if not settings.CONTACT_EMAIL:
             raise ContactUnavailable

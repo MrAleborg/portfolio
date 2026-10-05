@@ -389,7 +389,9 @@ are listed, in the same order (`display_order`, then id).
 
 - `kind` and `url` are required. `kind` is one of `email`, `linkedin`,
   `github`, `website`, `other`; `url` must start with `https://`, `http://` or
-  `mailto:`. Either one refused gets `400` with the error under its name.
+  `mailto:`, and must be a `mailto:` address exactly when `kind` is `email`
+  (checked against the stored kind when a `PATCH` sends only the `url`). Either
+  one refused gets `400` with the error under its name.
 - `display_order` defaults to `0` and `is_visible` to `true`.
 - `id` and the timestamps are read-only: the [writing rules](#writing-rules)
   above apply.

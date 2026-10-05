@@ -381,8 +381,9 @@ returned.
 ```
 
 - `kind` is one of `email`, `linkedin`, `github`, `website`, `other`.
-- `url` starts with `https://`, `http://` or `mailto:`: the check is on the
-  model, so the admin API and the Django admin refuse anything else.
+- `url` starts with `https://`, `http://` or `mailto:`, and it is a `mailto:`
+  address exactly when `kind` is `email`: the checks are on the model, so the
+  admin API and the Django admin refuse anything else.
 - Write methods are `405`; links are managed through the
   [admin API](admin_api.md#contact-links-apiv1adminprofilecontact-links).
 
@@ -410,8 +411,12 @@ stored, so there is nothing to read back.
   `CONTACT_EMAIL` (see [deployment.md](deployment.md#settings)),
   with the visitor's address as `Reply-To`. The subject is fixed text; the name,
   email and message are in the body.
+- The body must be JSON: any other content type (such as a plain HTML form)
+  gets `415`, and nothing is sent.
 - `204` with no body when the message is accepted.
-- `429` after 5 messages an hour from the same client address.
+- `429` after 5 valid messages an hour from the same client address. Messages
+  refused with a `400` do not count toward the limit, but once it is reached
+  every post is refused with `429`.
 - `503` with a `detail` when `CONTACT_EMAIL` is not set, or when the mailer
   fails (the error is logged).
 - Other methods are `405`.

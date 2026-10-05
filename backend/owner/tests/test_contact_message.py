@@ -10,6 +10,7 @@ Nothing is stored. The answer is ``204`` with no body. Posting is throttled to
 
 import logging
 from unittest import mock
+from urllib.parse import urlencode
 
 import pytest
 from django.core import mail
@@ -111,7 +112,6 @@ def test_a_name_with_a_newline_is_still_sent_and_never_reaches_the_subject(
     sent = mail.outbox[0]
     assert "Grace" not in sent.subject
     assert "\n" not in sent.subject
-    assert "Bcc" not in sent.extra_headers
 
 
 @pytest.mark.parametrize(
@@ -142,6 +142,47 @@ def test_a_missing_field_is_a_bad_request_and_sends_nothing(api_client, field):
     assert response.status_code == 400
     assert set(response.json()) == {field}
     assert mail.outbox == []
+
+
+def test_an_email_with_a_newline_is_a_bad_request_and_sends_nothing(api_client):
+    """No second header can ride along with the Reply-To address."""
+    response = post(api_client, email="a@example.com\nBcc: x@example.com")
+
+    assert response.status_code == 400
+    assert set(response.json()) == {"email"}
+    assert mail.outbox == []
+
+
+def test_a_form_encoded_post_is_refused_and_sends_nothing(api_client):
+    """Only JSON is accepted: a plain cross-site form cannot post here."""
+    response = api_client.post(
+        URL,
+        urlencode(valid_message()),
+        content_type="application/x-www-form-urlencoded",
+    )
+
+    assert response.status_code == 415
+    assert mail.outbox == []
+
+
+def test_invalid_messages_do_not_use_up_the_hourly_limit(api_client):
+    for _ in range(6):
+        assert post(api_client, message="short").status_code == 400
+
+    response = post(api_client)
+
+    assert response.status_code == 204
+    assert len(mail.outbox) == 1
+
+
+def test_an_invalid_message_is_throttled_once_the_limit_is_reached(api_client):
+    """The limit holds: after 5 messages, even a bad one is a 429."""
+    for _ in range(5):
+        assert post(api_client).status_code == 204
+
+    response = post(api_client, message="short")
+
+    assert response.status_code == 429
 
 
 def test_the_sixth_message_within_the_hour_is_throttled(api_client):

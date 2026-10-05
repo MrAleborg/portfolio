@@ -160,6 +160,23 @@ def test_create_refuses_a_forbidden_url(staff_api_client):
     assert not ContactLink.objects.exists()
 
 
+@pytest.mark.parametrize(
+    ("kind", "url"),
+    [
+        ("email", "https://example.com/contact"),
+        ("github", "mailto:ada@example.com"),
+    ],
+)
+def test_create_refuses_a_url_that_does_not_fit_the_kind(staff_api_client, kind, url):
+    response = staff_api_client.post(
+        LIST_URL, {"kind": kind, "url": url}, format="json"
+    )
+
+    assert response.status_code == 400
+    assert "url" in response.json()
+    assert not ContactLink.objects.exists()
+
+
 def test_create_refuses_an_unknown_kind(staff_api_client):
     response = staff_api_client.post(
         LIST_URL, {"kind": "fax", "url": "https://example.com"}, format="json"
@@ -247,6 +264,20 @@ def test_patch_refuses_a_forbidden_url(staff_api_client):
 
     response = staff_api_client.patch(
         detail_url(link.id), {"url": "javascript:alert(1)"}, format="json"
+    )
+
+    assert response.status_code == 400
+    assert "url" in response.json()
+    link.refresh_from_db()
+    assert link.url == "mailto:ada@example.com"
+
+
+def test_patch_refuses_a_url_that_does_not_fit_the_stored_kind(staff_api_client):
+    """The kind is not sent, so the check runs against the stored one."""
+    link = make_link(kind="email", url="mailto:ada@example.com")
+
+    response = staff_api_client.patch(
+        detail_url(link.id), {"url": "https://example.com"}, format="json"
     )
 
     assert response.status_code == 400
