@@ -6,4 +6,9 @@ app_name = "owner"
 
 urlpatterns = [
     path("", views.ProfileView.as_view(), name="profile"),
+    path(
+        "contact-links/",
+        views.ContactLinkListView.as_view(),
+        name="contact-link-list",
+    ),
 ]

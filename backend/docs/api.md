@@ -8,8 +8,9 @@ managed through the [admin API](admin_api.md) (`/api/v1/admin/`, for the
 frontend) or the Django admin (`/admin/`).
 
 Every path below is relative to the base URL `/api/v1/experience/`, except the
-owner's [profile](#profile-apiv1profile), which is in the `owner` app, and the
-[whole resume](#resume-apiv1resume).
+owner's [profile](#profile-apiv1profile) and
+[contact links](#contact-links-apiv1profilecontact-links), which are in the
+`owner` app, and the [whole resume](#resume-apiv1resume).
 
 ## Endpoints
 
@@ -362,6 +363,26 @@ so the route has no id, and no list.
 - `404` until the profile is created through the
   [admin API](admin_api.md#profile-apiv1adminprofile). Write methods are
   `405`.
+
+## Contact links: `/api/v1/profile/contact-links/`
+
+Where visitors can reach the owner, from the `owner` app. A plain list, in
+`display_order` then id order, with no detail route. Only visible links are
+listed (`is_visible=false` ones are hidden), and only `kind` and `url` are
+returned.
+
+```json
+[
+  {"kind": "email", "url": "mailto:ada@example.com"},
+  {"kind": "github", "url": "https://github.com/ada"}
+]
+```
+
+- `kind` is one of `email`, `linkedin`, `github`, `website`, `other`.
+- `url` starts with `https://`, `http://` or `mailto:`: the check is on the
+  model, so the admin API and the Django admin refuse anything else.
+- Write methods are `405`; links are managed through the
+  [admin API](admin_api.md#contact-links-apiv1adminprofilecontact-links).
 
 ## Resume: `/api/v1/resume/`
 

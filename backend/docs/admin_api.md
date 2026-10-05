@@ -5,7 +5,8 @@ content from the frontend. It lives in
 [`experience/admin_api/`](../experience/admin_api/), next to the public API
 ([api.md](api.md)), which stays read-only. The owner's profile has its own
 route, in [`owner/admin_api/`](../owner/admin_api/) (see
-[Profile](#profile-apiv1adminprofile)).
+[Profile](#profile-apiv1adminprofile)), and so do its
+[contact links](#contact-links-apiv1adminprofilecontact-links).
 
 Every path below is relative to the base URL `/api/v1/admin/`.
 
@@ -364,3 +365,31 @@ is the same as for the other routes: staff token, else `401` or `403`.
   language when left out on creation).
 - The [writing rules](#writing-rules) above apply: translated texts in every
   language, per-language errors, read-only timestamps.
+
+## Contact links: `/api/v1/admin/profile/contact-links/`
+
+The links shown on the contact page, from the `owner` app: `contact-links/`
+(list, create) and `contact-links/{id}/` (retrieve, update, partial update,
+delete) under `/api/v1/admin/profile/`. They are not listed at the root. Access
+is the same as for the other routes: staff token, else `401` or `403`. Unlike
+the [public list](api.md#contact-links-apiv1profilecontact-links), hidden links
+are listed, in the same order (`display_order`, then id).
+
+```json
+{
+  "id": 1,
+  "kind": "github",
+  "url": "https://github.com/ada",
+  "display_order": 0,
+  "is_visible": true,
+  "created_at": "2026-09-30T10:00:00.000000Z",
+  "updated_at": "2026-09-30T10:00:00.000000Z"
+}
+```
+
+- `kind` and `url` are required. `kind` is one of `email`, `linkedin`,
+  `github`, `website`, `other`; `url` must start with `https://`, `http://` or
+  `mailto:`. Either one refused gets `400` with the error under its name.
+- `display_order` defaults to `0` and `is_visible` to `true`.
+- `id` and the timestamps are read-only: the [writing rules](#writing-rules)
+  above apply.
