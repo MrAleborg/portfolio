@@ -1354,3 +1354,55 @@ def test_an_invalid_flat_category_is_reported_at_its_index():
     errors = import_error(data)
 
     assert "name" in errors["tag_categories"][1]
+
+
+def test_a_specialization_in_the_admin_api_shape_can_drop_a_hidden_certification():
+    hidden = Certification.objects.create(
+        id=1,
+        name_en="H",
+        name_fr="H",
+        issuer="I",
+        issue_date="2024-01-01",
+        is_visible=False,
+    )
+    Specialization.objects.create(
+        id=1, name_en="S", name_fr="S", issuer="I", issue_date="2024-01-01"
+    ).certifications.add(hidden)
+    data = resume(
+        specializations=[
+            {**specialization(1), "certifications": [], "is_visible": True}
+        ]
+    )
+
+    import_resume(data)
+
+    assert Specialization.objects.get(pk=1).certifications.count() == 0
+
+
+def test_a_tag_listing_a_malformed_category_id_is_refused():
+    errors = import_error(resume(skills=[{**tag(1), "categories": [[2]]}]))
+
+    assert "categories" in errors["tags"][1]
+    assert Tag.objects.count() == 0
+
+
+def test_a_category_with_a_malformed_id_listing_tags_is_refused():
+    child = {**category(0, "C", [noted_tag(1)]), "id": [2]}
+
+    errors = import_error(resume(tag_categories=[domain(1, "D", [child])]))
+
+    assert "id" in errors["tag_categories"][0]["children"][0]
+    assert Tag.objects.count() == 0
+
+
+def test_every_error_of_a_domain_is_reported():
+    data = resume(
+        tag_categories=[
+            {**domain(1, "D", [{**category(2), "id": 0}]), "name": {"en": "No French"}}
+        ]
+    )
+
+    errors = import_error(data)
+
+    assert "name" in errors["tag_categories"][0]
+    assert "id" in errors["tag_categories"][0]["children"][0]

@@ -192,7 +192,11 @@ class _Importer:
         return self.data.get(key) or []
 
     def add_error(self, section, index, detail):
-        self.errors.setdefault(section, {})[index] = detail
+        errors = self.errors.setdefault(section, {})
+        if isinstance(errors.get(index), dict) and isinstance(detail, dict):
+            errors[index].update(detail)
+        else:
+            errors[index] = detail
 
     def count(self, section, created):
         made, updated = self.report.sections.get(section, (0, 0))
@@ -266,8 +270,10 @@ class _Importer:
     @staticmethod
     def specialization_input(data, instance):
         certifications = _refs(data.get("certifications", []))
-        if instance is not None and isinstance(certifications, list):
+        resume_shape = "is_visible" not in data
+        if instance is not None and resume_shape and isinstance(certifications, list):
             # The resume hides hidden certifications: keep the links to them.
+            # A file that shows visibility (the admin API's) lists them all.
             hidden = instance.certifications.filter(is_visible=False)
             certifications += [
                 id_
@@ -448,7 +454,7 @@ class _Importer:
                 ]
             data = {
                 "name": fields["name"],
-                "categories": list(dict.fromkeys(categories)),
+                "categories": _unique(categories),
             }
             if "note" in fields:
                 data["note"] = fields["note"]
@@ -475,3 +481,10 @@ class _Importer:
 def _refs(values):
     """The ids of a list of nested records."""
     return [_ref(value) for value in values] if isinstance(values, list) else values
+
+
+def _unique(values):
+    """`values` without repeated ids; anything else kept, for the serializer
+    to refuse."""
+    ids = list(dict.fromkeys(value for value in values if _is_id(value)))
+    return ids + [value for value in values if not _is_id(value)]
