@@ -64,6 +64,7 @@ Django reads its settings from the environment
 | `DATABASE_URL` | `sqlite:////data/db.sqlite3` | Four slashes: absolute path |
 | `EMAIL_URL` | `smtp+tls://contact%40example.com:password@smtp.example.com:587` | Sends the emails people receive. `smtp+ssl://…:465` also works. URL-encode `@` and `:` in credentials |
 | `DEFAULT_FROM_EMAIL` | `contact@example.com` | Sender of those emails. Must match the `EMAIL_URL` account |
+| `CONTACT_EMAIL` | `you@example.com` | Receives the messages from the contact form (see [api.md](api.md#contact-message-apiv1profilecontact)). Empty by default: the form then answers `503` |
 | `SERVER_EMAIL_URL` | `smtp+tls://logs%40example.com:password@smtp.example.com:587` | Sends the error reports. Defaults to `EMAIL_URL` |
 | `SERVER_EMAIL` | `logs@example.com` | Sender of the error reports. Must match the `SERVER_EMAIL_URL` account |
 | `ADMINS` | `you@example.com` | Receive server error reports by email |

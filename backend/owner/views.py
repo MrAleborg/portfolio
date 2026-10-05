@@ -1,9 +1,21 @@
+import logging
+
+from django.conf import settings
+from django.core.mail import EmailMessage
 from django.shortcuts import get_object_or_404
-from rest_framework import generics
+from rest_framework import generics, status
+from rest_framework.exceptions import APIException
 from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
+from rest_framework.views import APIView
 
 from owner.models import ContactLink, Profile
-from owner.serializers import ContactLinkSerializer, ProfileSerializer
+from owner.serializers import (
+    ContactLinkSerializer,
+    ContactMessageSerializer,
+    ProfileSerializer,
+)
 
 
 class ProfileView(generics.RetrieveAPIView):
@@ -22,3 +34,48 @@ class ContactLinkListView(generics.ListAPIView):
     permission_classes = [AllowAny]
     queryset = ContactLink.objects.filter(is_visible=True)
     serializer_class = ContactLinkSerializer
+
+
+logger = logging.getLogger(__name__)
+
+
+class ContactUnavailable(APIException):
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    default_detail = "Messages cannot be sent right now. Please try again later."
+    default_code = "contact_unavailable"
+
+
+class ContactMessageView(APIView):
+    """Receive a message from a visitor; 204 when it is accepted."""
+
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "contact"
+
+    def post(self, request):
+        serializer = ContactMessageSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        message = serializer.validated_data
+        if not settings.CONTACT_EMAIL:
+            raise ContactUnavailable
+        if message.get("website"):
+            # A bot filled the honeypot: pretend it worked, send nothing.
+            return Response(status=204)
+        email = EmailMessage(
+            # Fixed subject: nothing the visitor typed ends up in a header.
+            subject="New message from the portfolio",
+            body=(
+                f"Name: {message['name']}\n"
+                f"Email: {message['email']}\n\n"
+                f"{message['message']}\n"
+            ),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[settings.CONTACT_EMAIL],
+            reply_to=[message["email"]],
+        )
+        try:
+            email.send()
+        except Exception as error:
+            logger.exception("Could not send a contact message")
+            raise ContactUnavailable from error
+        return Response(status=204)
