@@ -4,6 +4,7 @@ import './index.css'
 import App from './App.tsx'
 import { createHttpCertificationRepository } from '@/infrastructure/certification/httpCertificationRepository'
 import { createHttpCommitmentRepository } from '@/infrastructure/commitment/httpCommitmentRepository'
+import { createHttpContactRepository } from '@/infrastructure/contact/httpContactRepository'
 import { createHttpEducationRepository } from '@/infrastructure/education/httpEducationRepository'
 import { createHttpHobbyRepository } from '@/infrastructure/hobby/httpHobbyRepository'
 import { createHttpProfessionalExperienceRepository } from '@/infrastructure/professionalExperience/httpProfessionalExperienceRepository'
@@ -26,6 +27,7 @@ const repositories = {
   scientificCommunication: createHttpScientificCommunicationRepository(apiUrl),
   commitment: createHttpCommitmentRepository(apiUrl),
   hobby: createHttpHobbyRepository(apiUrl),
+  contact: createHttpContactRepository(apiUrl),
 }
 
 createRoot(document.getElementById('root')!).render(

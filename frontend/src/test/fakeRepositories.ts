@@ -1,5 +1,6 @@
 import { fakeCertificationRepository } from '@/test/fakeCertificationRepository'
 import { fakeCommitmentRepository } from '@/test/fakeCommitmentRepository'
+import { fakeContactRepository } from '@/test/fakeContactRepository'
 import { fakeEducationRepository } from '@/test/fakeEducationRepository'
 import { fakeHobbyRepository } from '@/test/fakeHobbyRepository'
 import { fakeProfessionalExperienceRepository } from '@/test/fakeProfessionalExperienceRepository'
@@ -23,6 +24,7 @@ export function fakeRepositories(overrides: Partial<Repositories> = {}) {
     scientificCommunication: fakeScientificCommunicationRepository(),
     commitment: fakeCommitmentRepository(),
     hobby: fakeHobbyRepository(),
+    contact: fakeContactRepository(),
     ...overrides,
   } satisfies Repositories
 }
