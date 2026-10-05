@@ -11,7 +11,15 @@ interface Messages {
   navLabel: string
   navHome: string
   navResume: string
+  navContact: string
   resumeTitle: string
+  contactTitle: string
+  contactIntro: string
+  contactLinksUnavailable: string
+  contactName: string
+  contactEmail: string
+  contactMessage: string
+  contactSend: string
   expertiseTitle: string
   professionalExperienceTitle: string
   sideProjectsTitle: string
@@ -22,6 +30,7 @@ interface Messages {
   hobbiesTitle: string
   commitmentKinds: Record<CommitmentKind, string>
   websiteLink: string
+  contactLinkKinds: Record<'linkedin' | 'github', string>
   scientificCommunicationKinds: Record<ScientificCommunicationKind, string>
   seeOnline: string
   /** Said after the name of a link that opens in a new tab. */
@@ -58,7 +67,15 @@ export const messages: Localized<Messages> = {
     navLabel: 'Main',
     navHome: 'Home',
     navResume: 'Resume',
+    navContact: 'Contact',
     resumeTitle: 'Resume',
+    contactTitle: 'Contact',
+    contactIntro: 'Write to me, or find me elsewhere.',
+    contactLinksUnavailable: 'Links couldn’t be loaded.',
+    contactName: 'Name',
+    contactEmail: 'Email',
+    contactMessage: 'Message',
+    contactSend: 'Send message',
     expertiseTitle: 'Expertise',
     professionalExperienceTitle: 'Professional experience',
     sideProjectsTitle: 'Personal projects',
@@ -73,6 +90,7 @@ export const messages: Localized<Messages> = {
       other_event: 'Event',
     },
     websiteLink: 'Website',
+    contactLinkKinds: { linkedin: 'LinkedIn', github: 'GitHub' },
     scientificCommunicationKinds: {
       talk: 'Talk',
       poster: 'Poster',
@@ -115,7 +133,15 @@ export const messages: Localized<Messages> = {
     navLabel: 'Principale',
     navHome: 'Accueil',
     navResume: 'CV',
+    navContact: 'Contact',
     resumeTitle: 'CV',
+    contactTitle: 'Contact',
+    contactIntro: 'Écrivez-moi, ou retrouvez-moi ailleurs.',
+    contactLinksUnavailable: 'Les liens n’ont pas pu être chargés.',
+    contactName: 'Nom',
+    contactEmail: 'E-mail',
+    contactMessage: 'Message',
+    contactSend: 'Envoyer le message',
     expertiseTitle: 'Expertise',
     professionalExperienceTitle: 'Expérience professionnelle',
     sideProjectsTitle: 'Projets personnels',
@@ -130,6 +156,7 @@ export const messages: Localized<Messages> = {
       other_event: 'Événement',
     },
     websiteLink: 'Site web',
+    contactLinkKinds: { linkedin: 'LinkedIn', github: 'GitHub' },
     scientificCommunicationKinds: {
       talk: 'Exposé',
       poster: 'Poster',

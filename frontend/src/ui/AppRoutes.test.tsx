@@ -42,6 +42,20 @@ describe('AppRoutes', () => {
     )
   })
 
+  it('lists Contact in the navigation after Resume', () => {
+    renderAt('/')
+
+    expect(navigation().getAllByRole('link').map((link) => link.textContent)).toEqual([
+      'Home',
+      'Resume',
+      'Contact',
+    ])
+    expect(navigation().getByRole('link', { name: 'Contact' })).toHaveAttribute(
+      'href',
+      '/contact',
+    )
+  })
+
   it('shows the home page at the root', async () => {
     renderAt('/')
 
@@ -66,6 +80,30 @@ describe('AppRoutes', () => {
     )
     expect(
       await screen.findByRole('article', { name: 'Master’s degree, Computer Science' }),
+    ).toBeInTheDocument()
+  })
+
+  it('shows the contact page at /contact', async () => {
+    renderAt('/contact')
+
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Contact' }),
+    ).toBeInTheDocument()
+    expect(navigation().getByRole('link', { name: 'Contact' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+    expect(await screen.findByRole('link', { name: 'ada@example.com' })).toBeInTheDocument()
+  })
+
+  it('goes to the contact page from the navigation', async () => {
+    const user = userEvent.setup()
+    renderAt('/')
+
+    await user.click(navigation().getByRole('link', { name: 'Contact' }))
+
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Contact' }),
     ).toBeInTheDocument()
   })
 
@@ -96,6 +134,9 @@ describe('AppRoutes', () => {
     ).toBeInTheDocument()
     expect(
       navigation('Principale').getByRole('link', { name: 'CV' }),
+    ).toBeInTheDocument()
+    expect(
+      navigation('Principale').getByRole('link', { name: 'Contact' }),
     ).toBeInTheDocument()
   })
 
