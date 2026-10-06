@@ -1,15 +1,18 @@
 # API
 
-The API is public and read-only. It is built with Django REST Framework in the
-`experience` app ([`experience/urls.py`](../experience/urls.py),
+The API is public and read-only, except for the
+[contact message](#contact-message-apiv1profilecontact). It is built with
+Django REST Framework in the `experience` app ([`experience/urls.py`](../experience/urls.py),
 [`experience/views.py`](../experience/views.py),
 [`experience/serializers.py`](../experience/serializers.py)). Content is
 managed through the [admin API](admin_api.md) (`/api/v1/admin/`, for the
 frontend) or the Django admin (`/admin/`).
 
 Every path below is relative to the base URL `/api/v1/experience/`, except the
-owner's [profile](#profile-apiv1profile), which is in the `owner` app, and the
-[whole resume](#resume-apiv1resume).
+owner's [profile](#profile-apiv1profile) and
+[contact links](#contact-links-apiv1profilecontact-links) and
+[contact message](#contact-message-apiv1profilecontact), which are in the
+`owner` app, and the [whole resume](#resume-apiv1resume).
 
 ## Endpoints
 
@@ -362,6 +365,61 @@ so the route has no id, and no list.
 - `404` until the profile is created through the
   [admin API](admin_api.md#profile-apiv1adminprofile). Write methods are
   `405`.
+
+## Contact links: `/api/v1/profile/contact-links/`
+
+Where visitors can reach the owner, from the `owner` app. A plain list, in
+`display_order` then id order, with no detail route. Only visible links are
+listed (`is_visible=false` ones are hidden), and only `kind` and `url` are
+returned.
+
+```json
+[
+  {"kind": "email", "url": "mailto:ada@example.com"},
+  {"kind": "github", "url": "https://github.com/ada"}
+]
+```
+
+- `kind` is one of `email`, `linkedin`, `github`, `website`, `other`.
+- `url` starts with `https://`, `http://` or `mailto:`, and it is a `mailto:`
+  address exactly when `kind` is `email`: the checks are on the model, so the
+  admin API and the Django admin refuse anything else.
+- Write methods are `405`; links are managed through the
+  [admin API](admin_api.md#contact-links-apiv1adminprofilecontact-links).
+
+## Contact message: `/api/v1/profile/contact/`
+
+Lets a visitor write to the owner. `POST` only: the message is emailed, not
+stored, so there is nothing to read back.
+
+```json
+{
+  "name": "Grace Hopper",
+  "email": "grace@example.com",
+  "message": "Hello, I would like to talk about a project.",
+  "website": ""
+}
+```
+
+- `name` is required, at most 100 characters. `email` must be a valid address.
+  `message` is 10 to 5000 characters. Each refused field gets a `400` with the
+  error under its name, and nothing is sent.
+- `website` is a honeypot: the form hides it, bots fill it in. It is optional
+  and may be blank; when it is filled in the answer is still `204`, but no
+  email is sent.
+- The email goes through the default mailer, from `DEFAULT_FROM_EMAIL` to
+  `CONTACT_EMAIL` (see [deployment.md](deployment.md#settings)),
+  with the visitor's address as `Reply-To`. The subject is fixed text; the name,
+  email and message are in the body.
+- The body must be JSON: any other content type (such as a plain HTML form)
+  gets `415`, and nothing is sent.
+- `204` with no body when the message is accepted.
+- `429` after 5 valid messages an hour from the same client address. Messages
+  refused with a `400` do not count toward the limit, but once it is reached
+  every post is refused with `429`.
+- `503` with a `detail` when `CONTACT_EMAIL` is not set, or when the mailer
+  fails (the error is logged).
+- Other methods are `405`.
 
 ## Resume: `/api/v1/resume/`
 

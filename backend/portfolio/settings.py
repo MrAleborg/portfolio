@@ -208,7 +208,7 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
-    "DEFAULT_THROTTLE_RATES": {"login": "5/min"},
+    "DEFAULT_THROTTLE_RATES": {"login": "5/min", "contact": "5/hour"},
     # Caddy is the only proxy in front of the app. Without this, DRF identifies
     # clients by the whole X-Forwarded-For header, which they can set freely.
     "NUM_PROXIES": 1,
@@ -249,6 +249,10 @@ MAILERS = {
 }
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="webmaster@localhost")
 SERVER_EMAIL = env("SERVER_EMAIL", default=DEFAULT_FROM_EMAIL)
+
+# Where messages from the contact form are sent. Empty: the form answers 503.
+CONTACT_EMAIL = env("CONTACT_EMAIL", default="")
+
 # Addresses that receive server error reports
 ADMINS = env("ADMINS")
 

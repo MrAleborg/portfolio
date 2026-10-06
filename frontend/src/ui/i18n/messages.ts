@@ -11,7 +11,22 @@ interface Messages {
   navLabel: string
   navHome: string
   navResume: string
+  navContact: string
   resumeTitle: string
+  contactTitle: string
+  contactIntro: string
+  contactLinksUnavailable: string
+  contactName: string
+  contactEmail: string
+  contactMessage: string
+  contactSend: string
+  contactFieldErrors: { name: string; email: string; message: string }
+  /** Label of the field only bots fill. */
+  contactTrap: string
+  contactSending: string
+  contactSent: (email: string) => string
+  contactThrottled: string
+  contactUnavailable: string
   expertiseTitle: string
   professionalExperienceTitle: string
   sideProjectsTitle: string
@@ -22,6 +37,7 @@ interface Messages {
   hobbiesTitle: string
   commitmentKinds: Record<CommitmentKind, string>
   websiteLink: string
+  contactLinkKinds: Record<'linkedin' | 'github', string>
   scientificCommunicationKinds: Record<ScientificCommunicationKind, string>
   seeOnline: string
   /** Said after the name of a link that opens in a new tab. */
@@ -58,7 +74,25 @@ export const messages: Localized<Messages> = {
     navLabel: 'Main',
     navHome: 'Home',
     navResume: 'Resume',
+    navContact: 'Contact',
     resumeTitle: 'Resume',
+    contactTitle: 'Contact',
+    contactIntro: 'Write to me, or find me elsewhere.',
+    contactLinksUnavailable: 'Links couldn’t be loaded.',
+    contactName: 'Name',
+    contactEmail: 'Email',
+    contactMessage: 'Message',
+    contactSend: 'Send message',
+    contactFieldErrors: {
+      name: 'Enter your name (100 characters at most).',
+      email: 'Enter a valid email address.',
+      message: 'Write between 10 and 5000 characters.',
+    },
+    contactTrap: 'Website',
+    contactSending: 'Sending…',
+    contactSent: (email) => `Message sent. I’ll reply to ${email}.`,
+    contactThrottled: 'Too many messages; try again in an hour.',
+    contactUnavailable: 'Messages can’t be sent right now; try again later.',
     expertiseTitle: 'Expertise',
     professionalExperienceTitle: 'Professional experience',
     sideProjectsTitle: 'Personal projects',
@@ -73,6 +107,7 @@ export const messages: Localized<Messages> = {
       other_event: 'Event',
     },
     websiteLink: 'Website',
+    contactLinkKinds: { linkedin: 'LinkedIn', github: 'GitHub' },
     scientificCommunicationKinds: {
       talk: 'Talk',
       poster: 'Poster',
@@ -115,7 +150,26 @@ export const messages: Localized<Messages> = {
     navLabel: 'Principale',
     navHome: 'Accueil',
     navResume: 'CV',
+    navContact: 'Contact',
     resumeTitle: 'CV',
+    contactTitle: 'Contact',
+    contactIntro: 'Écrivez-moi, ou retrouvez-moi ailleurs.',
+    contactLinksUnavailable: 'Les liens n’ont pas pu être chargés.',
+    contactName: 'Nom',
+    contactEmail: 'E-mail',
+    contactMessage: 'Message',
+    contactSend: 'Envoyer le message',
+    contactFieldErrors: {
+      name: 'Indiquez votre nom (100 caractères au plus).',
+      email: 'Indiquez une adresse e-mail valide.',
+      message: 'Écrivez entre 10 et 5000 caractères.',
+    },
+    contactTrap: 'Site web',
+    contactSending: 'Envoi…',
+    contactSent: (email) => `Message envoyé. Je vous répondrai à ${email}.`,
+    contactThrottled: 'Trop de messages ; réessayez dans une heure.',
+    contactUnavailable:
+      'Les messages ne peuvent pas être envoyés pour le moment ; réessayez plus tard.',
     expertiseTitle: 'Expertise',
     professionalExperienceTitle: 'Expérience professionnelle',
     sideProjectsTitle: 'Projets personnels',
@@ -130,6 +184,7 @@ export const messages: Localized<Messages> = {
       other_event: 'Événement',
     },
     websiteLink: 'Site web',
+    contactLinkKinds: { linkedin: 'LinkedIn', github: 'GitHub' },
     scientificCommunicationKinds: {
       talk: 'Exposé',
       poster: 'Poster',

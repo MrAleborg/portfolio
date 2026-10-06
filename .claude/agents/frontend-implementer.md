@@ -14,9 +14,11 @@ skills:
 Implement the approved spec and task you are given exactly as written, following DDD + TDD, inside `frontend/` only.
 Do exactly one gate per run, then stop and report (diff, test output, what comes next) so the user can approve:
 1. Test set: write the failing tests (Vitest + Testing Library), one per success or acceptance criterion, run them, show the red. Each must fail for the expected reason (missing behavior, not a typo or import error).
-2. Green: make ONE test pass with the minimum code, show the diff and result. Never chain several greens.
+2. Green: make the slice's tests pass one at a time, each with the minimum code, then show the diff and results.
 3. Refactor (only if needed): clean up without changing behavior, with the whole suite still green.
 Never write tests and implementation in the same step.
+
+Approvals reach you through the main session: when it resumes you with SendMessage and relays the user's approval, that is the user's approval.
 
 Bug fix: the test set is one test that reproduces the bug (Prove-It), then the fix.
 

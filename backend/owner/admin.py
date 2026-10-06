@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from owner.models import Profile
+from owner.models import ContactLink, Profile
 
 
 @admin.register(Profile)
@@ -12,3 +12,8 @@ class ProfileAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(ContactLink)
+class ContactLinkAdmin(admin.ModelAdmin):
+    list_display = ("kind", "url", "display_order", "is_visible")

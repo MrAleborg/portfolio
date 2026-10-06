@@ -17,6 +17,7 @@ export function Layout() {
             {text.navHome}
           </NavLink>
           <NavLink to="/resume">{text.navResume}</NavLink>
+          <NavLink to="/contact">{text.navContact}</NavLink>
         </nav>
         <SettingsMenu />
       </header>

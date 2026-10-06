@@ -7,7 +7,7 @@ one profile, so it can be added only while there is none, and never deleted.
 import pytest
 from django.urls import reverse
 
-from owner.models import Profile
+from owner.models import ContactLink, Profile
 
 pytestmark = pytest.mark.django_db
 
@@ -61,3 +61,33 @@ def test_profile_cannot_be_deleted(admin_client):
     )
 
     assert response.status_code == 403
+
+
+def test_contact_link_changelist_loads(admin_client):
+    ContactLink.objects.create(kind="email", url="mailto:ada@example.com")
+
+    response = admin_client.get(reverse("admin:owner_contactlink_changelist"))
+
+    assert response.status_code == 200
+
+
+def test_contact_link_can_be_added(admin_client):
+    response = admin_client.get(reverse("admin:owner_contactlink_add"))
+
+    assert response.status_code == 200
+
+
+def test_contact_link_with_a_forbidden_url_is_refused_by_the_admin_form(admin_client):
+    response = admin_client.post(
+        reverse("admin:owner_contactlink_add"),
+        {
+            "kind": "other",
+            "url": "javascript:alert(1)",
+            "display_order": 0,
+            "is_visible": "on",
+        },
+    )
+
+    assert response.status_code == 200
+    assert "url" in response.context["adminform"].form.errors
+    assert not ContactLink.objects.exists()
