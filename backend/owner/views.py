@@ -68,8 +68,9 @@ class ContactMessageView(APIView):
             # A bot filled the honeypot: pretend it worked, send nothing.
             return Response(status=204)
         email = EmailMessage(
-            # Fixed subject: nothing the visitor typed ends up in a header.
-            subject="New message from the portfolio",
+            # name and subject reach a header: the serializer refuses control
+            # characters in both, so no extra header can be injected.
+            subject=f"[CONTACT] {message['name']} : {message['subject']}",
             body=(
                 f"Name: {message['name']}\n"
                 f"Email: {message['email']}\n\n"

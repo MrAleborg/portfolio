@@ -171,7 +171,7 @@ describe('ContactPage', () => {
   })
 
   describe('form', () => {
-    it('asks the browser to check the name, email and message', () => {
+    it('asks the browser to check the name, email, subject and message', () => {
       renderPage(fakeContactRepository())
 
       const name = screen.getByRole('textbox', { name: 'Name' })
@@ -180,6 +180,10 @@ describe('ContactPage', () => {
       const email = screen.getByRole('textbox', { name: 'Email' })
       expect(email).toBeRequired()
       expect(email).toHaveAttribute('type', 'email')
+      const subject = screen.getByRole('textbox', { name: 'Subject' })
+      expect(subject).toBeRequired()
+      expect(subject).toHaveAttribute('minlength', '3')
+      expect(subject).toHaveAttribute('maxlength', '150')
       const message = screen.getByRole('textbox', { name: 'Message' })
       expect(message).toBeRequired()
       expect(message).toHaveAttribute('minlength', '10')
@@ -204,7 +208,7 @@ describe('ContactPage', () => {
       expect(trap).toHaveAttribute('tabindex', '-1')
       expect(trap).toHaveAttribute('autocomplete', 'off')
       expect(trap.closest('.visually-hidden')).not.toBeNull()
-      expect(container.querySelectorAll('input')).toHaveLength(3)
+      expect(container.querySelectorAll('input')).toHaveLength(4)
     })
 
     it('has labelled fields and a send button in English', () => {
@@ -212,6 +216,7 @@ describe('ContactPage', () => {
 
       expect(screen.getByRole('textbox', { name: 'Name' })).toBeInTheDocument()
       expect(screen.getByRole('textbox', { name: 'Email' })).toBeInTheDocument()
+      expect(screen.getByRole('textbox', { name: 'Subject' })).toBeInTheDocument()
       expect(screen.getByRole('textbox', { name: 'Message' })).toBeInTheDocument()
       expect(screen.getByRole('button', { name: 'Send message' })).toBeInTheDocument()
     })
@@ -221,6 +226,7 @@ describe('ContactPage', () => {
 
       expect(screen.getByRole('textbox', { name: 'Nom' })).toBeInTheDocument()
       expect(screen.getByRole('textbox', { name: 'E-mail' })).toBeInTheDocument()
+      expect(screen.getByRole('textbox', { name: 'Objet' })).toBeInTheDocument()
       expect(screen.getByRole('textbox', { name: 'Message' })).toBeInTheDocument()
       expect(screen.getByRole('button', { name: 'Envoyer le message' })).toBeInTheDocument()
     })
@@ -232,11 +238,12 @@ describe('ContactPage', () => {
       await user.clear(screen.getByRole('textbox', { name: /^(Name|Nom)$/ }))
       await user.type(screen.getByRole('textbox', { name: /^(Name|Nom)$/ }), 'Grace')
       await user.type(screen.getByRole('textbox', { name: /^(Email|E-mail)$/ }), 'grace@example.com')
+      await user.type(screen.getByRole('textbox', { name: /^(Subject|Objet)$/ }), 'Say hello')
       await user.type(screen.getByRole('textbox', { name: 'Message' }), 'Hello, I would like to talk.')
       await user.click(screen.getByRole('button', { name: button }))
     }
 
-    it('sends the name, email and message that were typed', async () => {
+    it('sends the name, email, subject and message that were typed', async () => {
       const user = userEvent.setup()
       const repository = fakeContactRepository()
       renderPage(repository)
@@ -246,6 +253,7 @@ describe('ContactPage', () => {
       expect(repository.send).toHaveBeenCalledWith({
         name: 'Grace',
         email: 'grace@example.com',
+        subject: 'Say hello',
         message: 'Hello, I would like to talk.',
         website: '',
       })
@@ -310,12 +318,14 @@ describe('ContactPage', () => {
       const fieldErrors = {
         name: ['This field may not be blank.'],
         email: ['The server’s own email wording.', 'A second email problem.'],
+        subject: ['Ensure this field has at least 3 characters.'],
         message: ['Ensure this field has at least 10 characters.'],
       }
 
       it.each([
         ['Name', 'Enter your name (100 characters at most).'],
         ['Email', 'Enter a valid email address.'],
+        ['Subject', 'Enter a subject of 3 to 150 characters.'],
         ['Message', 'Write between 10 and 5000 characters.'],
       ])('shows our message for the %s field under it', async (field, error) => {
         const user = userEvent.setup()
@@ -331,6 +341,7 @@ describe('ContactPage', () => {
       it.each([
         ['Nom', 'Indiquez votre nom (100 caractères au plus).'],
         ['E-mail', 'Indiquez une adresse e-mail valide.'],
+        ['Objet', 'Saisissez un objet de 3 à 150 caractères.'],
         ['Message', 'Écrivez entre 10 et 5000 caractères.'],
       ])('shows our message for the %s field in French', async (field, error) => {
         const user = userEvent.setup()
@@ -364,10 +375,28 @@ describe('ContactPage', () => {
           'true',
         )
         expect(screen.getByRole('textbox', { name: 'Name' })).not.toHaveAttribute('aria-invalid', 'true')
+        expect(screen.getByRole('textbox', { name: 'Subject' })).not.toHaveAttribute(
+          'aria-invalid',
+          'true',
+        )
         expect(screen.getByRole('textbox', { name: 'Message' })).not.toHaveAttribute(
           'aria-invalid',
           'true',
         )
+      })
+
+      it('shows a subject-only refusal under the subject field, not as the generic alert', async () => {
+        const user = userEvent.setup()
+        renderPage(
+          refusingContactRepository('invalid', { subject: ['Ensure this field has at least 3 characters.'] }),
+        )
+
+        await fillAndSend(user)
+
+        const subject = await screen.findByRole('textbox', { name: 'Subject' })
+        expect(subject).toHaveAttribute('aria-invalid', 'true')
+        expect(subject).toHaveAccessibleDescription('Enter a subject of 3 to 150 characters.')
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument()
       })
 
       it('keeps what was typed', async () => {
@@ -379,6 +408,7 @@ describe('ContactPage', () => {
         await screen.findByText('Enter a valid email address.')
         expect(screen.getByRole('textbox', { name: 'Name' })).toHaveValue('Grace')
         expect(screen.getByRole('textbox', { name: 'Email' })).toHaveValue('grace@example.com')
+        expect(screen.getByRole('textbox', { name: 'Subject' })).toHaveValue('Say hello')
         expect(screen.getByRole('textbox', { name: 'Message' })).toHaveValue(
           'Hello, I would like to talk.',
         )

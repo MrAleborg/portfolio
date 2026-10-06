@@ -1,9 +1,10 @@
 """Tests for the contact message endpoint.
 
 Route: ``POST /api/v1/profile/contact/``, open to everyone. A visitor sends
-``{"name", "email", "message", "website"}``; ``website`` is a honeypot that
+``{"name", "email", "subject", "message", "website"}``; ``website`` is a honeypot that
 real visitors leave empty. A valid message is emailed once, through the default
-mailer, from DEFAULT_FROM_EMAIL to CONTACT_EMAIL, with the visitor as Reply-To.
+mailer, from DEFAULT_FROM_EMAIL to CONTACT_EMAIL, with the visitor as Reply-To
+and the subject ``[CONTACT] <name> : <subject>``.
 Nothing is stored. The answer is ``204`` with no body. Posting is throttled to
 5 per hour. The mailbox is the locmem outbox (``django.core.mail.outbox``).
 """
@@ -39,6 +40,7 @@ def valid_message(**overrides):
     fields = {
         "name": "Grace Hopper",
         "email": "grace@example.com",
+        "subject": "Job offer",
         "message": "Hello, I would like to talk about a project.",
         "website": "",
     }
@@ -62,6 +64,7 @@ def test_a_valid_message_is_emailed_to_the_owner_and_answered_with_no_content(
     assert sent.from_email == SENDER_EMAIL
     assert sent.to == [OWNER_EMAIL]
     assert sent.reply_to == ["grace@example.com"]
+    assert sent.subject == "[CONTACT] Grace Hopper : Job offer"
     assert "Grace Hopper" in sent.body
     assert "grace@example.com" in sent.body
     assert "Hello, I would like to talk about a project." in sent.body
@@ -89,10 +92,18 @@ def test_a_filled_honeypot_looks_like_a_success_but_sends_nothing(api_client):
     "overrides",
     [
         {"name": "n" * 100},
+        {"subject": "s" * 3},
+        {"subject": "s" * 150},
         {"message": "m" * 10},
         {"message": "m" * 5000},
     ],
-    ids=["name of 100 characters", "message of 10", "message of 5000"],
+    ids=[
+        "name of 100 characters",
+        "subject of 3",
+        "subject of 150",
+        "message of 10",
+        "message of 5000",
+    ],
 )
 def test_limits_are_inclusive(api_client, overrides):
     response = post(api_client, **overrides)
@@ -101,17 +112,30 @@ def test_limits_are_inclusive(api_client, overrides):
     assert len(mail.outbox) == 1
 
 
-def test_a_name_with_a_newline_is_still_sent_and_never_reaches_the_subject(
-    api_client,
+@pytest.mark.parametrize(
+    "value",
+    [
+        "Hi\nthere",
+        "Hi\r\nBcc: x@example.com",
+        "Hi\tthere",
+        "Hi\x00",
+        "Hi\x7f",
+        "Hi\x85there",
+        "Hi\u2028there",
+        "Hi\u2029there",
+    ],
+    ids=["LF", "CRLF", "tab", "NUL", "DEL", "NEL", "LS", "PS"],
+)
+@pytest.mark.parametrize("field", ["name", "subject"])
+def test_a_control_character_in_name_or_subject_is_a_bad_request_and_sends_nothing(
+    api_client, field, value
 ):
-    """The subject is fixed text: visitor input cannot inject a header."""
-    response = post(api_client, name="Grace\nBcc: spam@example.com")
+    """Both go into the email subject header: no control character may pass."""
+    response = post(api_client, **{field: value})
 
-    assert response.status_code == 204
-    assert len(mail.outbox) == 1
-    sent = mail.outbox[0]
-    assert "Grace" not in sent.subject
-    assert "\n" not in sent.subject
+    assert response.status_code == 400
+    assert set(response.json()) == {field}
+    assert mail.outbox == []
 
 
 @pytest.mark.parametrize(
@@ -119,10 +143,23 @@ def test_a_name_with_a_newline_is_still_sent_and_never_reaches_the_subject(
     [
         ("name", "n" * 101),
         ("email", "not-an-email"),
+        ("subject", ""),
+        ("subject", "   "),
+        ("subject", "s" * 2),
+        ("subject", "s" * 151),
         ("message", "m" * 9),
         ("message", "m" * 5001),
     ],
-    ids=["name over 100", "bad email", "message under 10", "message over 5000"],
+    ids=[
+        "name over 100",
+        "bad email",
+        "blank subject",
+        "subject of spaces",
+        "subject under 3",
+        "subject over 150",
+        "message under 10",
+        "message over 5000",
+    ],
 )
 def test_an_invalid_field_is_a_bad_request_and_sends_nothing(api_client, field, value):
     response = post(api_client, **{field: value})
@@ -132,7 +169,7 @@ def test_an_invalid_field_is_a_bad_request_and_sends_nothing(api_client, field, 
     assert mail.outbox == []
 
 
-@pytest.mark.parametrize("field", ["name", "email", "message"])
+@pytest.mark.parametrize("field", ["name", "email", "subject", "message"])
 def test_a_missing_field_is_a_bad_request_and_sends_nothing(api_client, field):
     fields = valid_message()
     del fields[field]
