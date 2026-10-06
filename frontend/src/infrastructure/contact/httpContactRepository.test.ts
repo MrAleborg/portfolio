@@ -2,7 +2,12 @@ import { ContactSendError } from '@/domain/contact/ContactSendError'
 import { createHttpContactRepository } from '@/infrastructure/contact/httpContactRepository'
 import { respondWith } from '@/test/respondWith'
 
-const message = { name: 'Grace', email: 'grace@example.com', message: 'Hello, I would like to talk.' }
+const message = {
+  name: 'Grace',
+  email: 'grace@example.com',
+  subject: 'Say hello',
+  message: 'Hello, I would like to talk.',
+}
 
 function respondWithNoContent() {
   return vi.fn<typeof fetch>(() => Promise.resolve(new Response(null, { status: 204 })))
@@ -85,6 +90,7 @@ describe('httpContactRepository', () => {
         'https://api.example.com',
         respondWith(400, {
           email: ['Enter a valid email address.'],
+          subject: ['Ensure this field has at least 3 characters.'],
           message: ['Ensure this field has at least 10 characters.'],
         }),
       )
@@ -96,6 +102,7 @@ describe('httpContactRepository', () => {
         reason: 'invalid',
         fieldErrors: {
           email: ['Enter a valid email address.'],
+          subject: ['Ensure this field has at least 3 characters.'],
           message: ['Ensure this field has at least 10 characters.'],
         },
       })

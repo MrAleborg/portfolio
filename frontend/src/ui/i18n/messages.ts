@@ -18,9 +18,10 @@ interface Messages {
   contactLinksUnavailable: string
   contactName: string
   contactEmail: string
+  contactSubject: string
   contactMessage: string
   contactSend: string
-  contactFieldErrors: { name: string; email: string; message: string }
+  contactFieldErrors: { name: string; email: string; subject: string; message: string }
   /** Label of the field only bots fill. */
   contactTrap: string
   contactSending: string
@@ -81,11 +82,13 @@ export const messages: Localized<Messages> = {
     contactLinksUnavailable: 'Links couldn’t be loaded.',
     contactName: 'Name',
     contactEmail: 'Email',
+    contactSubject: 'Subject',
     contactMessage: 'Message',
     contactSend: 'Send message',
     contactFieldErrors: {
       name: 'Enter your name (100 characters at most).',
       email: 'Enter a valid email address.',
+      subject: 'Enter a subject of 3 to 150 characters.',
       message: 'Write between 10 and 5000 characters.',
     },
     contactTrap: 'Website',
@@ -157,11 +160,13 @@ export const messages: Localized<Messages> = {
     contactLinksUnavailable: 'Les liens n’ont pas pu être chargés.',
     contactName: 'Nom',
     contactEmail: 'E-mail',
+    contactSubject: 'Objet',
     contactMessage: 'Message',
     contactSend: 'Envoyer le message',
     contactFieldErrors: {
       name: 'Indiquez votre nom (100 caractères au plus).',
       email: 'Indiquez une adresse e-mail valide.',
+      subject: 'Saisissez un objet de 3 à 150 caractères.',
       message: 'Écrivez entre 10 et 5000 caractères.',
     },
     contactTrap: 'Site web',

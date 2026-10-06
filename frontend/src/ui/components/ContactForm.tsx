@@ -19,6 +19,7 @@ export function ContactForm({ repository }: ContactFormProps) {
   const id = useId()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [subject, setSubject] = useState('')
   const [message, setMessage] = useState('')
   const [website, setWebsite] = useState('')
   const [sending, setSending] = useState(false)
@@ -37,13 +38,13 @@ export function ContactForm({ repository }: ContactFormProps) {
     setSending(true)
     setFieldErrors({})
     setFailure(undefined)
-    repository.send({ name, email, message, website }).then(
+    repository.send({ name, email, subject, message, website }).then(
       () => setSentTo(email),
       (error: unknown) => {
         setSending(false)
         const refusal = error instanceof ContactSendError ? error : undefined
         const shown = refusal?.fieldErrors
-        if (refusal?.reason === 'invalid' && (shown?.name || shown?.email || shown?.message)) {
+        if (refusal?.reason === 'invalid' && (shown?.name || shown?.email || shown?.subject || shown?.message)) {
           setFieldErrors(shown)
         } else {
           setFailure(refusal?.reason === 'throttled' ? 'throttled' : 'unavailable')
@@ -98,6 +99,27 @@ export function ContactForm({ repository }: ContactFormProps) {
         {fieldErrors.email && (
           <p id={`${id}-email-error`} className="contact-form__error">
             {text.contactFieldErrors.email}
+          </p>
+        )}
+      </div>
+      <div className="contact-form__field">
+        <label htmlFor={`${id}-subject`}>{text.contactSubject}</label>
+        <input
+          id={`${id}-subject`}
+          name="subject"
+          aria-invalid={fieldErrors.subject ? true : undefined}
+          aria-describedby={fieldErrors.subject ? `${id}-subject-error` : undefined}
+          type="text"
+          required
+          minLength={3}
+          maxLength={150}
+          autoComplete="off"
+          value={subject}
+          onChange={(event) => setSubject(event.target.value)}
+        />
+        {fieldErrors.subject && (
+          <p id={`${id}-subject-error`} className="contact-form__error">
+            {text.contactFieldErrors.subject}
           </p>
         )}
       </div>
