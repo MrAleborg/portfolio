@@ -43,3 +43,6 @@ if (!('ResizeObserver' in globalThis)) {
     },
   )
 }
+
+// jsdom does not implement scrollTo (it only logs "Not implemented"): nothing scrolls in tests.
+vi.stubGlobal('scrollTo', () => {})
