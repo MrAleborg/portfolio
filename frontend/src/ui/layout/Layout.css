@@ -34,6 +34,7 @@
   line-height: 1.2;
   min-width: 0;
   overflow-wrap: break-word;
+  text-wrap: balance;
   color: var(--text-strong);
   text-decoration: none;
 }

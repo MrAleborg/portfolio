@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -23,21 +22,28 @@ const contrast = (a: Rgb, b: Rgb): number => {
   return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05)
 }
 
-// color-mix(in srgb, foreground 12%, background)
-const tint = (foreground: Rgb, background: Rgb): Rgb => [
-  foreground[0] * 0.12 + background[0] * 0.88,
-  foreground[1] * 0.12 + background[1] * 0.88,
-  foreground[2] * 0.12 + background[2] * 0.88,
+// color-mix(in srgb, first <share>%, second)
+const mix = (first: Rgb, share: number, second: Rgb): Rgb => [
+  first[0] * share + second[0] * (1 - share),
+  first[1] * share + second[1] * (1 - share),
+  first[2] * share + second[2] * (1 - share),
 ]
 
-const css = readFileSync(join(import.meta.dirname, 'index.css'), 'utf8')
+// index.css is the single source of truth, read without its comments.
+const css = readFileSync(join(import.meta.dirname, 'index.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
 
-// Reads `--name: light-dark(#light, #dark)` from index.css, the single source of truth.
+const HEX = '#[0-9a-fA-F]{6}'
+
+// Reads `--name: light-dark(#light, #dark)`, or an alias `--name: var(--other)` of such a token.
 const token = (name: string, theme: Theme): Rgb => {
-  const pattern = new RegExp(
-    `--${name}:\\s*light-dark\\(\\s*(#[0-9a-fA-F]{6})\\s*,\\s*(#[0-9a-fA-F]{6})\\s*\\)`,
-  )
-  const match = pattern.exec(css)
+  const definitions = [...css.matchAll(new RegExp(`--${name}:\\s*([^;]+);`, 'g'))]
+  if (definitions.length !== 1) {
+    throw new Error(`--${name} is defined ${definitions.length} times in index.css, not once`)
+  }
+  const value = (definitions[0]?.[1] ?? '').trim()
+  const alias = /^var\(--([\w-]+)\)$/.exec(value)
+  if (alias) return token(alias[1] as string, theme)
+  const match = new RegExp(`^light-dark\\(\\s*(${HEX})\\s*,\\s*(${HEX})\\s*\\)$`).exec(value)
   if (!match) throw new Error(`--${name} is not a light-dark(#hex, #hex) token in index.css`)
   return toRgb(match[theme === 'light' ? 1 : 2] as string)
 }
@@ -47,6 +53,14 @@ const MINIMUM = 4.5
 
 const textTokens = ['text', 'text-strong', 'accent', 'subtitle', 'danger']
 const tagTokens = ['tag-skill', 'tag-tool', 'tag-methodology']
+
+// TagList.css: the tint of a tag is its colour at 12% over --surface.
+const tagTint = (name: string, theme: Theme): Rgb =>
+  mix(token(name, theme), 0.12, token('surface', theme))
+
+// ContactForm.css and HomePage.css: a filled button darkens to 85% accent over --text-strong on hover.
+const buttonHover = (theme: Theme): Rgb =>
+  mix(token('accent', theme), 0.85, token('text-strong', theme))
 
 describe('contrast function', () => {
   it('measures black on white at 21:1', () => {
@@ -59,11 +73,21 @@ describe.each<Theme>(['light', 'dark'])('%s theme contrast', (theme) => {
     it.each(textTokens)(`--%s reaches ${MINIMUM}:1`, (name) => {
       expect(contrast(token(name, theme), token(ground, theme))).toBeGreaterThanOrEqual(MINIMUM)
     })
+  })
 
-    it.each(tagTokens)(`--%s reaches ${MINIMUM}:1 on its 12% tint`, (name) => {
-      const colour = token(name, theme)
-      const background = tint(colour, token(ground, theme))
-      expect(contrast(colour, background)).toBeGreaterThanOrEqual(MINIMUM)
-    })
+  it.each(tagTokens)(`--%s reaches ${MINIMUM}:1 on its 12% tint over --surface`, (name) => {
+    expect(contrast(token(name, theme), tagTint(name, theme))).toBeGreaterThanOrEqual(MINIMUM)
+  })
+
+  it.each(tagTokens)(`a note in --text reaches ${MINIMUM}:1 on the --%s tint`, (name) => {
+    expect(contrast(token('text', theme), tagTint(name, theme))).toBeGreaterThanOrEqual(MINIMUM)
+  })
+
+  it(`--bg as text on a filled --accent button reaches ${MINIMUM}:1`, () => {
+    expect(contrast(token('bg', theme), token('accent', theme))).toBeGreaterThanOrEqual(MINIMUM)
+  })
+
+  it(`--bg as text on the hovered filled button reaches ${MINIMUM}:1`, () => {
+    expect(contrast(token('bg', theme), buttonHover(theme))).toBeGreaterThanOrEqual(MINIMUM)
   })
 })
