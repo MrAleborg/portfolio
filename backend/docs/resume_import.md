@@ -59,7 +59,7 @@ they keep their stored value, or take their default on creation.
 
 | Key | Records | Fields |
 |---|---|---|
-| `profile` | One object, no `id` | **`full_name`**, **`headline`** (text), `bio` (optional text) |
+| `profile` | One object, no `id` | **`full_name`**, **`headline`** (text), `bio` (optional text), `desired_role` (optional text) |
 | `education` | List | **`id`**, **`institution`**, **`degree`** (text), `field_of_study`, `grade`, `location`, `description` (optional texts), **`start_date`**, `end_date`; internal: `display_order`, `is_visible` |
 | `professional_experiences` | List | **`id`**, **`company`**, **`position`** (text), `employment_type` (`full_time`, the default, `part_time`, `contract`, `freelance`, `internship`, `apprenticeship`), `company_url`, `location`, `description` (optional texts), **`start_date`**, `end_date`; internal: `display_order`, `is_visible`. `projects` is ignored. |
 | `projects` | List | **`id`**, **`title`** (text), `description` (optional text), **`start_date`**, `end_date`, `experience` (a reference, or `null` for a side project), `achievements` and `missions` (lists of texts, in display order), `tags` (references); internal: `display_order`, `is_visible` |

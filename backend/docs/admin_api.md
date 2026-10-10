@@ -356,13 +356,14 @@ is the same as for the other routes: staff token, else `401` or `403`.
   "full_name": "Ada Lovelace",
   "headline": {"en": "Analyst", "fr": "Analyste"},
   "bio": {"en": "I write programs.", "fr": "J’écris des programmes."},
+  "desired_role": {"en": "Software engineer", "fr": "Ingénieure logiciel"},
   "created_at": "2026-09-30T10:00:00.000000Z",
   "updated_at": "2026-09-30T10:00:00.000000Z"
 }
 ```
 
-- `full_name` and `headline` are required; `bio` is optional (empty in every
-  language when left out on creation).
+- `full_name` and `headline` are required; `bio` and `desired_role` are
+  optional (empty in every language when left out on creation).
 - The [writing rules](#writing-rules) above apply: translated texts in every
   language, per-language errors, read-only timestamps.
 

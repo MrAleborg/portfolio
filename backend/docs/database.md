@@ -187,6 +187,8 @@ erDiagram
         varchar headline_fr
         text bio_en
         text bio_fr
+        varchar desired_role_en
+        varchar desired_role_fr
         datetime created_at
         datetime updated_at
     }
@@ -265,7 +267,7 @@ stored in both languages, as one column per language: `title_en` and
 - **Every language is filled in.** A required text (`degree`, `position`,
   `title`, `name`, `role`) is required in each language. An optional text
   (`field_of_study`, `grade`, `location`, `description`, a tag's `note`) is either filled in
-  every language or empty in all of them (the profile's `bio` too): a check
+  every language or empty in all of them (the profile's `bio` and `desired_role` too): a check
   constraint per field
   (`translated_together()` in [`models.py`](../experience/models.py)) refuses
   anything else, so the rule holds for every writer.

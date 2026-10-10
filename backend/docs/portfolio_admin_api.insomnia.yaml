@@ -4089,7 +4089,7 @@ collection:
         const body = insomnia.response.json();
         insomnia.test("Returns every field, without id", () => {
           if (insomnia.response.code === 200) {
-            insomnia.expect(body).to.have.all.keys('full_name', 'headline', 'bio', 'created_at', 'updated_at');
+            insomnia.expect(body).to.have.all.keys('full_name', 'headline', 'bio', 'desired_role', 'created_at', 'updated_at');
           }
         });
   - url: '{{ _.base_url }}/api/v1/admin/profile/'
@@ -4108,7 +4108,8 @@ collection:
         {
           "full_name": "Demo Owner",
           "headline": {"en": "Software engineer", "fr": "Ingénieur logiciel"},
-          "bio": {"en": "Created from Insomnia.", "fr": "Créé depuis Insomnia."}
+          "bio": {"en": "Created from Insomnia.", "fr": "Créé depuis Insomnia."},
+          "desired_role": {"en": "Tech lead", "fr": "Tech lead"}
         }
     headers:
     - name: Content-Type
@@ -4135,9 +4136,10 @@ collection:
           insomnia.expect(body.full_name).to.eql("Demo Owner");
           insomnia.expect(body.headline).to.eql({"en": "Software engineer", "fr": "Ingénieur logiciel"});
           insomnia.expect(body.bio).to.eql({"en": "Created from Insomnia.", "fr": "Créé depuis Insomnia."});
+          insomnia.expect(body.desired_role).to.eql({"en": "Tech lead", "fr": "Tech lead"});
         });
         insomnia.test("Returns the timestamps, without id", () => {
-          insomnia.expect(body).to.have.all.keys('full_name', 'headline', 'bio', 'created_at', 'updated_at');
+          insomnia.expect(body).to.have.all.keys('full_name', 'headline', 'bio', 'desired_role', 'created_at', 'updated_at');
         });
   - url: '{{ _.base_url }}/api/v1/admin/profile/'
     name: Update the bio only → 200
@@ -4276,7 +4278,7 @@ collection:
         });
         const body = insomnia.response.json();
         insomnia.test("Returns the public fields only", () => {
-          insomnia.expect(body).to.have.all.keys("full_name", "headline", "bio");
+          insomnia.expect(body).to.have.all.keys("full_name", "headline", "bio", "desired_role");
         });
         insomnia.test("Shows the latest bio", () => {
           insomnia.expect(body.bio).to.eql({"en": "Updated from Insomnia.", "fr": "Modifié depuis Insomnia."});
