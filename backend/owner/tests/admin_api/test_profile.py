@@ -64,6 +64,8 @@ def test_get_returns_every_field(staff_api_client):
         headline_fr="Analyste",
         bio_en="I write programs.",
         bio_fr="J’écris des programmes.",
+        desired_role_en="Software engineer",
+        desired_role_fr="Ingénieure logiciel",
     )
 
     response = staff_api_client.get(URL)
@@ -73,6 +75,7 @@ def test_get_returns_every_field(staff_api_client):
         "full_name": "Ada Lovelace",
         "headline": {"en": "Analyst", "fr": "Analyste"},
         "bio": {"en": "I write programs.", "fr": "J’écris des programmes."},
+        "desired_role": {"en": "Software engineer", "fr": "Ingénieure logiciel"},
         **timestamps(profile),
     }
 
@@ -84,7 +87,7 @@ def test_get_is_not_found_before_the_profile_is_created(staff_api_client):
 
 
 def test_put_creates_the_profile_when_there_is_none(staff_api_client):
-    """The bio is optional and defaults to empty in every language."""
+    """The bio and the desired role are optional: empty in every language."""
     response = staff_api_client.put(
         URL,
         {
@@ -100,6 +103,7 @@ def test_put_creates_the_profile_when_there_is_none(staff_api_client):
         "full_name": "Ada Lovelace",
         "headline": {"en": "Analyst", "fr": "Analyste"},
         "bio": {"en": "", "fr": ""},
+        "desired_role": {"en": "", "fr": ""},
         **timestamps(profile),
     }
 
@@ -114,6 +118,7 @@ def test_put_replaces_the_existing_profile(staff_api_client):
             "full_name": "Grace Hopper",
             "headline": {"en": "Admiral", "fr": "Amirale"},
             "bio": {"en": "I wrote compilers.", "fr": "J’ai écrit des compilateurs."},
+            "desired_role": {"en": "Compiler engineer", "fr": "Ingénieure compilateur"},
         },
         format="json",
     )
@@ -125,6 +130,27 @@ def test_put_replaces_the_existing_profile(staff_api_client):
     assert profile.headline_fr == "Amirale"
     assert profile.bio_en == "I wrote compilers."
     assert profile.bio_fr == "J’ai écrit des compilateurs."
+    assert profile.desired_role_en == "Compiler engineer"
+    assert profile.desired_role_fr == "Ingénieure compilateur"
+
+
+def test_put_without_desired_role_empties_it(staff_api_client):
+    """PUT replaces the profile: an omitted optional field goes back to empty."""
+    make_profile(desired_role_en="Software engineer", desired_role_fr="Ingénieure")
+
+    response = staff_api_client.put(
+        URL,
+        {
+            "full_name": "Ada Lovelace",
+            "headline": {"en": "Analyst", "fr": "Analyste"},
+        },
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert response.json()["desired_role"] == {"en": "", "fr": ""}
+    profile = Profile.objects.get()
+    assert (profile.desired_role_en, profile.desired_role_fr) == ("", "")
 
 
 def test_put_without_required_fields_is_a_bad_request(staff_api_client):
@@ -166,6 +192,28 @@ def test_put_refuses_a_bio_filled_in_one_language(staff_api_client):
     }
 
 
+@pytest.mark.parametrize("method", ["put", "patch"])
+def test_desired_role_filled_in_one_language_is_refused(staff_api_client, method):
+    """Like the bio, the desired role is filled in every language or none."""
+    make_profile()
+
+    response = getattr(staff_api_client, method)(
+        URL,
+        {
+            "full_name": "Ada Lovelace",
+            "headline": {"en": "Analyst", "fr": "Analyste"},
+            "desired_role": {"en": "Software engineer", "fr": ""},
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "desired_role": {"fr": ["Fill in every language, or leave them all empty."]}
+    }
+    assert Profile.objects.get().desired_role_en == ""
+
+
 def test_timestamps_are_ignored_on_write(staff_api_client):
     """created_at cannot be forced by the client."""
     staff_api_client.put(
@@ -197,6 +245,26 @@ def test_patch_changes_only_sent_fields(staff_api_client):
     assert profile.bio_fr == "J’écris des programmes."
     assert profile.full_name == "Ada Lovelace"
     assert profile.headline_en == "Analyst"
+
+
+def test_patch_changes_the_desired_role_alone(staff_api_client):
+    make_profile(bio_en="I write programs.", bio_fr="J’écris des programmes.")
+
+    response = staff_api_client.patch(
+        URL,
+        {"desired_role": {"en": "Software engineer", "fr": "Ingénieure logiciel"}},
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert response.json()["desired_role"] == {
+        "en": "Software engineer",
+        "fr": "Ingénieure logiciel",
+    }
+    profile = Profile.objects.get()
+    assert profile.desired_role_en == "Software engineer"
+    assert profile.desired_role_fr == "Ingénieure logiciel"
+    assert profile.bio_en == "I write programs."
 
 
 def test_patch_is_not_found_before_the_profile_is_created(staff_api_client):

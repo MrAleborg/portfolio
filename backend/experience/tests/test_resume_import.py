@@ -232,6 +232,7 @@ def profile(full_name="Ada Lovelace"):
         "full_name": full_name,
         "headline": text("Analyst", "Analyste"),
         "bio": text("I write programs.", "J’écris des programmes."),
+        "desired_role": text("Software engineer", "Ingénieure logiciel"),
     }
 
 
@@ -255,6 +256,8 @@ def portfolio():
         headline_fr="Analyste",
         bio_en="I write programs.",
         bio_fr="J’écris des programmes.",
+        desired_role_en="Software engineer",
+        desired_role_fr="Ingénieure logiciel",
     )
     python = Skill.objects.create(
         name_en="Python",
@@ -522,6 +525,33 @@ def test_profile_is_created_when_there_is_none():
     created = Profile.objects.get()
     assert created.full_name == "Ada Lovelace"
     assert created.headline_fr == "Analyste"
+
+
+def test_profile_desired_role_is_stored():
+    import_resume(resume(profile=profile()))
+
+    created = Profile.objects.get()
+    assert created.desired_role_en == "Software engineer"
+    assert created.desired_role_fr == "Ingénieure logiciel"
+
+
+def test_profile_desired_role_is_optional():
+    data = profile()
+    del data["desired_role"]
+
+    import_resume(resume(profile=data))
+
+    created = Profile.objects.get()
+    assert (created.desired_role_en, created.desired_role_fr) == ("", "")
+
+
+def test_profile_desired_role_in_one_language_is_refused():
+    data = {**profile(), "desired_role": {"en": "Software engineer", "fr": ""}}
+
+    errors = import_error(resume(profile=data))
+
+    assert list(errors["profile"]) == ["desired_role"]
+    assert Profile.objects.count() == 0
 
 
 def test_profile_overwrites_the_existing_one():
