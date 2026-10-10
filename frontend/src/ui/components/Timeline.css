@@ -1,0 +1,120 @@
+.timeline {
+  /* Where a card's title starts: its 3px top border plus 1.25rem of padding. */
+  --timeline-offset: 1.4rem;
+
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timeline__item {
+  /* The middle of the dot, from the top of the item. */
+  --timeline-dot-centre: 0.64rem;
+
+  position: relative;
+  padding: 0 0 1.25rem 1.75rem;
+}
+
+/* The rule runs from the first dot to the last one. */
+.timeline__item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(0.375rem - 1px);
+  width: 2px;
+  background: var(--border);
+}
+
+.timeline__item:first-child::before {
+  top: var(--timeline-dot-centre);
+}
+
+.timeline__item:last-child::before {
+  bottom: auto;
+  height: var(--timeline-dot-centre);
+}
+
+.timeline__item:only-child::before {
+  display: none;
+}
+
+.timeline__when {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.timeline__period {
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.timeline__duration {
+  font-size: 0.8rem;
+  font-weight: normal;
+  color: var(--text);
+}
+
+.timeline__dot {
+  position: absolute;
+  z-index: 1;
+  top: calc(var(--timeline-dot-centre) - 0.375rem);
+  left: 0;
+  width: 0.75rem;
+  height: 0.75rem;
+  background: var(--bg);
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+}
+
+.timeline__dot[data-ongoing] {
+  background: var(--accent);
+}
+
+.timeline__tile {
+  min-width: 0;
+}
+
+@media (min-width: 48rem) {
+  .timeline__item {
+    --timeline-dot-centre: calc(var(--timeline-offset) + 0.75rem);
+
+    display: grid;
+    grid-template-columns: 9rem 2.5rem minmax(0, 1fr);
+    padding: 0 0 1.25rem;
+  }
+
+  .timeline__item::before {
+    left: calc(9rem + 1.25rem - 1px);
+  }
+
+  .timeline__when {
+    grid-column: 1;
+    margin: 0;
+    padding-top: var(--timeline-offset);
+    text-align: right;
+  }
+
+  /* The end of the period goes on its own line, under the start. */
+  .timeline__period time:first-child::after {
+    content: '';
+    display: block;
+  }
+
+  .timeline__separator {
+    display: none;
+  }
+
+  .timeline__duration {
+    display: block;
+  }
+
+  .timeline__dot {
+    left: calc(9rem + 1.25rem - 0.375rem);
+  }
+
+  .timeline__tile {
+    grid-column: 3;
+  }
+}
