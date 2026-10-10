@@ -206,6 +206,60 @@ describe('AppRoutes', () => {
     expect(screen.getByText('Mémoire sur les compilateurs.')).toBeVisible()
   })
 
+  describe('header scroll state', () => {
+    const realIntersectionObserver = globalThis.IntersectionObserver
+    let reportSentinel: (isIntersecting: boolean) => void
+
+    beforeEach(() => {
+      vi.stubGlobal(
+        'IntersectionObserver',
+        class {
+          constructor(callback: IntersectionObserverCallback) {
+            reportSentinel = (isIntersecting) =>
+              callback(
+                [{ isIntersecting } as IntersectionObserverEntry],
+                this as unknown as IntersectionObserver,
+              )
+          }
+          observe() {}
+          unobserve() {}
+          disconnect() {}
+          takeRecords() {
+            return []
+          }
+        },
+      )
+    })
+
+    afterEach(() => {
+      // Puts the setup's stub back without dropping the other globals it stubs.
+      vi.stubGlobal('IntersectionObserver', realIntersectionObserver)
+    })
+
+    it('is not marked as scrolled while the top of the page is in view', () => {
+      renderAt('/')
+
+      expect(screen.getByRole('banner')).not.toHaveAttribute('data-scrolled')
+    })
+
+    it('is marked as scrolled once the top of the page scrolls out of view', () => {
+      renderAt('/')
+
+      act(() => reportSentinel(false))
+
+      expect(screen.getByRole('banner')).toHaveAttribute('data-scrolled')
+    })
+
+    it('is no longer marked as scrolled once the top of the page is back in view', () => {
+      renderAt('/')
+      act(() => reportSentinel(false))
+
+      act(() => reportSentinel(true))
+
+      expect(screen.getByRole('banner')).not.toHaveAttribute('data-scrolled')
+    })
+  })
+
   describe('when a page fails to render', () => {
     const malformedDate = fakeEducationRepository([
       { ...masters, period: { start: 'not a date', end: null } },

@@ -1,6 +1,6 @@
 import { isInaccessible, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { ReactElement } from 'react'
+import { useState, type ReactElement } from 'react'
 import type { Locale } from '@/domain/i18n/Locale'
 import type { AsyncState } from '@/ui/async/useAsync'
 import { Tile } from '@/ui/components/Tile'
@@ -314,6 +314,36 @@ describe('ResumeSection', () => {
       await userEvent.click(section().getByRole('button', { name: 'Tout déplier' }))
 
       expect(section().getByRole('button', { name: 'Tout replier' })).toBeInTheDocument()
+    })
+
+    it('stops offering expand all once entries go away and fewer than two remain', async () => {
+      function RemovableEntries() {
+        const [showSecond, setShowSecond] = useState(true)
+        return (
+          <>
+            <Entry name="First" />
+            {showSecond && <Entry name="Second" />}
+            <button type="button" onClick={() => setShowSecond(false)}>
+              Remove second
+            </button>
+          </>
+        )
+      }
+      render(
+        <LocaleProvider initialLocale="en">
+          <ResumeSection
+            title="Things"
+            icon={<svg />}
+            state={{ status: 'loaded', value: [{ id: 1 }] }}
+            renderItems={() => <RemovableEntries />}
+          />
+        </LocaleProvider>,
+      )
+      expect(section().getByRole('button', { name: 'Expand all' })).toBeInTheDocument()
+
+      await userEvent.click(section().getByRole('button', { name: 'Remove second' }))
+
+      expect(section().queryByRole('button', { name: /all/i })).not.toBeInTheDocument()
     })
 
     it('lets an entry outside any section toggle on its own', async () => {
