@@ -1,5 +1,4 @@
 import type { Education } from '@/domain/education/Education'
-import { PeriodTime } from '@/ui/components/PeriodTime'
 import { Tile } from '@/ui/components/Tile'
 import { useLocale } from '@/ui/i18n/useLocale'
 import { paragraphs } from '@/ui/text/paragraphs'
@@ -21,7 +20,7 @@ export function EducationTile({ education }: EducationTileProps) {
         .filter(Boolean)
         .join(', ')}
       subtitle={education.institution}
-      meta={[<PeriodTime period={education.period} />, education.location[locale]]}
+      meta={[education.location[locale]]}
     >
       {lines.map((line, index) => (
         <p key={index}>{line}</p>

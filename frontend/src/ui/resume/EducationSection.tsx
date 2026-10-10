@@ -1,5 +1,6 @@
 import type { EducationRepository } from '@/domain/education/EducationRepository'
 import { useAsync } from '@/ui/async/useAsync'
+import { Timeline } from '@/ui/components/Timeline'
 import { messages } from '@/ui/i18n/messages'
 import { useLocale } from '@/ui/i18n/useLocale'
 import { EducationTile } from '@/ui/resume/EducationTile'
@@ -20,8 +21,14 @@ export function EducationSection({ repository }: EducationSectionProps) {
       icon={<GraduationCapIcon />}
       state={state}
       variant="row"
-      getKey={(education) => education.id}
-      renderTile={(education) => <EducationTile education={education} />}
+      renderItems={(educations) => (
+        <Timeline
+          items={educations}
+          getKey={(education) => education.id}
+          getPeriod={(education) => education.period}
+          renderTile={(education) => <EducationTile education={education} />}
+        />
+      )}
     />
   )
 }

@@ -7,6 +7,11 @@
   list-style: none;
 }
 
+/* A row tile has no card border: its title starts at its 1rem of padding. */
+.resume-section--row .timeline {
+  --timeline-offset: 1rem;
+}
+
 .timeline__item {
   /* The middle of the dot, from the top of the item. */
   --timeline-dot-centre: 0.64rem;
