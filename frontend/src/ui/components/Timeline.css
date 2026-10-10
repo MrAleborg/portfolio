@@ -50,7 +50,7 @@
 
 .timeline__when {
   margin: 0 0 0.5rem;
-  font-size: 0.85rem;
+  font-size: var(--step--1);
   font-variant-numeric: tabular-nums;
 }
 
@@ -60,7 +60,7 @@
 }
 
 .timeline__duration {
-  font-size: 0.8rem;
+  font-size: var(--step--1);
   color: var(--text);
 }
 
