@@ -1,21 +1,32 @@
 :root {
-  /* GitHub Primer. Text, accent and subtitle reach 4.5:1 or more on bg and surface in both themes; tags use their kind colour as text on a 12% tint of it, 4.7:1 or more in both themes (measured: light 5.7:1 or more, dark 4.7:1 or more on --surface and --bg). */
-  --text: light-dark(#59636e, #9198a1);
-  --text-strong: light-dark(#1f2328, #f0f6fc);
-  --bg: light-dark(#ffffff, #0d1117);
-  --surface: light-dark(#f6f8fa, #151b23);
-  --border: light-dark(#d1d9e0, #3d444d);
-  --accent: light-dark(#0969da, #4493f8);
-  --danger: light-dark(#d1242f, #f85149);
-  --subtitle: light-dark(#8250df, #ab7df8);
+  /* Viridian and ochre on green-tinted greys. theme.test.ts enforces 4.5:1. */
+  --text: light-dark(#4d5450, #a7afaa);
+  --text-strong: light-dark(#1a201d, #eef1ee);
+  --bg: light-dark(#f8f8f5, #131715);
+  --surface: light-dark(#efefea, #1b201e);
+  --border: light-dark(#d3d4cc, #363d39);
+  --accent: light-dark(#0b6b5c, #5cc4ad);
+  --danger: light-dark(#b3261e, #f28b82);
+  --subtitle: light-dark(#7a4a12, #e0a964);
   --header-height: 4rem;
-  --tag-skill: light-dark(#0550ae, #4493f8);
-  --tag-tool: light-dark(#6639ba, #ab7df8);
-  --tag-methodology: light-dark(#116329, #3fb950);
+  --tag-skill: var(--accent);
+  --tag-tool: var(--subtitle);
+  --tag-methodology: light-dark(#3e4f8a, #9fb0f0);
   --shadow: 0 10px 25px -5px
     light-dark(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.6));
 
-  font: 18px/1.5 system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Bricolage Grotesque Variable', system-ui, sans-serif;
+  --font-body: 'IBM Plex Sans Variable', system-ui, sans-serif;
+
+  /* Type scale: ratio 1.25 from a 17px base. */
+  --step--1: 0.85rem;
+  --step-0: 1.0625rem;
+  --step-1: 1.328rem;
+  --step-2: 1.66rem;
+  --step-3: 2.075rem;
+  --step-4: 2.594rem;
+
+  font-size: 100%;
   /* Follows the OS unless the visitor picked a theme (data-theme, see ThemeSwitch). */
   color-scheme: light dark;
   color: var(--text);
@@ -39,6 +50,16 @@
 
 body {
   margin: 0;
+  font: var(--step-0) / 1.55 var(--font-body);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+  line-height: 1.15;
 }
 
 /* Read by screen readers, invisible on screen. */
