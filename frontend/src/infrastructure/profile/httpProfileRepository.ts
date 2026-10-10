@@ -6,6 +6,7 @@ interface ProfileDto {
   full_name: string
   headline: Localized<string>
   bio: Localized<string>
+  desired_role: Localized<string>
 }
 
 export function createHttpProfileRepository(
@@ -15,7 +16,12 @@ export function createHttpProfileRepository(
   return {
     async get() {
       const dto = await getJson<ProfileDto>(apiUrl, '/api/v1/profile/', fetchFn)
-      return { fullName: dto.full_name, headline: dto.headline, bio: dto.bio }
+      return {
+        fullName: dto.full_name,
+        headline: dto.headline,
+        bio: dto.bio,
+        desiredRole: dto.desired_role,
+      }
     },
   }
 }

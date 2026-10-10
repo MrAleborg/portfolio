@@ -5,6 +5,7 @@ export const ada: Profile = {
   fullName: 'Ada Lovelace',
   headline: { en: 'Analyst', fr: 'Analyste' },
   bio: { en: 'I write programs.', fr: 'J’écris des programmes.' },
+  desiredRole: { en: 'Engineer', fr: 'Ingénieure' },
 }
 
 /** A repository that answers with the given profile. */
