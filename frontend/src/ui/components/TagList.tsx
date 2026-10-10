@@ -13,26 +13,30 @@ interface TagListProps {
 /** The order in which the groups are shown. */
 const KINDS: TagKind[] = ['skill', 'tool', 'methodology']
 
-interface TagGroupProps {
-  label: string
-  /** Colours the chips by kind; chips without a kind are neutral. */
+interface Chip {
+  id: number
+  name: Localized<string>
+  note?: Localized<string>
+  /** Colours this chip, over the kind of its list. */
   kind?: TagKind
-  tags: readonly { id: number; name: Localized<string>; note?: Localized<string> }[]
 }
 
-/** A labelled row of chips; a chip shows its note after the name when it has one. */
-export function TagGroup({ label, kind, tags }: TagGroupProps) {
+type TagChipsProps = {
+  /** Colours the chips by kind; chips without a kind are neutral. */
+  kind?: TagKind
+  tags: readonly Chip[]
+} & ({ 'aria-label': string } | { 'aria-labelledby': string })
+
+/** A list of chips; a chip shows its note after the name when it has one. */
+export function TagChips({ kind, tags, ...labelling }: TagChipsProps) {
   const { locale } = useLocale()
-  const labelId = useId()
 
   return (
-    <div>
-      <p id={labelId} className="tile__label tag-list__label">
-        {label}
-      </p>
-      <ul aria-labelledby={labelId} className="tag-list__tags">
-        {tags.map((tag) => (
-          <li key={tag.id} className={kind ? `tag tag--${kind}` : 'tag'}>
+    <ul {...labelling} className="tag-list__tags">
+      {tags.map((tag) => {
+        const chipKind = tag.kind ?? kind
+        return (
+          <li key={tag.id} className={chipKind ? `tag tag--${chipKind}` : 'tag'}>
             {tag.name[locale]}
             {tag.note?.[locale] && (
               <span className="tag__note">
@@ -41,8 +45,29 @@ export function TagGroup({ label, kind, tags }: TagGroupProps) {
               </span>
             )}
           </li>
-        ))}
-      </ul>
+        )
+      })}
+    </ul>
+  )
+}
+
+interface TagGroupProps {
+  label: string
+  /** Colours the chips by kind; chips without a kind are neutral. */
+  kind?: TagKind
+  tags: readonly Chip[]
+}
+
+/** A labelled row of chips. */
+export function TagGroup({ label, kind, tags }: TagGroupProps) {
+  const labelId = useId()
+
+  return (
+    <div>
+      <p id={labelId} className="tile__label tag-list__label">
+        {label}
+      </p>
+      <TagChips aria-labelledby={labelId} kind={kind} tags={tags} />
     </div>
   )
 }

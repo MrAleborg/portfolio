@@ -5,3 +5,17 @@
   padding: 0;
   list-style: none;
 }
+
+.experience-tile__summary {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  margin: 0;
+  color: var(--text);
+}
+
+.experience-tile__summary + .tag-list__tags {
+  margin-top: 0.5rem;
+}

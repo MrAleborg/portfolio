@@ -1,17 +1,63 @@
-import { render, screen, within } from '@testing-library/react'
+import { isInaccessible, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { Locale } from '@/domain/i18n/Locale'
 import type { ProfessionalExperience } from '@/domain/professionalExperience/ProfessionalExperience'
-import { fullExperience, minimalExperience } from '@/test/fakeProfessionalExperienceRepository'
+import {
+  fakeProfessionalExperienceRepository,
+  fullExperience,
+  minimalExperience,
+} from '@/test/fakeProfessionalExperienceRepository'
+import { minimalProject, portfolioProject } from '@/test/fakeProjectRepository'
 import { LocaleProvider } from '@/ui/i18n/LocaleProvider'
+import { ExperienceSection } from '@/ui/resume/ExperienceSection'
 import { ExperienceTile } from '@/ui/resume/ExperienceTile'
 
-function renderTile(experience: ProfessionalExperience, locale: Locale = 'en') {
+function renderTile(
+  experience: ProfessionalExperience,
+  locale: Locale = 'en',
+  defaultExpanded?: boolean,
+) {
   return render(
     <LocaleProvider initialLocale={locale}>
-      <ExperienceTile experience={experience} />
+      <ExperienceTile experience={experience} defaultExpanded={defaultExpanded} />
     </LocaleProvider>,
   )
+}
+
+/** Seven tags over two projects, deliberately not in kind order. */
+const manyTagsProjects = [
+  {
+    ...portfolioProject,
+    tags: [
+      { id: 10, name: { en: 'Scrum', fr: 'Scrum' }, kind: 'methodology' as const },
+      { id: 11, name: { en: 'Vite', fr: 'Vite' }, kind: 'tool' as const },
+      { id: 12, name: { en: 'React', fr: 'React' }, kind: 'skill' as const },
+    ],
+  },
+  {
+    ...minimalProject,
+    tags: [
+      { id: 13, name: { en: 'Python', fr: 'Python' }, kind: 'skill' as const },
+      { id: 14, name: { en: 'Docker', fr: 'Docker' }, kind: 'tool' as const },
+      { id: 15, name: { en: 'SQL', fr: 'SQL' }, kind: 'skill' as const },
+      { id: 16, name: { en: 'Git', fr: 'Git' }, kind: 'tool' as const },
+    ],
+  },
+]
+
+const twoParagraphs = {
+  en: 'Built the platform.\n\nLed the migration.',
+  fr: 'Construction de la plateforme.\n\nPilotage de la migration.',
+}
+
+/** The elements showing a text that the user can see, leaving out the hidden details. */
+function shown(text: string) {
+  return screen.queryAllByText(text).filter((element) => !isInaccessible(element))
+}
+
+/** The paragraphs the user can see: the company and the facts under the title, plus any summary. */
+function shownParagraphs() {
+  return screen.queryAllByRole('paragraph').filter((element) => !isInaccessible(element))
 }
 
 /** Clicks a tile's title to show its details. */
@@ -181,5 +227,120 @@ describe('ExperienceTile', () => {
         'Site portfolio',
       )
     })
+  })
+
+  describe('preview while closed', () => {
+    it('shows the first paragraph of the description only', () => {
+      renderTile({ ...fullExperience, description: twoParagraphs })
+
+      expect(shown('Built the platform.')).toHaveLength(1)
+      expect(shown('Led the migration.')).toHaveLength(0)
+    })
+
+    it('shows at most five tags, skills then tools then methodologies, under "Main keywords"', () => {
+      renderTile({ ...fullExperience, projects: manyTagsProjects })
+
+      const tags = within(screen.getByRole('list', { name: 'Main keywords' })).getAllByRole(
+        'listitem',
+      )
+      expect(tags.map((tag) => tag.textContent)).toEqual([
+        'React',
+        'Python',
+        'SQL',
+        'Vite',
+        'Docker',
+      ])
+      expect(tags[0]).toHaveClass('tag', 'tag--skill')
+      expect(tags[3]).toHaveClass('tag', 'tag--tool')
+    })
+
+    it('goes away once the tile is opened, which shows the full description', async () => {
+      renderTile({
+        ...fullExperience,
+        description: twoParagraphs,
+        projects: manyTagsProjects,
+      })
+
+      await expand('Software engineer')
+
+      expect(screen.queryByRole('list', { name: 'Main keywords' })).toBeNull()
+      expect(screen.getByText('Built the platform.')).toBeVisible()
+      expect(screen.getByText('Led the migration.')).toBeVisible()
+    })
+
+    it('comes back when the tile is closed again', async () => {
+      renderTile({ ...fullExperience, projects: manyTagsProjects }, 'en', true)
+
+      await expand('Software engineer')
+
+      expect(screen.getByRole('list', { name: 'Main keywords' })).toBeVisible()
+    })
+
+    it('has no summary when the description is empty', () => {
+      renderTile({
+        ...fullExperience,
+        description: { en: '', fr: '' },
+        projects: manyTagsProjects,
+      })
+
+      expect(screen.getByRole('list', { name: 'Main keywords' })).toBeVisible()
+      expect(shownParagraphs()).toHaveLength(2)
+    })
+
+    it('has no list of skills when the projects have no tags', () => {
+      renderTile({ ...fullExperience, projects: [minimalProject] })
+
+      expect(shown('Built the platform.')).toHaveLength(1)
+      expect(screen.queryByRole('list', { name: 'Main keywords' })).toBeNull()
+    })
+
+    it('has no preview at all without a description and without tags', () => {
+      renderTile({ ...fullExperience, description: { en: '', fr: '' }, projects: [minimalProject] })
+
+      expect(screen.queryByRole('list', { name: 'Main keywords' })).toBeNull()
+      expect(shownParagraphs()).toHaveLength(2)
+    })
+
+    it('starts open when asked to', () => {
+      renderTile(fullExperience, 'en', true)
+
+      expect(screen.getByRole('button', { name: 'Software engineer' })).toHaveAttribute(
+        'aria-expanded',
+        'true',
+      )
+      expect(screen.getByRole('list', { name: 'Projects' })).toBeVisible()
+    })
+
+    it('is in French in French', () => {
+      renderTile(
+        { ...fullExperience, description: twoParagraphs, projects: manyTagsProjects },
+        'fr',
+      )
+
+      expect(shown('Construction de la plateforme.')).toHaveLength(1)
+      expect(screen.getByRole('list', { name: 'Mots-clés principaux' })).toBeVisible()
+    })
+  })
+})
+
+describe('ExperienceSection', () => {
+  it('opens the first experience, showing its projects, and keeps the next ones closed', async () => {
+    const second = { ...fullExperience, id: 3, position: { en: 'Tech lead', fr: 'Responsable technique' } }
+    render(
+      <LocaleProvider initialLocale="en">
+        <ExperienceSection
+          repository={fakeProfessionalExperienceRepository([fullExperience, second])}
+        />
+      </LocaleProvider>,
+    )
+
+    const first = await screen.findByRole('button', { name: 'Software engineer' })
+    expect(first).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('list', { name: 'Projects' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Tech lead' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    )
+    expect(screen.getByRole('list', { name: 'Main keywords' })).toBeVisible()
   })
 })

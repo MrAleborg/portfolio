@@ -53,6 +53,7 @@ interface Messages {
   missions: string
   achievements: string
   projectsLabel: string
+  keyTagsLabel: string
   employmentTypes: Record<EmploymentType, string>
   tagKinds: Record<TagKind, string>
   loading: string
@@ -132,6 +133,7 @@ export const messages: Localized<Messages> = {
     missions: 'Missions',
     achievements: 'Achievements',
     projectsLabel: 'Projects',
+    keyTagsLabel: 'Main keywords',
     employmentTypes: {
       full_time: 'Full-time',
       part_time: 'Part-time',
@@ -214,6 +216,7 @@ export const messages: Localized<Messages> = {
     missions: 'Missions',
     achievements: 'Réalisations',
     projectsLabel: 'Projets',
+    keyTagsLabel: 'Mots-clés principaux',
     employmentTypes: {
       full_time: 'Temps plein',
       part_time: 'Temps partiel',

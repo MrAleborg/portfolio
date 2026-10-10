@@ -155,6 +155,22 @@ describe('ResumePage', () => {
     })
   })
 
+  it.each([
+    { slug: 'expertise', row: false },
+    { slug: 'experience', row: false },
+    { slug: 'projects', row: false },
+    { slug: 'education', row: true },
+    { slug: 'certifications', row: true },
+    { slug: 'communications', row: true },
+    { slug: 'commitments', row: true },
+    { slug: 'hobbies', row: true },
+  ])('renders #$slug as a row section: $row', ({ slug, row }) => {
+    renderPage()
+
+    const section = (document.getElementById(slug) as HTMLElement).querySelector('section')
+    expect(section?.classList.contains('resume-section--row')).toBe(row)
+  })
+
   it.each(titlesWithIcon)('shows an icon in the %s heading', (title) => {
     renderPage()
 
@@ -166,7 +182,11 @@ describe('ResumePage', () => {
     renderPage()
 
     const section = within(screen.getByRole('region', { name: en }))
-    const articles = await section.findAllByRole('article')
+    await section.findAllByRole('article')
+    // An open tile also shows the nested tiles of its details: keep the section's own.
+    const articles = section
+      .getAllByRole('article')
+      .filter((article) => article.parentElement?.closest('article') == null)
     expect(articles).toHaveLength(tiles.length)
     tiles.forEach((name, index) => {
       expect(articles[index]).toHaveAccessibleName(name)

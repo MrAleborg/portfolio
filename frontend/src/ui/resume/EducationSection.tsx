@@ -19,6 +19,7 @@ export function EducationSection({ repository }: EducationSectionProps) {
       title={text.educationTitle}
       icon={<GraduationCapIcon />}
       state={state}
+      variant="row"
       getKey={(education) => education.id}
       renderTile={(education) => <EducationTile education={education} />}
     />

@@ -1,14 +1,31 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import type { Hobby } from '@/domain/hobby/Hobby'
 import type { Locale } from '@/domain/i18n/Locale'
 import { chess, climbing } from '@/test/fakeHobbyRepository'
 import { LocaleProvider } from '@/ui/i18n/LocaleProvider'
 import { HobbyTile } from '@/ui/resume/HobbyTile'
+import { ResumeSection } from '@/ui/resume/ResumeSection'
+import type { SectionVariant } from '@/ui/resume/SectionContext'
 
 function renderTile(hobbies: readonly Hobby[] = [climbing, chess], locale: Locale = 'en') {
   return render(
     <LocaleProvider initialLocale={locale}>
       <HobbyTile hobbies={hobbies} />
+    </LocaleProvider>,
+  )
+}
+
+function renderInSection(variant: SectionVariant, hobbies: readonly Hobby[] = [climbing, chess]) {
+  return render(
+    <LocaleProvider initialLocale="en">
+      <ResumeSection
+        title="Hobbies"
+        icon={<svg />}
+        state={{ status: 'loaded', value: [hobbies] }}
+        getKey={() => 'hobbies'}
+        renderTile={(items) => <HobbyTile hobbies={items} />}
+        variant={variant}
+      />
     </LocaleProvider>,
   )
 }
@@ -79,5 +96,39 @@ describe('HobbyTile', () => {
 
     expect(screen.getByRole('article')).toHaveTextContent(/^Chess$/)
     expect(screen.queryByText('', { selector: 'p' })).toBeNull()
+  })
+
+  describe('in a row section', () => {
+    it('drops the card around the hobbies', () => {
+      renderInSection('row')
+
+      const article = screen.getByRole('article', { name: 'Hobbies' })
+      expect(article).not.toHaveClass('tile')
+    })
+
+    it('shows every hobby with its title and text', () => {
+      renderInSection('row')
+
+      const article = within(screen.getByRole('article', { name: 'Hobbies' }))
+      const names = article
+        .getAllByRole('heading', { level: 3 })
+        .map((heading) => heading.textContent)
+      expect(names).toEqual(['Climbing', 'Chess'])
+      expect(article.getByText('Bouldering twice a week.')).toBeVisible()
+    })
+  })
+
+  describe('in a card section', () => {
+    it('keeps the card around the hobbies', () => {
+      renderInSection('card')
+
+      expect(screen.getByRole('article', { name: 'Hobbies' })).toHaveClass('tile')
+    })
+  })
+
+  it('is a card on its own', () => {
+    renderTile()
+
+    expect(screen.getByRole('article')).toHaveClass('tile')
   })
 })

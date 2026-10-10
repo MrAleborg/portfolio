@@ -19,6 +19,7 @@ export function ScientificCommunicationSection({ repository }: ScientificCommuni
       title={text.scientificCommunicationsTitle}
       icon={<MicIcon />}
       state={state}
+      variant="row"
       getKey={(communication) => communication.id}
       renderTile={(communication) => <ScientificCommunicationTile communication={communication} />}
     />
