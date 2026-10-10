@@ -1,6 +1,6 @@
 import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router'
+import { MemoryRouter, useNavigate } from 'react-router'
 import type { Locale } from '@/domain/i18n/Locale'
 import { fakeEducationRepository, masters } from '@/test/fakeEducationRepository'
 import {
@@ -204,6 +204,88 @@ describe('AppRoutes', () => {
       'true',
     )
     expect(screen.getByText('Mémoire sur les compilateurs.')).toBeVisible()
+  })
+
+  describe('scroll position', () => {
+    let scrollTo: ReturnType<typeof vi.spyOn>
+
+    beforeEach(() => {
+      // jsdom does not scroll: the spy records where the page was sent.
+      scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+    })
+
+    afterEach(() => {
+      scrollTo.mockRestore()
+    })
+
+    // Stands in for the browser's back button and for a link to a section of another page.
+    function Controls() {
+      const navigate = useNavigate()
+      return (
+        <>
+          <button onClick={() => navigate(-1)}>Back</button>
+          <button onClick={() => navigate('/resume#education')}>Go to the education section</button>
+        </>
+      )
+    }
+
+    function renderWithHistory(entries: string[]) {
+      return render(
+        <LocaleProvider initialLocale="en">
+          <MemoryRouter initialEntries={entries} initialIndex={entries.length - 1}>
+            <AppRoutes repositories={fakeRepositories()} />
+            <Controls />
+          </MemoryRouter>
+        </LocaleProvider>,
+      )
+    }
+
+    it('goes back to the top of the page when a navigation link is followed', async () => {
+      const user = userEvent.setup()
+      renderAt('/resume')
+
+      await user.click(navigation().getByRole('link', { name: 'Contact' }))
+
+      expect(scrollTo).toHaveBeenLastCalledWith(0, 0)
+    })
+
+    it('goes back to the top of the page when the header name is followed', async () => {
+      const user = userEvent.setup()
+      renderAt('/resume')
+
+      await user.click(await header().findByRole('link', { name: 'Ada Lovelace' }))
+
+      expect(scrollTo).toHaveBeenLastCalledWith(0, 0)
+    })
+
+    it('goes back to the top of the page when a call to action of the home page is followed', async () => {
+      const user = userEvent.setup()
+      renderAt('/')
+
+      await user.click(await screen.findByRole('link', { name: 'Get in touch' }))
+
+      expect(scrollTo).toHaveBeenLastCalledWith(0, 0)
+    })
+
+    it('leaves the scroll to the section when the destination has a hash', async () => {
+      const user = userEvent.setup()
+      renderWithHistory(['/'])
+
+      await user.click(screen.getByRole('button', { name: 'Go to the education section' }))
+
+      expect(screen.getByRole('heading', { level: 1, name: 'Resume' })).toBeInTheDocument()
+      expect(scrollTo).not.toHaveBeenCalled()
+    })
+
+    it('leaves the scroll to the browser when going back', async () => {
+      const user = userEvent.setup()
+      renderWithHistory(['/', '/resume'])
+
+      await user.click(screen.getByRole('button', { name: 'Back' }))
+
+      expect(await screen.findByRole('heading', { level: 1, name: 'Ada Lovelace' })).toBeInTheDocument()
+      expect(scrollTo).not.toHaveBeenCalled()
+    })
   })
 
   describe('header scroll state', () => {
