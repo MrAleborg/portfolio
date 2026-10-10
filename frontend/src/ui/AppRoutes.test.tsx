@@ -1,9 +1,13 @@
-import { render, screen, within } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import type { Locale } from '@/domain/i18n/Locale'
 import { fakeEducationRepository, masters } from '@/test/fakeEducationRepository'
-import { fakeProfileRepository } from '@/test/fakeProfileRepository'
+import {
+  failingProfileRepository,
+  fakeProfileRepository,
+  pendingProfileRepository,
+} from '@/test/fakeProfileRepository'
 import { fakeRepositories } from '@/test/fakeRepositories'
 import { AppRoutes } from '@/ui/AppRoutes'
 import { LocaleProvider } from '@/ui/i18n/LocaleProvider'
@@ -31,29 +35,50 @@ function navigation(name = 'Main') {
   return within(screen.getByRole('navigation', { name }))
 }
 
+function header() {
+  return within(screen.getByRole('banner'))
+}
+
 describe('AppRoutes', () => {
-  it('links to every page', () => {
+  it('lists Resume then Contact in the navigation, each linking to its page', () => {
     renderAt('/')
 
-    expect(navigation().getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/')
-    expect(navigation().getByRole('link', { name: 'Resume' })).toHaveAttribute(
-      'href',
+    const links = navigation().getAllByRole('link')
+    expect(links.map((link) => link.textContent)).toEqual(['Resume', 'Contact'])
+    expect(links.map((link) => link.getAttribute('href'))).toEqual([
       '/resume',
+      '/contact',
+    ])
+  })
+
+  it('shows the profile name in the header as a link to the home page', async () => {
+    renderAt('/resume')
+
+    expect(await header().findByRole('link', { name: 'Ada Lovelace' })).toHaveAttribute(
+      'href',
+      '/',
     )
   })
 
-  it('lists Contact in the navigation after Resume', () => {
-    renderAt('/')
+  it('keeps the navigation and no site mark while the profile loads', () => {
+    renderAt('/resume', {
+      repositories: fakeRepositories({ profile: pendingProfileRepository() }),
+    })
 
-    expect(navigation().getAllByRole('link').map((link) => link.textContent)).toEqual([
-      'Home',
-      'Resume',
-      'Contact',
-    ])
-    expect(navigation().getByRole('link', { name: 'Contact' })).toHaveAttribute(
-      'href',
-      '/contact',
-    )
+    expect(header().queryByRole('link', { name: 'Ada Lovelace' })).not.toBeInTheDocument()
+    expect(navigation().getByRole('link', { name: 'Resume' })).toBeInTheDocument()
+  })
+
+  it('shows no site mark but keeps the navigation when the profile fails to load', async () => {
+    renderAt('/resume', {
+      repositories: fakeRepositories({ profile: failingProfileRepository() }),
+    })
+    // Lets the rejected request settle, so the assertions see the error state.
+    await act(async () => {})
+
+    expect(header().queryByRole('link', { name: 'Ada Lovelace' })).not.toBeInTheDocument()
+    expect(navigation().getByRole('link', { name: 'Resume' })).toBeInTheDocument()
+    expect(navigation().getByRole('link', { name: 'Contact' })).toBeInTheDocument()
   })
 
   it('shows the home page at the root', async () => {
@@ -62,10 +87,6 @@ describe('AppRoutes', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Ada Lovelace' }),
     ).toBeInTheDocument()
-    expect(navigation().getByRole('link', { name: 'Home' })).toHaveAttribute(
-      'aria-current',
-      'page',
-    )
   })
 
   it('shows the resume page at /resume', async () => {
@@ -130,9 +151,6 @@ describe('AppRoutes', () => {
     renderAt('/', { locale: 'fr' })
 
     expect(
-      navigation('Principale').getByRole('link', { name: 'Accueil' }),
-    ).toBeInTheDocument()
-    expect(
       navigation('Principale').getByRole('link', { name: 'CV' }),
     ).toBeInTheDocument()
     expect(
@@ -145,6 +163,7 @@ describe('AppRoutes', () => {
     const profile = fakeProfileRepository()
     renderAt('/', { repositories: fakeRepositories({ profile }) })
     await screen.findByText('Analyst')
+    const loadsBefore = profile.get.mock.calls.length
 
     await user.click(
       screen.getByRole('button', { name: 'Français', hidden: true }),
@@ -152,9 +171,9 @@ describe('AppRoutes', () => {
 
     expect(screen.getByText('Analyste')).toBeInTheDocument()
     expect(
-      navigation('Principale').getByRole('link', { name: 'Accueil' }),
+      navigation('Principale').getByRole('link', { name: 'CV' }),
     ).toBeInTheDocument()
-    expect(profile.get).toHaveBeenCalledTimes(1)
+    expect(profile.get).toHaveBeenCalledTimes(loadsBefore)
   })
 
   it('switches the language of the resume without loading the education again', async () => {
@@ -187,6 +206,60 @@ describe('AppRoutes', () => {
     expect(screen.getByText('Mémoire sur les compilateurs.')).toBeVisible()
   })
 
+  describe('header scroll state', () => {
+    const realIntersectionObserver = globalThis.IntersectionObserver
+    let reportSentinel: (isIntersecting: boolean) => void
+
+    beforeEach(() => {
+      vi.stubGlobal(
+        'IntersectionObserver',
+        class {
+          constructor(callback: IntersectionObserverCallback) {
+            reportSentinel = (isIntersecting) =>
+              callback(
+                [{ isIntersecting } as IntersectionObserverEntry],
+                this as unknown as IntersectionObserver,
+              )
+          }
+          observe() {}
+          unobserve() {}
+          disconnect() {}
+          takeRecords() {
+            return []
+          }
+        },
+      )
+    })
+
+    afterEach(() => {
+      // Puts the setup's stub back without dropping the other globals it stubs.
+      vi.stubGlobal('IntersectionObserver', realIntersectionObserver)
+    })
+
+    it('is not marked as scrolled while the top of the page is in view', () => {
+      renderAt('/')
+
+      expect(screen.getByRole('banner')).not.toHaveAttribute('data-scrolled')
+    })
+
+    it('is marked as scrolled once the top of the page scrolls out of view', () => {
+      renderAt('/')
+
+      act(() => reportSentinel(false))
+
+      expect(screen.getByRole('banner')).toHaveAttribute('data-scrolled')
+    })
+
+    it('is no longer marked as scrolled once the top of the page is back in view', () => {
+      renderAt('/')
+      act(() => reportSentinel(false))
+
+      act(() => reportSentinel(true))
+
+      expect(screen.getByRole('banner')).not.toHaveAttribute('data-scrolled')
+    })
+  })
+
   describe('when a page fails to render', () => {
     const malformedDate = fakeEducationRepository([
       { ...masters, period: { start: 'not a date', end: null } },
@@ -208,7 +281,7 @@ describe('AppRoutes', () => {
       expect(await screen.findByRole('alert')).toHaveTextContent(
         'This page could not be displayed. Reload to try again.',
       )
-      expect(navigation().getByRole('link', { name: 'Home' })).toBeInTheDocument()
+      expect(navigation().getByRole('link', { name: 'Resume' })).toBeInTheDocument()
     })
 
     it('says so in French', async () => {
@@ -229,7 +302,7 @@ describe('AppRoutes', () => {
       })
       await screen.findByRole('alert')
 
-      await user.click(navigation().getByRole('link', { name: 'Home' }))
+      await user.click(await header().findByRole('link', { name: 'Ada Lovelace' }))
 
       expect(
         await screen.findByRole('heading', { level: 1, name: 'Ada Lovelace' }),

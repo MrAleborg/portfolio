@@ -19,6 +19,7 @@ export function HobbySection({ repository }: HobbySectionProps) {
       title={text.hobbiesTitle}
       icon={<CompassIcon />}
       state={state}
+      variant="row"
       renderItems={(hobbies) => <HobbyTile hobbies={hobbies} />}
     />
   )

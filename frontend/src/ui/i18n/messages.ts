@@ -13,6 +13,8 @@ interface Messages {
   navResume: string
   navContact: string
   resumeTitle: string
+  /** Accessible name of the in-page navigation between the resume sections. */
+  resumeSectionsLabel: string
   contactTitle: string
   contactIntro: string
   contactLinksUnavailable: string
@@ -51,6 +53,7 @@ interface Messages {
   missions: string
   achievements: string
   projectsLabel: string
+  keyTagsLabel: string
   employmentTypes: Record<EmploymentType, string>
   tagKinds: Record<TagKind, string>
   loading: string
@@ -68,6 +71,9 @@ interface Messages {
   switchToLight: string
   /** Label of the button that opens the theme and language switches. */
   settings: string
+  /** Labels of the button that opens or closes every entry of a section. */
+  expandAll: string
+  collapseAll: string
 }
 
 export const messages: Localized<Messages> = {
@@ -77,6 +83,7 @@ export const messages: Localized<Messages> = {
     navResume: 'Resume',
     navContact: 'Contact',
     resumeTitle: 'Resume',
+    resumeSectionsLabel: 'Resume sections',
     contactTitle: 'Contact',
     contactIntro: 'Write to me, or find me elsewhere.',
     contactLinksUnavailable: 'Links couldn’t be loaded.',
@@ -126,6 +133,7 @@ export const messages: Localized<Messages> = {
     missions: 'Missions',
     achievements: 'Achievements',
     projectsLabel: 'Projects',
+    keyTagsLabel: 'Main keywords',
     employmentTypes: {
       full_time: 'Full-time',
       part_time: 'Part-time',
@@ -148,6 +156,8 @@ export const messages: Localized<Messages> = {
     switchToDark: 'Switch to dark mode',
     switchToLight: 'Switch to light mode',
     settings: 'Settings',
+    expandAll: 'Expand all',
+    collapseAll: 'Collapse all',
   },
   fr: {
     navLabel: 'Principale',
@@ -155,6 +165,7 @@ export const messages: Localized<Messages> = {
     navResume: 'CV',
     navContact: 'Contact',
     resumeTitle: 'CV',
+    resumeSectionsLabel: 'Sections du CV',
     contactTitle: 'Contact',
     contactIntro: 'Écrivez-moi, ou retrouvez-moi ailleurs.',
     contactLinksUnavailable: 'Les liens n’ont pas pu être chargés.',
@@ -205,6 +216,7 @@ export const messages: Localized<Messages> = {
     missions: 'Missions',
     achievements: 'Réalisations',
     projectsLabel: 'Projets',
+    keyTagsLabel: 'Mots-clés principaux',
     employmentTypes: {
       full_time: 'Temps plein',
       part_time: 'Temps partiel',
@@ -227,5 +239,7 @@ export const messages: Localized<Messages> = {
     switchToDark: 'Passer en mode sombre',
     switchToLight: 'Passer en mode clair',
     settings: 'Préférences',
+    expandAll: 'Tout déplier',
+    collapseAll: 'Tout replier',
   },
 }

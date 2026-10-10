@@ -35,6 +35,7 @@ export function CertificationSection({
       title={text.certificationsTitle}
       icon={<AwardIcon />}
       state={state}
+      variant="row"
       getKey={(entry) =>
         entry.kind === 'specialization'
           ? `specialization-${entry.specialization.id}`

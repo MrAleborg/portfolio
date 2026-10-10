@@ -19,11 +19,36 @@
 .tag {
   padding: 0.125rem 0.5rem;
   font-size: 0.75rem;
-  color: #fff;
-  background: var(--tag);
-  border: 1px solid var(--tag);
+  color: var(--text-strong);
+  background: var(--bg);
+  border: 1px solid var(--border);
   border-radius: 999px;
   overflow-wrap: anywhere;
+}
+
+/* A kind colours its chips: its colour as text on a 12% tint of it, without a visible border. */
+.tag--skill,
+.tag--tool,
+.tag--methodology {
+  color: var(--tag-color);
+  background: color-mix(in srgb, var(--tag-color) 12%, var(--surface));
+  border-color: transparent;
+}
+
+.tag--skill {
+  --tag-color: var(--tag-skill);
+}
+
+.tag--tool {
+  --tag-color: var(--tag-tool);
+}
+
+.tag--methodology {
+  --tag-color: var(--tag-methodology);
+}
+
+.tag__note {
+  color: var(--text);
 }
 
 /* A chip with a note can wrap onto several lines: a pill would turn into an oval. */

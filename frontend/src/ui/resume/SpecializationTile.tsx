@@ -5,6 +5,7 @@ import { messages } from '@/ui/i18n/messages'
 import { useLocale } from '@/ui/i18n/useLocale'
 import { CertificationTile } from '@/ui/resume/CertificationTile'
 import { CredentialTile } from '@/ui/resume/CredentialTile'
+import './SpecializationTile.css'
 
 interface SpecializationTileProps {
   specialization: Specialization
@@ -20,7 +21,7 @@ export function SpecializationTile({ specialization, certifications }: Specializ
       {certifications.length > 0 ? (
         <LabelledList
           label={text.certificationsTitle}
-          className="experience-projects"
+          className="specialization-certifications"
           items={certifications.map((certification) => (
             <CertificationTile certification={certification} headingLevel={4} />
           ))}

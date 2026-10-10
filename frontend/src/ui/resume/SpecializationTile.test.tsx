@@ -6,6 +6,8 @@ import type { Specialization } from '@/domain/specialization/Specialization'
 import { cloudPractitioner, scrumMaster } from '@/test/fakeCertificationRepository'
 import { agileDelivery, cloudEngineering } from '@/test/fakeSpecializationRepository'
 import { LocaleProvider } from '@/ui/i18n/LocaleProvider'
+import { ResumeSection } from '@/ui/resume/ResumeSection'
+import type { SectionVariant } from '@/ui/resume/SectionContext'
 import { SpecializationTile } from '@/ui/resume/SpecializationTile'
 
 function renderTile(
@@ -16,6 +18,27 @@ function renderTile(
   return render(
     <LocaleProvider initialLocale={locale}>
       <SpecializationTile specialization={specialization} certifications={certifications} />
+    </LocaleProvider>,
+  )
+}
+
+function renderInSection(
+  variant: SectionVariant,
+  specialization: Specialization,
+  certifications: Certification[],
+) {
+  return render(
+    <LocaleProvider initialLocale="en">
+      <ResumeSection
+        title="Specializations"
+        icon={<svg />}
+        state={{ status: 'loaded', value: [specialization] }}
+        getKey={(item) => item.id}
+        renderTile={(item) => (
+          <SpecializationTile specialization={item} certifications={certifications} />
+        )}
+        variant={variant}
+      />
     </LocaleProvider>,
   )
 }
@@ -90,6 +113,22 @@ describe('SpecializationTile', () => {
       await expand('Ingénierie cloud')
 
       expect(screen.getByRole('heading', { level: 4, name: 'Praticien du cloud' })).toBeVisible()
+    })
+  })
+
+  describe('in a row section', () => {
+    it('lists its certifications inside the row tile, each still toggleable', async () => {
+      renderInSection('row', cloudEngineering, [cloudPractitioner])
+      await expand('Cloud engineering')
+
+      const row = screen.getByRole('article', { name: 'Cloud engineering' })
+      expect(row).toHaveClass('tile--row')
+      const nested = within(within(row).getByRole('article', { name: 'Cloud Practitioner' }))
+      expect(nested.getByText('Covers the basics.')).not.toBeVisible()
+
+      await userEvent.setup().click(nested.getByRole('button', { name: 'Cloud Practitioner' }))
+
+      expect(nested.getByText('Covers the basics.')).toBeVisible()
     })
   })
 })

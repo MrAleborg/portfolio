@@ -1,0 +1,116 @@
+/* Below 64rem: a bar of chips, sticky under the header. */
+.resume-index {
+  position: sticky;
+  top: var(--header-height);
+  z-index: 5;
+  height: 3rem;
+  /* Full-bleed: the bar spans the main area's side padding (1rem), so nothing shows beside it. */
+  margin-inline: -1rem;
+  padding-inline: 1rem;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.resume-index ul {
+  position: relative; /* offsetParent of the links, for centring the active chip */
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
+  scrollbar-width: none; /* still scrolls by touch and trackpad, and follows the active section */
+}
+
+.resume-index ul::-webkit-scrollbar {
+  display: none;
+}
+
+.resume-index li {
+  flex: none;
+}
+
+.resume-index a {
+  display: block;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  color: var(--text);
+  text-decoration: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.resume-index a[aria-current] {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.resume-index a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.resume-index__icon {
+  display: none;
+}
+
+/* From 64rem: a vertical list in the left column, sticky beside the sections. */
+@media (min-width: 64rem) {
+  .resume-index {
+    top: calc(var(--header-height) + 1.5rem);
+    z-index: auto;
+    align-self: start;
+    height: auto;
+    margin-inline: 0;
+    padding-inline: 0;
+    background: none;
+    border-bottom: 0;
+  }
+
+  .resume-index ul {
+    display: block;
+    height: auto;
+    overflow-x: visible;
+  }
+
+  .resume-index li {
+    flex: initial;
+  }
+
+  .resume-index a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.9rem;
+    white-space: normal;
+    border: 0;
+    border-left: 2px solid transparent;
+    border-radius: 0;
+  }
+
+  .resume-index a:hover {
+    color: var(--text-strong);
+  }
+
+  .resume-index a[aria-current] {
+    color: var(--text-strong);
+    border-left-color: var(--accent);
+  }
+
+  .resume-index__icon {
+    display: inline-flex;
+    flex: none;
+    width: 1rem;
+    height: 1rem;
+    color: var(--accent);
+  }
+
+  .resume-index__icon svg {
+    width: 100%;
+    height: 100%;
+  }
+}

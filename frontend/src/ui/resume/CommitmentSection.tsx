@@ -19,6 +19,7 @@ export function CommitmentSection({ repository }: CommitmentSectionProps) {
       title={text.commitmentsTitle}
       icon={<HeartIcon />}
       state={state}
+      variant="row"
       getKey={(commitment) => commitment.id}
       renderTile={(commitment) => <CommitmentTile commitment={commitment} />}
     />

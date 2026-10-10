@@ -107,3 +107,59 @@
 .tile--nested .tile__title {
   font-size: 1rem;
 }
+
+.tile__preview {
+  margin-top: 0.5rem;
+}
+
+.tile__preview > * {
+  margin: 0;
+}
+
+/* The lighter look of a tile in a secondary section: a ruled row instead of a card. */
+.tile--row {
+  padding: 1rem 0;
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.tile-list > li:last-child > .tile--row {
+  border-bottom: 1px solid var(--border);
+}
+
+.tile--row > .tile__body {
+  margin-top: 0.75rem;
+  padding-top: 0;
+  border-top: 0;
+}
+
+@media (min-width: 48rem) {
+  .tile--row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 1.5rem;
+  }
+
+  .tile--row > .tile__title,
+  .tile--row > .tile__subtitle {
+    grid-column: 1;
+  }
+
+  .tile--row > .tile__meta {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0;
+    margin-top: 0;
+    text-align: right;
+  }
+
+  .tile--row > .tile__preview,
+  .tile--row > .tile__body {
+    grid-column: 1 / -1;
+  }
+}

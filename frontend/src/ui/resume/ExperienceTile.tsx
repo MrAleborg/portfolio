@@ -1,7 +1,9 @@
 import type { ProfessionalExperience } from '@/domain/professionalExperience/ProfessionalExperience'
+import { experienceTags } from '@/domain/professionalExperience/experienceTags'
 import { ExternalLink } from '@/ui/components/ExternalLink'
 import { LabelledList } from '@/ui/components/LabelledList'
 import { PeriodTime } from '@/ui/components/PeriodTime'
+import { TagChips } from '@/ui/components/TagList'
 import { Tile } from '@/ui/components/Tile'
 import { messages } from '@/ui/i18n/messages'
 import { useLocale } from '@/ui/i18n/useLocale'
@@ -11,11 +13,23 @@ import './ExperienceTile.css'
 
 interface ExperienceTileProps {
   experience: ProfessionalExperience
+  /** Whether the details start open. */
+  defaultExpanded?: boolean
 }
 
-export function ExperienceTile({ experience }: ExperienceTileProps) {
+export function ExperienceTile({ experience, defaultExpanded }: ExperienceTileProps) {
   const { locale } = useLocale()
   const text = messages[locale]
+  const description = paragraphs(experience.description[locale])
+  const [summary] = description
+  const tags = experienceTags(experience, 5)
+  const preview =
+    summary || tags.length > 0 ? (
+      <>
+        {summary && <p className="experience-tile__summary">{summary}</p>}
+        {tags.length > 0 && <TagChips aria-label={text.keyTagsLabel} tags={tags} />}
+      </>
+    ) : undefined
 
   return (
     <Tile
@@ -26,8 +40,10 @@ export function ExperienceTile({ experience }: ExperienceTileProps) {
         experience.location[locale],
         text.employmentTypes[experience.employmentType],
       ]}
+      preview={preview}
+      defaultExpanded={defaultExpanded}
     >
-      {paragraphs(experience.description[locale]).map((paragraph, index) => (
+      {description.map((paragraph, index) => (
         <p key={index}>{paragraph}</p>
       ))}
       {experience.companyUrl ? (

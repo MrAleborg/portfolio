@@ -1,10 +1,12 @@
 import { isInaccessible, render, screen, within } from '@testing-library/react'
-import type { ReactElement } from 'react'
+import userEvent from '@testing-library/user-event'
+import { useState, type ReactElement } from 'react'
 import type { Locale } from '@/domain/i18n/Locale'
 import type { AsyncState } from '@/ui/async/useAsync'
 import { Tile } from '@/ui/components/Tile'
 import { LocaleProvider } from '@/ui/i18n/LocaleProvider'
 import { ResumeSection } from '@/ui/resume/ResumeSection'
+import { useSectionEntry, useSectionVariant } from '@/ui/resume/SectionContext'
 
 interface Item {
   id: number
@@ -166,6 +168,241 @@ describe('ResumeSection', () => {
       renderWithItems({ status: 'loading' })
 
       expect(section().getByRole('status')).toBeInTheDocument()
+    })
+  })
+
+  describe('with expandable entries', () => {
+    /** Stands in for a tile: a toggle that follows the section's expand and collapse commands. */
+    function Entry({ name, initiallyOpen = false }: { name: string; initiallyOpen?: boolean }) {
+      const [expanded, setExpanded] = useSectionEntry(initiallyOpen)
+      return (
+        <button type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>
+          {name}
+        </button>
+      )
+    }
+
+    function renderEntries(
+      entries: { name: string; initiallyOpen?: boolean }[],
+      locale: Locale = 'en',
+      variant?: 'card' | 'row',
+    ) {
+      return render(
+        <LocaleProvider initialLocale={locale}>
+          <ResumeSection
+            title="Things"
+            icon={<svg />}
+            state={{ status: 'loaded', value: entries }}
+            variant={variant}
+            renderItems={(items) =>
+              items.map((item) => <Entry key={item.name} {...item} />)
+            }
+          />
+        </LocaleProvider>,
+      )
+    }
+
+    function entry(name: string) {
+      return section().getByRole('button', { name })
+    }
+
+    it('offers no expand all with a single entry', () => {
+      renderEntries([{ name: 'First' }])
+
+      expect(section().queryByRole('button', { name: /all/i })).not.toBeInTheDocument()
+    })
+
+    it('offers no expand all with no entry', () => {
+      renderEntries([])
+
+      expect(section().queryByRole('button', { name: /all/i })).not.toBeInTheDocument()
+    })
+
+    it('offers to expand all when the entries are closed', () => {
+      renderEntries([{ name: 'First' }, { name: 'Second' }])
+
+      expect(section().getByRole('button', { name: 'Expand all' })).toBeInTheDocument()
+    })
+
+    it('offers to expand all when only some entries are open', () => {
+      renderEntries([{ name: 'First', initiallyOpen: true }, { name: 'Second' }])
+
+      expect(section().getByRole('button', { name: 'Expand all' })).toBeInTheDocument()
+    })
+
+    it('offers to collapse all when every entry is open', () => {
+      renderEntries([
+        { name: 'First', initiallyOpen: true },
+        { name: 'Second', initiallyOpen: true },
+      ])
+
+      expect(section().getByRole('button', { name: 'Collapse all' })).toBeInTheDocument()
+    })
+
+    it('opens every entry when expanding all', async () => {
+      renderEntries([{ name: 'First' }, { name: 'Second', initiallyOpen: true }, { name: 'Third' }])
+
+      await userEvent.click(section().getByRole('button', { name: 'Expand all' }))
+
+      for (const name of ['First', 'Second', 'Third']) {
+        expect(entry(name)).toHaveAttribute('aria-expanded', 'true')
+      }
+      expect(section().getByRole('button', { name: 'Collapse all' })).toBeInTheDocument()
+    })
+
+    it('closes every entry when collapsing all', async () => {
+      renderEntries([
+        { name: 'First', initiallyOpen: true },
+        { name: 'Second', initiallyOpen: true },
+      ])
+
+      await userEvent.click(section().getByRole('button', { name: 'Collapse all' }))
+
+      for (const name of ['First', 'Second']) {
+        expect(entry(name)).toHaveAttribute('aria-expanded', 'false')
+      }
+      expect(section().getByRole('button', { name: 'Expand all' })).toBeInTheDocument()
+    })
+
+    it('switches to collapse all once the last closed entry is opened', async () => {
+      renderEntries([{ name: 'First', initiallyOpen: true }, { name: 'Second' }])
+
+      await userEvent.click(entry('Second'))
+
+      expect(section().getByRole('button', { name: 'Collapse all' })).toBeInTheDocument()
+    })
+
+    it('switches to expand all once an entry is closed', async () => {
+      renderEntries([
+        { name: 'First', initiallyOpen: true },
+        { name: 'Second', initiallyOpen: true },
+      ])
+
+      await userEvent.click(entry('First'))
+
+      expect(section().getByRole('button', { name: 'Expand all' })).toBeInTheDocument()
+    })
+
+    it('lets an entry still be toggled alone after expanding all', async () => {
+      renderEntries([{ name: 'First' }, { name: 'Second' }])
+      await userEvent.click(section().getByRole('button', { name: 'Expand all' }))
+
+      await userEvent.click(entry('First'))
+
+      expect(entry('First')).toHaveAttribute('aria-expanded', 'false')
+      expect(entry('Second')).toHaveAttribute('aria-expanded', 'true')
+    })
+
+    it('describes the button by the section title', () => {
+      renderEntries([{ name: 'First' }, { name: 'Second' }])
+
+      expect(section().getByRole('button', { name: 'Expand all' })).toHaveAccessibleDescription(
+        'Things',
+      )
+    })
+
+    it('keeps the button out of the heading', () => {
+      renderEntries([{ name: 'First' }, { name: 'Second' }])
+
+      const heading = section().getByRole('heading', { level: 2 })
+      expect(within(heading).queryByRole('button')).not.toBeInTheDocument()
+    })
+
+    it('labels the button in French', async () => {
+      renderEntries([{ name: 'First' }, { name: 'Second' }], 'fr')
+
+      await userEvent.click(section().getByRole('button', { name: 'Tout déplier' }))
+
+      expect(section().getByRole('button', { name: 'Tout replier' })).toBeInTheDocument()
+    })
+
+    it('stops offering expand all once entries go away and fewer than two remain', async () => {
+      function RemovableEntries() {
+        const [showSecond, setShowSecond] = useState(true)
+        return (
+          <>
+            <Entry name="First" />
+            {showSecond && <Entry name="Second" />}
+            <button type="button" onClick={() => setShowSecond(false)}>
+              Remove second
+            </button>
+          </>
+        )
+      }
+      render(
+        <LocaleProvider initialLocale="en">
+          <ResumeSection
+            title="Things"
+            icon={<svg />}
+            state={{ status: 'loaded', value: [{ id: 1 }] }}
+            renderItems={() => <RemovableEntries />}
+          />
+        </LocaleProvider>,
+      )
+      expect(section().getByRole('button', { name: 'Expand all' })).toBeInTheDocument()
+
+      await userEvent.click(section().getByRole('button', { name: 'Remove second' }))
+
+      expect(section().queryByRole('button', { name: /all/i })).not.toBeInTheDocument()
+    })
+
+    it('lets an entry outside any section toggle on its own', async () => {
+      render(<Entry name="Alone" />)
+
+      await userEvent.click(screen.getByRole('button', { name: 'Alone' }))
+
+      expect(screen.getByRole('button', { name: 'Alone' })).toHaveAttribute('aria-expanded', 'true')
+    })
+  })
+
+  describe('variant', () => {
+    /** Shows the variant the entries of the section get. */
+    function Variant() {
+      return <p>{useSectionVariant()}</p>
+    }
+
+    function renderVariant(variant?: 'card' | 'row') {
+      return render(
+        <LocaleProvider initialLocale="en">
+          <ResumeSection
+            title="Things"
+            icon={<svg />}
+            state={{ status: 'loaded', value: [{ id: 1 }] }}
+            variant={variant}
+            renderItems={() => <Variant />}
+          />
+        </LocaleProvider>,
+      )
+    }
+
+    it('marks a row section', () => {
+      renderVariant('row')
+
+      expect(screen.getByRole('region', { name: 'Things' })).toHaveClass('resume-section--row')
+    })
+
+    it('is a card section by default', () => {
+      renderVariant()
+
+      expect(screen.getByRole('region', { name: 'Things' })).not.toHaveClass('resume-section--row')
+    })
+
+    it('gives its entries the card variant by default', () => {
+      renderVariant()
+
+      expect(section().getByText('card')).toBeInTheDocument()
+    })
+
+    it('gives its entries the row variant in a row section', () => {
+      renderVariant('row')
+
+      expect(section().getByText('row')).toBeInTheDocument()
+    })
+
+    it('is card for an entry outside any section', () => {
+      render(<Variant />)
+
+      expect(screen.getByText('card')).toBeInTheDocument()
     })
   })
 })

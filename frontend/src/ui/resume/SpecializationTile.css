@@ -1,0 +1,30 @@
+.specialization-certifications {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* In a secondary section the certifications are a plain ruled list, not small cards. */
+.tile--row .specialization-certifications {
+  gap: 0;
+}
+
+.tile--row .specialization-certifications > li > .tile--nested {
+  padding: 0.5rem 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.tile--row .specialization-certifications > li + li {
+  border-top: 1px solid var(--border);
+}
+
+/* The ruled rows already separate the certifications: no second line above the details. */
+.tile--row .specialization-certifications > li > .tile--nested > .tile__body {
+  padding-top: 0;
+  border-top: 0;
+}

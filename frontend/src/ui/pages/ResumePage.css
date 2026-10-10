@@ -1,11 +1,47 @@
 .resume {
   flex: 1;
   align-self: stretch;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
   gap: 2rem;
   width: 100%;
   max-width: 72rem;
   margin: 0 auto;
+  text-align: left;
+}
+
+.resume__sections {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  min-width: 0;
+}
+
+.resume__anchor {
+  scroll-margin-top: calc(var(--header-height) + 3rem + 0.5rem);
+}
+
+/* Focusable so that the index can move focus to a section; the section itself shows no ring. */
+.resume__anchor:focus {
+  outline: none;
+}
+
+@media (min-width: 64rem) {
+  .resume {
+    grid-template-columns: 12rem minmax(0, 1fr);
+    column-gap: 2.5rem;
+  }
+
+  .resume__title {
+    grid-column: 1 / -1;
+  }
+
+  .resume__sections {
+    grid-column: 2;
+  }
+
+  .resume__anchor {
+    scroll-margin-top: calc(var(--header-height) + 1rem);
+  }
 }
