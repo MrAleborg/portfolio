@@ -27,8 +27,10 @@
 }
 
 .layout__mark {
-  font-size: 1.05rem;
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-size: var(--step-1);
+  font-weight: 650;
+  letter-spacing: -0.01em;
   line-height: 1.2;
   min-width: 0;
   overflow-wrap: break-word;
@@ -70,7 +72,7 @@
   }
 
   .layout__mark {
-    font-size: 0.85rem;
+    font-size: 1.15rem;
   }
 }
 
@@ -105,7 +107,7 @@
 
 .layout__main h1 {
   margin: 1rem 0 0;
-  font-size: clamp(2rem, 6vw, 3rem);
+  font-size: clamp(var(--step-3), 6vw, var(--step-4));
   line-height: 1.1;
   color: var(--text-strong);
 }
