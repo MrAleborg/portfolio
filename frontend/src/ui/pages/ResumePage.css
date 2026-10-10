@@ -19,7 +19,14 @@
 }
 
 .resume__anchor {
-  scroll-margin-top: calc(var(--header-height) + 3rem + 0.5rem);
+  --anchor-offset: calc(var(--header-height) + 3rem + 0.5rem);
+
+  scroll-margin-top: var(--anchor-offset);
+}
+
+/* Tall enough for the last section to scroll up under the header like the others; no extra space when it is taller. */
+.resume__anchor:last-child {
+  min-height: calc(100dvh - var(--anchor-offset));
 }
 
 /* Focusable so that the index can move focus to a section; the section itself shows no ring. */
@@ -42,6 +49,6 @@
   }
 
   .resume__anchor {
-    scroll-margin-top: calc(var(--header-height) + 1rem);
+    --anchor-offset: calc(var(--header-height) + 1rem);
   }
 }
