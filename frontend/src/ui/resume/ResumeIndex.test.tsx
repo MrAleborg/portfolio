@@ -134,8 +134,8 @@ function stubBreakpoint() {
 
 /** Scrolls the page to its end (or, with `false`, to the middle) and tells the page. */
 function scrollPage(toEnd: boolean) {
-  Object.defineProperty(window, 'scrollY', { value: toEnd ? 900 : 300, configurable: true })
-  Object.defineProperty(window, 'innerHeight', { value: 100, configurable: true })
+  Object.defineProperty(window, 'scrollY', { value: toEnd ? 600 : 300, configurable: true })
+  Object.defineProperty(window, 'innerHeight', { value: 400, configurable: true })
   vi.spyOn(document.documentElement, 'scrollHeight', 'get').mockReturnValue(1000)
   act(() => {
     fireEvent.scroll(window)
@@ -384,6 +384,303 @@ describe('ResumeIndex', () => {
     expect(observer.disconnected).toBe(1)
   })
 
+  describe('when a smooth scroll ends off target', () => {
+    const ALIGNED = { behavior: 'auto', block: 'start' }
+
+    beforeEach(() => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+      Reflect.deleteProperty(window, 'visualViewport')
+    })
+
+    /** Like a browser whose address bar collapsed mid-scroll: the section stopped `top` px from the top. */
+    function stopAt(id: string, top: number) {
+      document.getElementById(id)!.getBoundingClientRect = () => ({ top }) as DOMRect
+    }
+
+    async function clickOn(name: string) {
+      await userEvent.click(screen.getByRole('link', { name }))
+    }
+
+    /** The page scrolls (once), then stays still for `ms`. */
+    function scrollsThenRests(ms = 150) {
+      act(() => {
+        fireEvent.scroll(window)
+        vi.advanceTimersByTime(ms)
+      })
+    }
+
+    function alignments() {
+      return scrollIntoView.mock.calls
+        .map((args, index) => ({ args, target: scrollIntoView.mock.contexts[index] }))
+        .filter(({ args }) => args[0].behavior === 'auto')
+    }
+
+    it('scrolls to it again, without animation, once the page has stopped scrolling', async () => {
+      renderIndex()
+      scrollPage(false)
+      await clickOn('Education')
+      stopAt('education', 200)
+
+      scrollsThenRests()
+
+      expect(scrollIntoView).toHaveBeenCalledTimes(2)
+      expect(scrollIntoView).toHaveBeenLastCalledWith(ALIGNED)
+      expect(scrollIntoView.mock.contexts[1]).toBe(document.getElementById('education'))
+    })
+
+    it('waits while the page is still scrolling, then scrolls to it again exactly once', async () => {
+      renderIndex()
+      scrollPage(false)
+      await clickOn('Education')
+      stopAt('education', 200)
+
+      for (let frame = 0; frame < 10; frame++) {
+        scrollsThenRests(100)
+      }
+      expect(alignments()).toHaveLength(0)
+      act(() => {
+        vi.advanceTimersByTime(1000)
+      })
+
+      expect(alignments()).toHaveLength(1)
+    })
+
+    it('keeps waiting when the gap is large mid-scroll, and corrects once it settles near the target', async () => {
+      renderIndex()
+      scrollPage(false)
+      await clickOn('Education')
+      stopAt('education', 700)
+      scrollsThenRests()
+      expect(alignments()).toHaveLength(0)
+      stopAt('education', 200)
+
+      scrollsThenRests()
+
+      expect(alignments()).toHaveLength(1)
+    })
+
+    it('stops waiting once the section is aligned', async () => {
+      renderIndex()
+      scrollPage(false)
+      await clickOn('Education')
+      stopAt('education', 126)
+      scrollsThenRests()
+      stopAt('education', 200)
+
+      scrollsThenRests()
+
+      expect(alignments()).toHaveLength(0)
+    })
+
+    it('waits again when the window is resized, as when the address bar collapses', async () => {
+      renderIndex()
+      scrollPage(false)
+      await clickOn('Education')
+      stopAt('education', 200)
+
+      act(() => {
+        fireEvent(window, new Event('resize'))
+        vi.advanceTimersByTime(150)
+      })
+
+      expect(alignments()).toHaveLength(1)
+    })
+
+    it('waits again when the visual viewport is resized', async () => {
+      const visualViewport = new EventTarget()
+      Object.defineProperty(window, 'visualViewport', { value: visualViewport, configurable: true })
+      renderIndex()
+      scrollPage(false)
+      await clickOn('Education')
+      stopAt('education', 200)
+
+      act(() => {
+        visualViewport.dispatchEvent(new Event('resize'))
+        vi.advanceTimersByTime(150)
+      })
+
+      expect(alignments()).toHaveLength(1)
+    })
+
+    it('stops listening to the visual viewport when the page is left', async () => {
+      const visualViewport = new EventTarget()
+      Object.defineProperty(window, 'visualViewport', { value: visualViewport, configurable: true })
+      const { unmount } = renderIndex()
+      scrollPage(false)
+      await clickOn('Education')
+      stopAt('education', 200)
+      unmount()
+
+      act(() => {
+        visualViewport.dispatchEvent(new Event('resize'))
+        vi.advanceTimersByTime(150)
+      })
+
+      expect(alignments()).toHaveLength(0)
+    })
+
+    it('does nothing when the click caused no scroll', async () => {
+      renderIndex()
+      scrollPage(false)
+      await clickOn('Education')
+      stopAt('education', 200)
+
+      act(() => {
+        vi.advanceTimersByTime(1900)
+      })
+
+      expect(alignments()).toHaveLength(0)
+    })
+
+    it('gives up after 2 seconds', async () => {
+      renderIndex()
+      scrollPage(false)
+      await clickOn('Education')
+      stopAt('education', 200)
+
+      for (let frame = 0; frame < 25; frame++) {
+        scrollsThenRests(100)
+      }
+      act(() => {
+        vi.advanceTimersByTime(1000)
+      })
+
+      expect(alignments()).toHaveLength(0)
+    })
+
+    it('leaves it alone when it landed on its scroll margin', async () => {
+      renderIndex()
+      scrollPage(false)
+      await clickOn('Education')
+      stopAt('education', 127)
+
+      scrollsThenRests()
+
+      expect(alignments()).toHaveLength(0)
+    })
+
+    it('leaves it alone when the user scrolled far away, such as by dragging the scrollbar', async () => {
+      renderIndex()
+      scrollPage(false)
+      await clickOn('Education')
+      stopAt('education', 700)
+
+      scrollsThenRests()
+
+      expect(alignments()).toHaveLength(0)
+    })
+
+    it('leaves it alone when the page is scrolled to its end', async () => {
+      renderIndex()
+      scrollPage(true)
+      await clickOn('Hobbies')
+      stopAt('hobbies', 300)
+
+      scrollsThenRests()
+
+      expect(alignments()).toHaveLength(0)
+    })
+
+    it('does not wait when the scroll is not animated', async () => {
+      prefersReducedMotion()
+      renderIndex()
+      scrollPage(false)
+      await clickOn('Education')
+      stopAt('education', 200)
+
+      scrollsThenRests()
+
+      expect(scrollIntoView).toHaveBeenCalledTimes(1)
+    })
+
+    it('scrolls to it a second time when the first correction also ends off target', async () => {
+      renderIndex()
+      scrollPage(false)
+      await clickOn('Education')
+      stopAt('education', 200)
+      scrollsThenRests()
+
+      scrollsThenRests()
+
+      expect(alignments()).toHaveLength(2)
+    })
+
+    it('corrects at most twice', async () => {
+      renderIndex()
+      scrollPage(false)
+      await clickOn('Education')
+      stopAt('education', 200)
+      scrollsThenRests()
+      scrollsThenRests()
+
+      scrollsThenRests()
+
+      expect(alignments()).toHaveLength(2)
+    })
+
+    it('does not correct a second time when no scroll followed the first', async () => {
+      renderIndex()
+      scrollPage(false)
+      await clickOn('Education')
+      stopAt('education', 200)
+      scrollsThenRests()
+
+      act(() => {
+        vi.advanceTimersByTime(1900)
+      })
+
+      expect(alignments()).toHaveLength(1)
+    })
+
+    it.each([
+      ['wheel', (target: Element) => fireEvent.wheel(target)],
+      ['touchstart', (target: Element) => fireEvent.touchStart(target)],
+      ['keydown', (target: Element) => fireEvent.keyDown(target, { key: 'ArrowDown' })],
+      ['pointerdown', (target: Element) => fireEvent.pointerDown(target)],
+    ])('leaves it alone when the user takes over with a %s', async (_, interact) => {
+      renderIndex()
+      scrollPage(false)
+      await clickOn('Education')
+      stopAt('education', 200)
+      interact(document.body)
+
+      scrollsThenRests()
+
+      expect(alignments()).toHaveLength(0)
+    })
+
+    it('leaves it alone when the page is left before scrolling ends', async () => {
+      const { unmount } = renderIndex()
+      scrollPage(false)
+      await clickOn('Education')
+      stopAt('education', 200)
+      unmount()
+
+      scrollsThenRests()
+
+      expect(alignments()).toHaveLength(0)
+    })
+
+    it('only checks the section of the last click', async () => {
+      renderIndex()
+      scrollPage(false)
+      await clickOn('Education')
+      stopAt('education', 200)
+      await clickOn('Certifications')
+      stopAt('certifications', 200)
+
+      scrollsThenRests()
+
+      expect(alignments().map(({ target }) => target)).toEqual([
+        document.getElementById('certifications'),
+      ])
+    })
+  })
+
   describe('when the page opens on a section', () => {
     beforeEach(() => {
       window.history.replaceState(null, '', '/#education')
@@ -429,6 +726,17 @@ describe('ResumeIndex', () => {
       const resizing = stubResizeObserver()
       renderIndex()
       interact(document.body)
+      scrollIntoView.mockClear()
+
+      resizing.resize()
+
+      expect(scrollIntoView).not.toHaveBeenCalled()
+    })
+
+    it('stops aligning when a link of the index is clicked, even with no pointer event', () => {
+      const resizing = stubResizeObserver()
+      renderIndex()
+      fireEvent.click(screen.getByRole('link', { name: 'Hobbies' }))
       scrollIntoView.mockClear()
 
       resizing.resize()
