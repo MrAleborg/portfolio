@@ -37,7 +37,7 @@ export function KeyFacts({ experiences, desiredRole, today = new Date() }: KeyFa
     facts.push({ label: text.factExperience, value: text.experienceYears(years), isText: true })
   }
 
-  const current = currentExperience(experiences)
+  const current = currentExperience(experiences, today)
   if (current) {
     facts.push({
       label: text.factCurrently,

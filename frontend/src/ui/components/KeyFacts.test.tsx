@@ -57,10 +57,11 @@ const definitions = () =>
   screen.queryAllByRole('definition').map((definition) => definition.textContent)
 
 describe('KeyFacts', () => {
-  it('is a list of facts labelled "Key facts"', () => {
+  it('is a region named by a "Key facts" heading', () => {
     renderFacts([experience('2015-09-01', '2024-12-31')])
 
-    expect(screen.getByLabelText('Key facts')).toBeInTheDocument()
+    const region = screen.getByRole('region', { name: 'Key facts' })
+    expect(within(region).getByRole('heading', { level: 2, name: 'Key facts' })).toBeInTheDocument()
   })
 
   it('shows the years of experience as "N+ years", rounding down', () => {
@@ -68,6 +69,12 @@ describe('KeyFacts', () => {
 
     expect(terms()).toContain('Experience')
     expect(definitions()).toContain('9+ years')
+  })
+
+  it('says "1+ an" in French from exactly 12 months of experience', () => {
+    renderFacts([experience('2025-10-01', '2026-09-30')], NO_ROLE, 'fr')
+
+    expect(definitions()).toContain('1+ an')
   })
 
   it('says "1+ year" from exactly 12 months of experience', () => {
@@ -89,6 +96,13 @@ describe('KeyFacts', () => {
     expect(terms()).toContain('Looking for')
     expect(terms()).not.toContain('Currently')
     expect(definitions()).toContain('Tech lead')
+  })
+
+  it('shows the desired role when the only ongoing job starts after today', () => {
+    renderFacts([experience('2027-01-01', null)], TECH_LEAD)
+
+    expect(terms()).toEqual(['Looking for'])
+    expect(definitions()).toEqual(['Tech lead'])
   })
 
   it('prefers the ongoing job over the desired role', () => {
@@ -154,7 +168,7 @@ describe('KeyFacts', () => {
     expect(terms()).toEqual(['Expérience', 'Actuellement', 'Stack principale'])
     expect(definitions()).toContain('11+ ans')
     expect(definitions()).toContain('Développeur chez Acme')
-    expect(screen.getByLabelText('En bref')).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'En bref' })).toBeInTheDocument()
     expect(screen.getByText('Étiquette 1')).toBeInTheDocument()
   })
 

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import type { Locale } from '@/domain/i18n/Locale'
@@ -201,11 +201,15 @@ describe('HomePage', () => {
   })
 
   describe('key facts', () => {
-    it('shows the facts under the calls to action once the experiences have loaded', async () => {
+    it('shows the facts after the calls to action once the experiences have loaded', async () => {
       renderPage(fakeProfileRepository())
 
-      expect(await screen.findByLabelText('Key facts')).toBeInTheDocument()
-      expect(screen.getByText('Consultant at Globex')).toBeInTheDocument()
+      const facts = await screen.findByRole('region', { name: 'Key facts' })
+      const lastCallToAction = screen.getByRole('link', { name: 'Get in touch' })
+      expect(within(facts).getByText('Consultant at Globex')).toBeInTheDocument()
+      expect(
+        lastCallToAction.compareDocumentPosition(facts) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
     })
 
     it('shows the desired role of the profile when no job is ongoing', async () => {
@@ -222,12 +226,20 @@ describe('HomePage', () => {
       expect(await screen.findByText('Engineer')).toBeInTheDocument()
     })
 
-    it('shows the profile and the calls to action while the experiences are loading, without facts', async () => {
+    it('keeps saying it is loading, without the hero yet, while the experiences are loading', async () => {
       renderPage(fakeProfileRepository(), 'en', { list: pending<ProfessionalExperience>() })
+      await act(async () => {})
 
-      expect(await screen.findByRole('heading', { level: 1, name: 'Ada Lovelace' })).toBeInTheDocument()
-      expect(screen.getByRole('link', { name: 'See my resume' })).toBeInTheDocument()
-      expect(screen.queryByLabelText('Key facts')).not.toBeInTheDocument()
+      expect(screen.getByRole('status')).toHaveTextContent('Loading…')
+      expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument()
+    })
+
+    it('shows the profile alert as soon as the profile fails, even while the experiences are loading', async () => {
+      renderPage(failingProfileRepository(), 'en', { list: pending<ProfessionalExperience>() })
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'The profile could not be loaded. Please try again later.',
+      )
     })
 
     it('shows the profile and the calls to action without facts or alert when the experiences fail to load', async () => {
@@ -235,7 +247,7 @@ describe('HomePage', () => {
 
       expect(await screen.findByRole('heading', { level: 1, name: 'Ada Lovelace' })).toBeInTheDocument()
       expect(screen.getByRole('link', { name: 'Get in touch' })).toBeInTheDocument()
-      expect(screen.queryByLabelText('Key facts')).not.toBeInTheDocument()
+      expect(screen.queryByRole('region', { name: 'Key facts' })).not.toBeInTheDocument()
       expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     })
   })

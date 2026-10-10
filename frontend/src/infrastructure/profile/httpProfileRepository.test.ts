@@ -28,6 +28,16 @@ describe('httpProfileRepository', () => {
     })
   })
 
+  it('has an empty desired role when the API does not send one yet', async () => {
+    const withoutDesiredRole = { full_name: body.full_name, headline: body.headline, bio: body.bio }
+    const repository = createHttpProfileRepository(
+      'https://api.example.com',
+      respondWith(200, withoutDesiredRole),
+    )
+
+    await expect(repository.get()).resolves.toMatchObject({ desiredRole: { en: '', fr: '' } })
+  })
+
   it('fails while the profile does not exist yet', async () => {
     const repository = createHttpProfileRepository(
       'https://api.example.com',
