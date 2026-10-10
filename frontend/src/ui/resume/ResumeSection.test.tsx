@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { isInaccessible, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState, type ReactElement } from 'react'
@@ -97,6 +99,136 @@ describe('ResumeSection', () => {
       renderSection({ status: 'loaded', value: [] }, 'fr')
 
       expect(section().getByText('Rien à afficher pour le moment.')).toBeInTheDocument()
+    })
+  })
+
+  describe('while loading', () => {
+    function renderLoading(
+      props: { variant?: 'card' | 'row'; singleColumn?: boolean; locale?: Locale } = {},
+    ) {
+      const { locale = 'en', ...sectionProps } = props
+      return render(
+        <LocaleProvider initialLocale={locale}>
+          <ResumeSection
+            title="Things"
+            icon={<svg />}
+            state={{ status: 'loading' }}
+            getKey={(item: Item) => item.id}
+            renderTile={(item: Item) => <Tile title={item.name} />}
+            {...sectionProps}
+          />
+        </LocaleProvider>,
+      )
+    }
+
+    /** The part of the placeholders that assistive technology skips. */
+    function hiddenSkeleton() {
+      const container = section().getByRole('status').querySelector('[aria-hidden="true"]')
+      if (!container) throw new Error('No aria-hidden placeholders inside the status')
+      return container
+    }
+
+    it('still shows the title right away', () => {
+      renderLoading()
+
+      expect(section().getByRole('heading', { level: 2, name: 'Things' })).toBeInTheDocument()
+    })
+
+    it('announces the loading with visually hidden text', () => {
+      renderLoading()
+
+      expect(section().getByRole('status')).toHaveTextContent('Loading…')
+      expect(section().getByText('Loading…')).toHaveClass('visually-hidden')
+    })
+
+    it('announces the loading in French with visually hidden text', () => {
+      renderLoading({ locale: 'fr' })
+
+      expect(section().getByText('Chargement…')).toHaveClass('visually-hidden')
+      expect(section().getByRole('status')).toHaveTextContent('Chargement…')
+    })
+
+    it('shows two card placeholders in a card section', () => {
+      renderLoading()
+
+      expect(hiddenSkeleton().querySelectorAll('li')).toHaveLength(2)
+    })
+
+    it('shows three row placeholders in a row section', () => {
+      renderLoading({ variant: 'row' })
+
+      expect(hiddenSkeleton().querySelectorAll('li')).toHaveLength(3)
+    })
+
+    it('lays the card placeholders out like the tiles', () => {
+      renderLoading()
+
+      expect(hiddenSkeleton().querySelector('.tile-list')).not.toHaveClass('tile-list--single')
+    })
+
+    it('stacks the card placeholders of a single column section', () => {
+      renderLoading({ singleColumn: true })
+
+      expect(hiddenSkeleton().querySelector('.tile-list')).toHaveClass('tile-list--single')
+    })
+
+    it('stacks the card placeholders of a section with its own rendering', () => {
+      render(
+        <LocaleProvider initialLocale="en">
+          <ResumeSection
+            title="Things"
+            icon={<svg />}
+            state={{ status: 'loading' }}
+            renderItems={() => null}
+          />
+        </LocaleProvider>,
+      )
+
+      expect(hiddenSkeleton().querySelector('.tile-list')).toHaveClass('tile-list--single')
+    })
+
+    it('is not mistaken for entries', () => {
+      renderLoading()
+
+      expect(section().queryByRole('article', { hidden: true })).not.toBeInTheDocument()
+      expect(section().queryByRole('button', { hidden: true })).not.toBeInTheDocument()
+      expect(section().getAllByRole('heading', { hidden: true })).toHaveLength(1)
+    })
+
+    it('gives way to the entries once loaded', () => {
+      const { rerender } = renderLoading()
+
+      rerender(
+        <LocaleProvider initialLocale="en">
+          <ResumeSection
+            title="Things"
+            icon={<svg />}
+            state={{ status: 'loaded', value: [{ id: 1, name: 'First' }] }}
+            getKey={(item: Item) => item.id}
+            renderTile={(item: Item) => <Tile title={item.name} />}
+          />
+        </LocaleProvider>,
+      )
+
+      expect(section().queryByRole('status')).not.toBeInTheDocument()
+      expect(section().getByRole('article')).toHaveTextContent('First')
+    })
+
+    describe('styles', () => {
+      const css = readFileSync(join(import.meta.dirname, 'SectionSkeleton.css'), 'utf8').replace(
+        /\/\*[\s\S]*?\*\//g,
+        '',
+      )
+
+      it('pulses slowly', () => {
+        expect(css).toMatch(/animation:[^;]*1\.6s\s+ease-in-out\s+infinite/)
+      })
+
+      it('does not animate when the reader prefers reduced motion', () => {
+        expect(css).toMatch(
+          /@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{[^}]*animation:\s*none/,
+        )
+      })
     })
   })
 

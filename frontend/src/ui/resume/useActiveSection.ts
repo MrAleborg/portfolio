@@ -9,7 +9,8 @@ const DESKTOP_QUERY = '(min-width: 64rem)'
  * Observed band: from the line where a scrolled-to section lands (its `scroll-margin-top`, which
  * clears the header and, on narrow screens, the bar) down to 40% of the viewport. The active section
  * is the first one crossing it; the last one stays active while none does, and a page scrolled to
- * its end activates the last section, which may be too short to ever reach the band.
+ * its end activates the last section. The last section is tall enough to reach the band (see
+ * `ResumePage.css`), so that end-of-page rule stays only as a safety net.
  */
 export function useActiveSection(ids: readonly string[]): string | undefined {
   const [active, setActive] = useState(ids[0])

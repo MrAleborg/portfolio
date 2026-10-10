@@ -8,6 +8,7 @@ import {
   useSectionRegistry,
   type SectionVariant,
 } from '@/ui/resume/SectionContext'
+import { SectionSkeleton } from '@/ui/resume/SectionSkeleton'
 import './ResumeSection.css'
 
 /** How the loaded items are shown: one tile each, or in a way of the section's own. */
@@ -70,7 +71,15 @@ export function ResumeSection<T>(props: ResumeSectionProps<T>) {
             </button>
           )}
         </div>
-        {state.status === 'loading' && <p role="status">{text.loading}</p>}
+        {state.status === 'loading' && (
+          <div role="status">
+            <span className="visually-hidden">{text.loading}</span>
+            <SectionSkeleton
+              variant={variant}
+              singleColumn={props.singleColumn || props.renderItems !== undefined}
+            />
+          </div>
+        )}
         {state.status === 'error' && (
           <p role="alert">{text.sectionUnavailable}</p>
         )}
