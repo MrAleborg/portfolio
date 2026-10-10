@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
   <!-- Mid greys: an <img> SVG can't follow the theme switch, so one palette fits both. -->
-  <rect fill="#afb8c1" width="200" height="200"/>
-  <circle fill="#6e7781" cx="100" cy="78" r="38"/>
-  <path fill="#6e7781" d="M28 200a72 66 0 0 1 144 0z"/>
+  <rect fill="#b3b8b2" width="200" height="200"/>
+  <circle fill="#737a75" cx="100" cy="78" r="38"/>
+  <path fill="#737a75" d="M28 200a72 66 0 0 1 144 0z"/>
 </svg>

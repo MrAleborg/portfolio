@@ -4,7 +4,7 @@
 }
 
 .tag-list__label {
-  font-size: 0.75rem;
+  font-size: var(--step--1);
 }
 
 .tag-list__tags {
@@ -18,7 +18,7 @@
 
 .tag {
   padding: 0.125rem 0.5rem;
-  font-size: 0.75rem;
+  font-size: var(--step--1);
   color: var(--text-strong);
   background: var(--bg);
   border: 1px solid var(--border);

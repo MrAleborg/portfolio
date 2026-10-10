@@ -19,7 +19,7 @@
 }
 
 .key-facts dt {
-  font-size: 0.8rem;
+  font-size: var(--step--1);
   color: var(--text);
 }
 
