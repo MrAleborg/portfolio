@@ -2,7 +2,6 @@ import type { ProfessionalExperience } from '@/domain/professionalExperience/Pro
 import { experienceTags } from '@/domain/professionalExperience/experienceTags'
 import { ExternalLink } from '@/ui/components/ExternalLink'
 import { LabelledList } from '@/ui/components/LabelledList'
-import { PeriodTime } from '@/ui/components/PeriodTime'
 import { TagChips } from '@/ui/components/TagList'
 import { Tile } from '@/ui/components/Tile'
 import { messages } from '@/ui/i18n/messages'
@@ -36,7 +35,6 @@ export function ExperienceTile({ experience, defaultExpanded }: ExperienceTilePr
       title={experience.position[locale]}
       subtitle={experience.company}
       meta={[
-        <PeriodTime period={experience.period} />,
         experience.location[locale],
         text.employmentTypes[experience.employmentType],
       ]}

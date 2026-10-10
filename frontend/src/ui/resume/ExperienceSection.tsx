@@ -1,6 +1,6 @@
 import type { ProfessionalExperienceRepository } from '@/domain/professionalExperience/ProfessionalExperienceRepository'
 import { useAsync } from '@/ui/async/useAsync'
-import { TileList } from '@/ui/components/TileList'
+import { Timeline } from '@/ui/components/Timeline'
 import { messages } from '@/ui/i18n/messages'
 import { useLocale } from '@/ui/i18n/useLocale'
 import { ExperienceTile } from '@/ui/resume/ExperienceTile'
@@ -21,16 +21,16 @@ export function ExperienceSection({ repository }: ExperienceSectionProps) {
       icon={<BriefcaseIcon />}
       state={state}
       renderItems={(experiences) => (
-        <TileList
+        <Timeline
           items={experiences}
           getKey={(experience) => experience.id}
+          getPeriod={(experience) => experience.period}
           renderTile={(experience) => (
             <ExperienceTile
               experience={experience}
               defaultExpanded={experience === experiences[0]}
             />
           )}
-          singleColumn
         />
       )}
     />

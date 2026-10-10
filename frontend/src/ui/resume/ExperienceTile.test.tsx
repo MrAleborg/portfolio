@@ -3,13 +3,11 @@ import userEvent from '@testing-library/user-event'
 import type { Locale } from '@/domain/i18n/Locale'
 import type { ProfessionalExperience } from '@/domain/professionalExperience/ProfessionalExperience'
 import {
-  fakeProfessionalExperienceRepository,
   fullExperience,
   minimalExperience,
 } from '@/test/fakeProfessionalExperienceRepository'
 import { minimalProject, portfolioProject } from '@/test/fakeProjectRepository'
 import { LocaleProvider } from '@/ui/i18n/LocaleProvider'
-import { ExperienceSection } from '@/ui/resume/ExperienceSection'
 import { ExperienceTile } from '@/ui/resume/ExperienceTile'
 
 function renderTile(
@@ -82,12 +80,11 @@ describe('ExperienceTile', () => {
       expect(screen.getByText('Acme')).toBeInTheDocument()
     })
 
-    it('shows the period in time elements, the location and the employment type', () => {
+    it('leaves the period to the timeline, and shows the location and the employment type', () => {
       renderTile(fullExperience)
 
-      const [start, end] = screen.getAllByRole('time')
-      expect(start).toHaveTextContent('Sep 2019')
-      expect(end).toHaveTextContent('Aug 2022')
+      expect(screen.getByRole('article')).not.toHaveTextContent('Sep 2019')
+      expect(screen.getByRole('article')).not.toHaveTextContent('Aug 2022')
       expect(screen.getByText('Paris')).toBeInTheDocument()
       expect(screen.getByText('Full-time')).toBeInTheDocument()
     })
@@ -156,12 +153,6 @@ describe('ExperienceTile', () => {
       expect(screen.queryByRole('list', { name: 'Projects' })).toBeNull()
     })
 
-    it('shows an ongoing job as lasting until now', () => {
-      renderTile(minimalExperience)
-
-      expect(screen.getByRole('article')).toHaveTextContent('Jan 2023 – Present')
-    })
-
     it('leaves out the optional fields that are empty', async () => {
       renderTile({
         ...fullExperience,
@@ -192,7 +183,6 @@ describe('ExperienceTile', () => {
 
       expect(screen.getByRole('article')).toHaveAccessibleName('Ingénieur logiciel')
       expect(screen.getByText('Temps plein')).toBeInTheDocument()
-      expect(screen.getByRole('article')).toHaveTextContent('sept. 2019 – août 2022')
     })
 
     it('names the other employment types in French', () => {
@@ -320,27 +310,5 @@ describe('ExperienceTile', () => {
       expect(shown('Construction de la plateforme.')).toHaveLength(1)
       expect(screen.getByRole('list', { name: 'Mots-clés principaux' })).toBeVisible()
     })
-  })
-})
-
-describe('ExperienceSection', () => {
-  it('opens the first experience, showing its projects, and keeps the next ones closed', async () => {
-    const second = { ...fullExperience, id: 3, position: { en: 'Tech lead', fr: 'Responsable technique' } }
-    render(
-      <LocaleProvider initialLocale="en">
-        <ExperienceSection
-          repository={fakeProfessionalExperienceRepository([fullExperience, second])}
-        />
-      </LocaleProvider>,
-    )
-
-    const first = await screen.findByRole('button', { name: 'Software engineer' })
-    expect(first).toHaveAttribute('aria-expanded', 'true')
-    expect(screen.getByRole('list', { name: 'Projects' })).toBeVisible()
-    expect(screen.getByRole('button', { name: 'Tech lead' })).toHaveAttribute(
-      'aria-expanded',
-      'false',
-    )
-    expect(screen.getByRole('list', { name: 'Main keywords' })).toBeVisible()
   })
 })
