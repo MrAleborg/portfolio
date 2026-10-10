@@ -18,15 +18,16 @@ interface HomePageProps {
 export function HomePage({ profileRepository, experienceRepository }: HomePageProps) {
   const { locale } = useLocale()
   const state = useAsync(profileRepository.get)
-  // Loaded apart from the profile: the facts are optional, so a failure or a wait shows nothing.
+  // Loaded in parallel with the profile. The facts are optional: if they fail, the hero shows without them.
   const experiences = useAsync(experienceRepository.list)
-
-  if (state.status === 'loading') {
-    return <p role="status">{messages[locale].loading}</p>
-  }
 
   if (state.status === 'error') {
     return <p role="alert">{messages[locale].profileUnavailable}</p>
+  }
+
+  // Both are awaited, so the hero does not shift when the facts arrive.
+  if (state.status === 'loading' || experiences.status === 'loading') {
+    return <p role="status">{messages[locale].loading}</p>
   }
 
   const text = messages[locale]

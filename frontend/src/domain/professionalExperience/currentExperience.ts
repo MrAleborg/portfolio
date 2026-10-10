@@ -1,10 +1,19 @@
+import { monthIndex } from '@/domain/period/monthIndex'
 import type { ProfessionalExperience } from '@/domain/professionalExperience/ProfessionalExperience'
 
-/** The first ongoing experience (no end date) in the given order, if any. */
+/**
+ * The first ongoing experience (no end date) in the given order, if any.
+ * One starting after the month of today is not current yet.
+ */
 export function currentExperience(
   experiences: ProfessionalExperience[],
   today: Date,
 ): ProfessionalExperience | undefined {
-  void today // Skeleton for the red gate: used in the green step.
-  return experiences.find((experience) => experience.period.end === null)
+  // ISO dates are read as UTC, so the result does not depend on the time zone.
+  const thisMonth = monthIndex(today.getUTCFullYear(), today.getUTCMonth())
+  return experiences.find((experience) => {
+    if (experience.period.end !== null) return false
+    const start = new Date(experience.period.start)
+    return monthIndex(start.getUTCFullYear(), start.getUTCMonth()) <= thisMonth
+  })
 }

@@ -6,7 +6,8 @@ interface ProfileDto {
   full_name: string
   headline: Localized<string>
   bio: Localized<string>
-  desired_role: Localized<string>
+  /** Missing from an API that predates the field. */
+  desired_role?: Localized<string>
 }
 
 export function createHttpProfileRepository(
@@ -20,7 +21,7 @@ export function createHttpProfileRepository(
         fullName: dto.full_name,
         headline: dto.headline,
         bio: dto.bio,
-        desiredRole: dto.desired_role,
+        desiredRole: dto.desired_role ?? { en: '', fr: '' },
       }
     },
   }
