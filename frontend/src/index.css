@@ -15,7 +15,7 @@
   --shadow: 0 10px 25px -5px
     light-dark(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.6));
 
-  --font-display: 'Bricolage Grotesque Variable', system-ui, sans-serif;
+  --font-display: 'Space Grotesk Variable', system-ui, sans-serif;
   --font-body: 'IBM Plex Sans Variable', system-ui, sans-serif;
 
   /* Type scale: ratio 1.25 from a 17px base. */
@@ -60,6 +60,7 @@ h4 {
   font-family: var(--font-display);
   letter-spacing: -0.01em;
   line-height: 1.15;
+  text-wrap: balance;
 }
 
 /* Read by screen readers, invisible on screen. */
