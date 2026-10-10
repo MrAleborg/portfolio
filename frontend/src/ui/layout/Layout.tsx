@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react'
-import { Link, NavLink, Outlet, useLocation } from 'react-router'
+import { useEffect, useLayoutEffect, useRef } from 'react'
+import { Link, NavLink, Outlet, useLocation, useNavigationType } from 'react-router'
 import type { ProfileRepository } from '@/domain/profile/ProfileRepository'
 import { useAsync } from '@/ui/async/useAsync'
 import { ErrorBoundary } from '@/ui/components/ErrorBoundary'
@@ -14,7 +14,8 @@ interface LayoutProps {
 
 export function Layout({ profileRepository }: LayoutProps) {
   const text = messages[useLocale().locale]
-  const { pathname } = useLocation()
+  const { pathname, hash, key } = useLocation()
+  const navigationType = useNavigationType()
   const profile = useAsync(profileRepository.get)
   const sentinel = useRef<HTMLDivElement>(null)
   const header = useRef<HTMLElement>(null)
@@ -28,6 +29,13 @@ export function Layout({ profileRepository }: LayoutProps) {
     if (sentinel.current) observer.observe(sentinel.current)
     return () => observer.disconnect()
   }, [])
+
+  // A followed link opens the page at its top, before it is painted. Back and forward are left to
+  // the browser, and a link to a section (`#…`) to the page, which scrolls there itself. The
+  // location's key changes on every navigation, including a second click on the current page.
+  useLayoutEffect(() => {
+    if (navigationType !== 'POP' && !hash) window.scrollTo(0, 0)
+  }, [key, navigationType, hash])
 
   return (
     <div className="layout">

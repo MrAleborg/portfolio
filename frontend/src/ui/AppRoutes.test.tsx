@@ -1,6 +1,6 @@
 import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router'
+import { MemoryRouter, useNavigate } from 'react-router'
 import type { Locale } from '@/domain/i18n/Locale'
 import { fakeEducationRepository, masters } from '@/test/fakeEducationRepository'
 import {
@@ -204,6 +204,123 @@ describe('AppRoutes', () => {
       'true',
     )
     expect(screen.getByText('Mémoire sur les compilateurs.')).toBeVisible()
+  })
+
+  describe('scroll position', () => {
+    let scrollTo: ReturnType<typeof vi.spyOn>
+
+    beforeEach(() => {
+      // jsdom does not scroll: the spy records where the page was sent.
+      scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+    })
+
+    afterEach(() => {
+      scrollTo.mockRestore()
+    })
+
+    // Stands in for the browser's back button.
+    function BackButton() {
+      const navigate = useNavigate()
+      return <button onClick={() => navigate(-1)}>Back</button>
+    }
+
+    function renderWithHistory(entries: string[]) {
+      return render(
+        <LocaleProvider initialLocale="en">
+          <MemoryRouter initialEntries={entries} initialIndex={entries.length - 1}>
+            <AppRoutes repositories={fakeRepositories()} />
+            <BackButton />
+          </MemoryRouter>
+        </LocaleProvider>,
+      )
+    }
+
+    it('goes back to the top of the page when a navigation link is followed', async () => {
+      const user = userEvent.setup()
+      renderAt('/resume')
+
+      await user.click(navigation().getByRole('link', { name: 'Contact' }))
+
+      expect(scrollTo).toHaveBeenLastCalledWith(0, 0)
+    })
+
+    it('goes back to the top of the page when the header name is followed', async () => {
+      const user = userEvent.setup()
+      renderAt('/resume')
+
+      await user.click(await header().findByRole('link', { name: 'Ada Lovelace' }))
+
+      expect(scrollTo).toHaveBeenLastCalledWith(0, 0)
+    })
+
+    it('goes back to the top of the page when a call to action of the home page is followed', async () => {
+      const user = userEvent.setup()
+      renderAt('/')
+
+      await user.click(await screen.findByRole('link', { name: 'Get in touch' }))
+
+      expect(scrollTo).toHaveBeenLastCalledWith(0, 0)
+    })
+
+    it('goes back to the top of the page each time the link to the current page is followed', async () => {
+      const user = userEvent.setup()
+      renderAt('/')
+      const mark = await header().findByRole('link', { name: 'Ada Lovelace' })
+
+      await user.click(mark)
+      await user.click(mark)
+
+      expect(scrollTo).toHaveBeenCalledTimes(2)
+      expect(scrollTo).toHaveBeenLastCalledWith(0, 0)
+    })
+
+    it('goes back to the top of the page each time the active navigation link is followed', async () => {
+      const user = userEvent.setup()
+      renderAt('/contact')
+
+      await user.click(navigation().getByRole('link', { name: 'Contact' }))
+      await user.click(navigation().getByRole('link', { name: 'Contact' }))
+
+      expect(scrollTo).toHaveBeenCalledTimes(2)
+      expect(scrollTo).toHaveBeenLastCalledWith(0, 0)
+    })
+
+    describe('on the resume page', () => {
+      beforeEach(() => {
+        // jsdom has no scrollIntoView either: the resume index uses it to reach a section.
+        Element.prototype.scrollIntoView = vi.fn()
+      })
+
+      afterEach(() => {
+        delete (Element.prototype as Partial<Element>).scrollIntoView
+      })
+
+      it('leaves the scroll to the resume index when a section is chosen', async () => {
+        const user = userEvent.setup()
+        renderAt('/')
+        await user.click(navigation().getByRole('link', { name: 'Resume' }))
+        const scrollsBefore = scrollTo.mock.calls.length
+
+        await user.click(
+          within(screen.getByRole('navigation', { name: 'Resume sections' })).getByRole('link', {
+            name: 'Education',
+          }),
+        )
+
+        expect(scrollsBefore).toBe(1)
+        expect(scrollTo).toHaveBeenCalledTimes(scrollsBefore)
+      })
+    })
+
+    it('leaves the scroll to the browser when going back', async () => {
+      const user = userEvent.setup()
+      renderWithHistory(['/', '/resume'])
+
+      await user.click(screen.getByRole('button', { name: 'Back' }))
+
+      expect(await screen.findByRole('heading', { level: 1, name: 'Ada Lovelace' })).toBeInTheDocument()
+      expect(scrollTo).not.toHaveBeenCalled()
+    })
   })
 
   describe('header scroll state', () => {
