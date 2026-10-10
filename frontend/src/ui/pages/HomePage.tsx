@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import avatarSrc from '@/assets/avatar.svg?no-inline'
+import type { ProfessionalExperienceRepository } from '@/domain/professionalExperience/ProfessionalExperienceRepository'
 import type { ProfileRepository } from '@/domain/profile/ProfileRepository'
 import { useAsync } from '@/ui/async/useAsync'
 import { Avatar } from '@/ui/components/Avatar'
@@ -10,6 +11,7 @@ import './HomePage.css'
 
 interface HomePageProps {
   profileRepository: ProfileRepository
+  experienceRepository: ProfessionalExperienceRepository
 }
 
 export function HomePage({ profileRepository }: HomePageProps) {
