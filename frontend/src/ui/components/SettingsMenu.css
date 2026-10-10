@@ -32,8 +32,8 @@
 }
 
 .settings-menu__panel {
-  position: absolute;
-  inset: 3.75rem 1rem auto auto;
+  position: fixed;
+  inset: calc(var(--header-height) - 0.25rem) 1rem auto auto;
   margin: 0;
   align-items: center;
   gap: 0.75rem;

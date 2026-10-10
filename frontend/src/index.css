@@ -1,5 +1,5 @@
 :root {
-  /* GitHub Primer. Text, accent and subtitle reach 4.5:1 or more on bg and surface in both themes; tags are white on --tag (4.6:1 or more). */
+  /* GitHub Primer. Text, accent and subtitle reach 4.5:1 or more on bg and surface in both themes; tags use their kind colour as text on a 12% tint of it, 4.7:1 or more in both themes (measured: light 5.7:1 or more, dark 4.7:1 or more on --surface and --bg). */
   --text: light-dark(#59636e, #9198a1);
   --text-strong: light-dark(#1f2328, #f0f6fc);
   --bg: light-dark(#ffffff, #0d1117);
@@ -8,7 +8,10 @@
   --accent: light-dark(#0969da, #4493f8);
   --danger: light-dark(#d1242f, #f85149);
   --subtitle: light-dark(#8250df, #ab7df8);
-  --tag: light-dark(#9a6700, #9e6a03);
+  --header-height: 4rem;
+  --tag-skill: light-dark(#0550ae, #4493f8);
+  --tag-tool: light-dark(#6639ba, #ab7df8);
+  --tag-methodology: light-dark(#116329, #3fb950);
   --shadow: 0 10px 25px -5px
     light-dark(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.6));
 

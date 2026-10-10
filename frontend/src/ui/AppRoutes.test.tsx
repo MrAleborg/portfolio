@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import type { Locale } from '@/domain/i18n/Locale'
@@ -40,32 +40,15 @@ function header() {
 }
 
 describe('AppRoutes', () => {
-  it('links to every page', () => {
+  it('lists Resume then Contact in the navigation, each linking to its page', () => {
     renderAt('/')
 
-    expect(navigation().getByRole('link', { name: 'Resume' })).toHaveAttribute(
-      'href',
+    const links = navigation().getAllByRole('link')
+    expect(links.map((link) => link.textContent)).toEqual(['Resume', 'Contact'])
+    expect(links.map((link) => link.getAttribute('href'))).toEqual([
       '/resume',
-    )
-  })
-
-  it('lists Contact in the navigation after Resume', () => {
-    renderAt('/')
-
-    expect(navigation().getAllByRole('link').map((link) => link.textContent)).toEqual([
-      'Resume',
-      'Contact',
-    ])
-    expect(navigation().getByRole('link', { name: 'Contact' })).toHaveAttribute(
-      'href',
       '/contact',
-    )
-  })
-
-  it('has no Home link in the navigation', () => {
-    renderAt('/')
-
-    expect(navigation().queryByRole('link', { name: 'Home' })).not.toBeInTheDocument()
+    ])
   })
 
   it('shows the profile name in the header as a link to the home page', async () => {
@@ -87,9 +70,11 @@ describe('AppRoutes', () => {
   })
 
   it('shows no site mark but keeps the navigation when the profile fails to load', async () => {
-    const profile = failingProfileRepository()
-    renderAt('/resume', { repositories: fakeRepositories({ profile }) })
-    await waitFor(() => expect(profile.get).toHaveBeenCalled())
+    renderAt('/resume', {
+      repositories: fakeRepositories({ profile: failingProfileRepository() }),
+    })
+    // Lets the rejected request settle, so the assertions see the error state.
+    await act(async () => {})
 
     expect(header().queryByRole('link', { name: 'Ada Lovelace' })).not.toBeInTheDocument()
     expect(navigation().getByRole('link', { name: 'Resume' })).toBeInTheDocument()

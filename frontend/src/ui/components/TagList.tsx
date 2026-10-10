@@ -15,11 +15,13 @@ const KINDS: TagKind[] = ['skill', 'tool', 'methodology']
 
 interface TagGroupProps {
   label: string
+  /** Colours the chips by kind; chips without a kind are neutral. */
+  kind?: TagKind
   tags: readonly { id: number; name: Localized<string>; note?: Localized<string> }[]
 }
 
 /** A labelled row of chips; a chip shows its note after the name when it has one. */
-export function TagGroup({ label, tags }: TagGroupProps) {
+export function TagGroup({ label, kind, tags }: TagGroupProps) {
   const { locale } = useLocale()
   const labelId = useId()
 
@@ -30,7 +32,7 @@ export function TagGroup({ label, tags }: TagGroupProps) {
       </p>
       <ul aria-labelledby={labelId} className="tag-list__tags">
         {tags.map((tag) => (
-          <li key={tag.id} className="tag">
+          <li key={tag.id} className={kind ? `tag tag--${kind}` : 'tag'}>
             {tag.name[locale]}
             {tag.note?.[locale] && (
               <span className="tag__note">
@@ -58,7 +60,12 @@ export function TagList({ tags }: TagListProps) {
   return (
     <div className="tag-list">
       {groups.map((group) => (
-        <TagGroup key={group.kind} label={messages[locale].tagKinds[group.kind]} tags={group.tags} />
+        <TagGroup
+          key={group.kind}
+          kind={group.kind}
+          label={messages[locale].tagKinds[group.kind]}
+          tags={group.tags}
+        />
       ))}
     </div>
   )

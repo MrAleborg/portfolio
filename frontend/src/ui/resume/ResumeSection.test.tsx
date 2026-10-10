@@ -6,7 +6,7 @@ import type { AsyncState } from '@/ui/async/useAsync'
 import { Tile } from '@/ui/components/Tile'
 import { LocaleProvider } from '@/ui/i18n/LocaleProvider'
 import { ResumeSection } from '@/ui/resume/ResumeSection'
-import { useSectionEntry } from '@/ui/resume/SectionContext'
+import { useSectionEntry, useSectionVariant } from '@/ui/resume/SectionContext'
 
 interface Item {
   id: number
@@ -326,16 +326,20 @@ describe('ResumeSection', () => {
   })
 
   describe('variant', () => {
+    /** Shows the variant the entries of the section get. */
+    function Variant() {
+      return <p>{useSectionVariant()}</p>
+    }
+
     function renderVariant(variant?: 'card' | 'row') {
       return render(
         <LocaleProvider initialLocale="en">
           <ResumeSection
             title="Things"
             icon={<svg />}
-            state={{ status: 'loaded', value: [{ id: 1, name: 'First' }] }}
+            state={{ status: 'loaded', value: [{ id: 1 }] }}
             variant={variant}
-            getKey={(item: Item) => item.id}
-            renderTile={(item: Item) => <Tile title={item.name} />}
+            renderItems={() => <Variant />}
           />
         </LocaleProvider>,
       )
@@ -351,6 +355,24 @@ describe('ResumeSection', () => {
       renderVariant()
 
       expect(screen.getByRole('region', { name: 'Things' })).not.toHaveClass('resume-section--row')
+    })
+
+    it('gives its entries the card variant by default', () => {
+      renderVariant()
+
+      expect(section().getByText('card')).toBeInTheDocument()
+    })
+
+    it('gives its entries the row variant in a row section', () => {
+      renderVariant('row')
+
+      expect(section().getByText('row')).toBeInTheDocument()
+    })
+
+    it('is card for an entry outside any section', () => {
+      render(<Variant />)
+
+      expect(screen.getByText('card')).toBeInTheDocument()
     })
   })
 })

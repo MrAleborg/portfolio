@@ -110,6 +110,6 @@ describe('TagGroup', () => {
 
     const [chip] = within(screen.getByRole('list', { name: 'Expertise' })).getAllByRole('listitem')
     expect(chip).toHaveClass('tag')
-    expect(chip.className).not.toMatch(/tag--/)
+    expect(chip?.className).not.toMatch(/tag--/)
   })
 })

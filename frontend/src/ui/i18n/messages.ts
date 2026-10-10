@@ -68,6 +68,9 @@ interface Messages {
   switchToLight: string
   /** Label of the button that opens the theme and language switches. */
   settings: string
+  /** Labels of the button that opens or closes every entry of a section. */
+  expandAll: string
+  collapseAll: string
 }
 
 export const messages: Localized<Messages> = {
@@ -148,6 +151,8 @@ export const messages: Localized<Messages> = {
     switchToDark: 'Switch to dark mode',
     switchToLight: 'Switch to light mode',
     settings: 'Settings',
+    expandAll: 'Expand all',
+    collapseAll: 'Collapse all',
   },
   fr: {
     navLabel: 'Principale',
@@ -227,5 +232,7 @@ export const messages: Localized<Messages> = {
     switchToDark: 'Passer en mode sombre',
     switchToLight: 'Passer en mode clair',
     settings: 'Préférences',
+    expandAll: 'Tout déplier',
+    collapseAll: 'Tout replier',
   },
 }
