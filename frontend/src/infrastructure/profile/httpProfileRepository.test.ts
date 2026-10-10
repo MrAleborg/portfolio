@@ -5,6 +5,7 @@ const body = {
   full_name: 'Ada Lovelace',
   headline: { en: 'Analyst', fr: 'Analyste' },
   bio: { en: 'I write programs.', fr: 'J’écris des programmes.' },
+  desired_role: { en: 'Engineer', fr: 'Ingénieure' },
 }
 
 describe('httpProfileRepository', () => {
@@ -23,6 +24,7 @@ describe('httpProfileRepository', () => {
       fullName: 'Ada Lovelace',
       headline: { en: 'Analyst', fr: 'Analyste' },
       bio: { en: 'I write programs.', fr: 'J’écris des programmes.' },
+      desiredRole: { en: 'Engineer', fr: 'Ingénieure' },
     })
   })
 
