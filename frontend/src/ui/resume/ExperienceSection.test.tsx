@@ -45,6 +45,24 @@ describe('ExperienceSection', () => {
     expect(within(items[2]!).getByRole('article', { name: 'Consultant' })).toBeVisible()
   })
 
+  it('describes each experience by its period and duration', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-10-10T12:00:00Z'))
+    renderSection()
+
+    const [first, second] = await loadedItems()
+    expect(
+      within(first!).getByRole('article', { name: 'Software engineer' }),
+    ).toHaveAccessibleDescription(
+      'Sep 2019 – Aug 2022, 3 yrs',
+    )
+    expect(
+      within(second!).getByRole('article', { name: 'Tech lead' }),
+    ).toHaveAccessibleDescription(
+      'Sep 2022 – Jun 2024, 1 yr 10 mos',
+    )
+  })
+
   it('shows the period and the duration of each experience beside it', async () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date('2026-10-10T12:00:00Z'))

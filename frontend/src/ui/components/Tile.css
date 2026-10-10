@@ -130,11 +130,6 @@
   border-bottom: 1px solid var(--border);
 }
 
-/* In a timeline, the rule beside the entries replaces the lines around a row. */
-.timeline .tile--row {
-  border-top: 0;
-}
-
 .tile--row > .tile__body {
   margin-top: 0.75rem;
   padding-top: 0;

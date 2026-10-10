@@ -39,6 +39,15 @@ describe('EducationSection', () => {
     expect(items[1]).toHaveTextContent('Oct 2021 – Present')
   })
 
+  it('describes each education by its period and duration', async () => {
+    renderSection()
+
+    const { items } = await entries()
+    expect(within(items[0]!).getByRole('article')).toHaveAccessibleDescription(
+      'Sep 2015 – Jun 2017, 1 yr 10 mos',
+    )
+  })
+
   it('shows the period outside the tile', async () => {
     renderSection()
 

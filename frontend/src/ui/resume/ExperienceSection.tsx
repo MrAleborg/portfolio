@@ -25,9 +25,10 @@ export function ExperienceSection({ repository }: ExperienceSectionProps) {
           items={experiences}
           getKey={(experience) => experience.id}
           getPeriod={(experience) => experience.period}
-          renderTile={(experience) => (
+          renderTile={(experience, describedBy) => (
             <ExperienceTile
               experience={experience}
+              describedBy={describedBy}
               defaultExpanded={experience === experiences[0]}
             />
           )}

@@ -42,4 +42,10 @@ describe('DurationTime', () => {
 
     expect(screen.getByRole('time')).toHaveAttribute('datetime', 'P2Y')
   })
+
+  it('exposes an empty duration to machines as zero months', () => {
+    renderDuration({ years: 0, months: 0 })
+
+    expect(screen.getByRole('time')).toHaveAttribute('datetime', 'P0M')
+  })
 })

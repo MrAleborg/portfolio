@@ -74,6 +74,17 @@ describe('ExperienceTile', () => {
       expect(screen.getByRole('article')).toHaveAccessibleName('Software engineer')
     })
 
+    it('is described by the element it is given', () => {
+      render(
+        <LocaleProvider initialLocale="en">
+          <p id="when">Sep 2019 – Aug 2022</p>
+          <ExperienceTile experience={fullExperience} describedBy="when" />
+        </LocaleProvider>,
+      )
+
+      expect(screen.getByRole('article')).toHaveAccessibleDescription('Sep 2019 – Aug 2022')
+    })
+
     it('shows the company', () => {
       renderTile(fullExperience)
 

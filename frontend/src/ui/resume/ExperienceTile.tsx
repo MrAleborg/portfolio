@@ -12,11 +12,13 @@ import './ExperienceTile.css'
 
 interface ExperienceTileProps {
   experience: ProfessionalExperience
+  /** The id of an element that describes the experience, e.g. its period. */
+  describedBy?: string
   /** Whether the details start open. */
   defaultExpanded?: boolean
 }
 
-export function ExperienceTile({ experience, defaultExpanded }: ExperienceTileProps) {
+export function ExperienceTile({ experience, describedBy, defaultExpanded }: ExperienceTileProps) {
   const { locale } = useLocale()
   const text = messages[locale]
   const description = paragraphs(experience.description[locale])
@@ -33,6 +35,7 @@ export function ExperienceTile({ experience, defaultExpanded }: ExperienceTilePr
   return (
     <Tile
       title={experience.position[locale]}
+      describedBy={describedBy}
       subtitle={experience.company}
       meta={[
         experience.location[locale],

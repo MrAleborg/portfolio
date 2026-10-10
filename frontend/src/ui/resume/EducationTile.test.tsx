@@ -35,6 +35,17 @@ describe('EducationTile', () => {
       )
     })
 
+    it('is described by the element it is given', () => {
+      render(
+        <LocaleProvider initialLocale="en">
+          <p id="when">Sep 2015 – Jun 2017</p>
+          <EducationTile education={masters} describedBy="when" />
+        </LocaleProvider>,
+      )
+
+      expect(screen.getByRole('article')).toHaveAccessibleDescription('Sep 2015 – Jun 2017')
+    })
+
     it('is named by the degree alone when it has no field of study', () => {
       renderTile(doctorate)
 

@@ -5,9 +5,11 @@ import { paragraphs } from '@/ui/text/paragraphs'
 
 interface EducationTileProps {
   education: Education
+  /** The id of an element that describes the education, e.g. its period. */
+  describedBy?: string
 }
 
-export function EducationTile({ education }: EducationTileProps) {
+export function EducationTile({ education, describedBy }: EducationTileProps) {
   const { locale } = useLocale()
   const lines = [
     education.grade[locale],
@@ -16,6 +18,7 @@ export function EducationTile({ education }: EducationTileProps) {
 
   return (
     <Tile
+      describedBy={describedBy}
       title={[education.degree[locale], education.fieldOfStudy[locale]]
         .filter(Boolean)
         .join(', ')}

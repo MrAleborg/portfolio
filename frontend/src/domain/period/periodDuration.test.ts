@@ -2,6 +2,10 @@ import { periodDuration } from '@/domain/period/periodDuration'
 
 const OCTOBER_2026 = new Date('2026-10-10T12:00:00Z')
 
+afterEach(() => {
+  vi.unstubAllEnvs()
+})
+
 describe('periodDuration', () => {
   it('counts both end months, so Sep 2015 to Jun 2017 is 1 year 10 months', () => {
     const duration = periodDuration(
@@ -53,10 +57,12 @@ describe('periodDuration', () => {
     expect(endOfTheMonths).toEqual({ years: 0, months: 6 })
   })
 
-  it('does not depend on the time zone: shortly after midnight UTC on the 1st still counts that month', () => {
+  it('does not depend on the time zone: west of UTC, the 1st of a month still counts that month', () => {
+    vi.stubEnv('TZ', 'America/Los_Angeles')
+
     const duration = periodDuration(
       { start: '2026-09-01', end: null },
-      new Date('2026-10-01T00:30:00Z'),
+      new Date('2026-10-15T12:00:00Z'),
     )
 
     expect(duration).toEqual({ years: 0, months: 2 })

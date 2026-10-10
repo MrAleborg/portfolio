@@ -4,6 +4,8 @@ import './Tile.css'
 
 interface TileProps {
   title: string
+  /** The id of an element that describes the tile, e.g. when it happened. */
+  describedBy?: string
   /** The level of the title heading; 4 for a tile nested in another. */
   headingLevel?: 3 | 4
   subtitle?: string
@@ -23,6 +25,7 @@ interface TileProps {
  */
 export function Tile({
   title,
+  describedBy,
   headingLevel = 3,
   subtitle,
   meta = [],
@@ -48,7 +51,7 @@ export function Tile({
     .join(' ')
 
   return (
-    <article className={className} aria-labelledby={titleId}>
+    <article className={className} aria-labelledby={titleId} aria-describedby={describedBy}>
       <Heading id={titleId} className="tile__title">
         {hasDetails ? (
           <button

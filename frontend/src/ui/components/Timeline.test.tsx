@@ -28,7 +28,7 @@ function renderTimeline(items: readonly Entry[]) {
         items={items}
         getKey={(item) => item.id}
         getPeriod={(item) => item.period}
-        renderTile={(item) => <Tile title={item.name} />}
+        renderTile={(item, describedBy) => <Tile title={item.name} describedBy={describedBy} />}
       />
     </LocaleProvider>,
   )
@@ -76,6 +76,21 @@ describe('Timeline', () => {
     const item = screen.getByRole('listitem')
     expect(item).toHaveTextContent('Oct 2021 – Present')
     expect(within(item).getByText('5 yrs 1 mo')).toHaveAttribute('datetime', 'P5Y1M')
+  })
+
+  it('describes the tile of each entry by its period and duration', () => {
+    renderTimeline([finished, ongoing])
+
+    const [first] = screen.getAllByRole('article')
+    expect(first).toHaveAccessibleDescription(/Sep 2015 – Jun 2017.*1 yr 10 mos/)
+  })
+
+  it('reads the period and the duration as separate phrases to assistive technology', () => {
+    renderTimeline([finished])
+
+    expect(screen.getByRole('article')).toHaveAccessibleDescription(
+      'Sep 2015 – Jun 2017, 1 yr 10 mos',
+    )
   })
 
   it('hides the dot from assistive technology', () => {

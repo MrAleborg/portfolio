@@ -26,7 +26,9 @@ export function EducationSection({ repository }: EducationSectionProps) {
           items={educations}
           getKey={(education) => education.id}
           getPeriod={(education) => education.period}
-          renderTile={(education) => <EducationTile education={education} />}
+          renderTile={(education, describedBy) => (
+            <EducationTile education={education} describedBy={describedBy} />
+          )}
         />
       )}
     />
