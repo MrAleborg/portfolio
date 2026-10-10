@@ -6,6 +6,7 @@ import { CommitmentSection } from '@/ui/resume/CommitmentSection'
 import { EducationSection } from '@/ui/resume/EducationSection'
 import { ExperienceSection } from '@/ui/resume/ExperienceSection'
 import { HobbySection } from '@/ui/resume/HobbySection'
+import { ResumeIndex } from '@/ui/resume/ResumeIndex'
 import { resumeSections, type ResumeSectionId } from '@/ui/resume/resumeSections'
 import { ScientificCommunicationSection } from '@/ui/resume/ScientificCommunicationSection'
 import { SideProjectSection } from '@/ui/resume/SideProjectSection'
@@ -41,10 +42,10 @@ export function ResumePage({ repositories }: ResumePageProps) {
   return (
     <div className="resume">
       <h1 className="resume__title">{text.resumeTitle}</h1>
-      <div className="resume__index" />
+      <ResumeIndex />
       <div className="resume__sections">
         {resumeSections.map(({ id }) => (
-          <div key={id} id={id} className="resume__anchor">
+          <div key={id} id={id} className="resume__anchor" tabIndex={-1}>
             {sectionById[id]}
           </div>
         ))}

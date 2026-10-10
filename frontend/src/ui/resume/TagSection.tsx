@@ -1,4 +1,4 @@
-import { useCallback, useId, useState } from 'react'
+import { useCallback, useId } from 'react'
 import type { Domain } from '@/domain/tag/TagCategory'
 import { visibleDomains } from '@/domain/tag/TagCategory'
 import type { TagRepository } from '@/domain/tag/TagRepository'
@@ -7,6 +7,7 @@ import { TagGroup } from '@/ui/components/TagList'
 import { messages } from '@/ui/i18n/messages'
 import { useLocale } from '@/ui/i18n/useLocale'
 import { ResumeSection } from '@/ui/resume/ResumeSection'
+import { useSectionEntry } from '@/ui/resume/SectionContext'
 import { LayersIcon } from '@/ui/resume/sectionIcons'
 import '@/ui/components/Tile.css'
 import './TagSection.css'
@@ -19,7 +20,7 @@ interface TagSectionProps {
 function DomainBlock({ domain }: { domain: Domain }) {
   const { locale } = useLocale()
   const bodyId = useId()
-  const [expanded, setExpanded] = useState(false)
+  const [expanded, setExpanded] = useSectionEntry(true)
 
   return (
     <div className="tag-summary__domain">

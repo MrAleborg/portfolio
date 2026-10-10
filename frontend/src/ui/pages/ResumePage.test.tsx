@@ -1,5 +1,6 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router'
 import type { Locale } from '@/domain/i18n/Locale'
 import type { Domain } from '@/domain/tag/TagCategory'
 import {
@@ -17,9 +18,11 @@ import type { Repositories } from '@/ui/Repositories'
 
 function renderPage(overrides: Partial<Repositories> = {}, locale: Locale = 'en') {
   return render(
-    <LocaleProvider initialLocale={locale}>
-      <ResumePage repositories={fakeRepositories(overrides)} />
-    </LocaleProvider>,
+    <MemoryRouter>
+      <LocaleProvider initialLocale={locale}>
+        <ResumePage repositories={fakeRepositories(overrides)} />
+      </LocaleProvider>
+    </MemoryRouter>,
   )
 }
 
@@ -123,6 +126,15 @@ describe('ResumePage', () => {
     ).toBeInTheDocument()
   })
 
+  it.each(anchors)('lets the index move focus to the #$slug anchor', ({ slug }) => {
+    renderPage()
+
+    const anchor = document.getElementById(slug) as HTMLElement
+    anchor.focus()
+
+    expect(anchor).toHaveFocus()
+  })
+
   it('places the eight anchors in order, from expertise to hobbies', () => {
     renderPage()
 
@@ -168,44 +180,33 @@ describe('ResumePage', () => {
     expect(await section.findByRole('article', { name: firstInFrench })).toBeInTheDocument()
   })
 
-  /** The Expertise section, once loaded, with the domain of the given name expanded. */
-  async function expandedExpertise(domain: string) {
+  /** The Expertise section, once loaded: every domain starts open. */
+  async function loadedExpertise(domain: string) {
     const expertise = within(screen.getByRole('region', { name: 'Expertise' }))
-    await userEvent.setup().click(await expertise.findByRole('button', { name: domain }))
+    await expertise.findByRole('button', { name: domain })
     return expertise
   }
 
-  it('hides the categories of a domain until its title is clicked', async () => {
-    renderPage()
+  it('shows the categories of every domain once loaded, and hides them when its title is clicked', async () => {
+    renderPage({ tag: fakeTagRepository([engineering, practices]) })
 
-    const expertise = within(screen.getByRole('region', { name: 'Expertise' }))
-    const toggle = await expertise.findByRole('button', { name: 'Engineering' })
-    expect(toggle).toHaveAttribute('aria-expanded', 'false')
-    expect(expertise.queryByRole('list', { name: 'Languages' })).not.toBeInTheDocument()
+    const expertise = await loadedExpertise('Engineering')
+    const toggle = expertise.getByRole('button', { name: 'Engineering' })
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    expect(expertise.getByRole('list', { name: 'Languages' })).toBeVisible()
+    expect(expertise.getByRole('list', { name: 'Methods' })).toBeVisible()
 
     await userEvent.setup().click(toggle)
 
-    expect(toggle).toHaveAttribute('aria-expanded', 'true')
-    expect(expertise.getByRole('list', { name: 'Languages' })).toBeVisible()
-  })
-
-  it('expands and collapses each domain on its own', async () => {
-    renderPage({ tag: fakeTagRepository([engineering, practices]) })
-    const user = userEvent.setup()
-    const expertise = within(screen.getByRole('region', { name: 'Expertise' }))
-
-    await user.click(await expertise.findByRole('button', { name: 'Engineering' }))
-    await user.click(expertise.getByRole('button', { name: 'Practices' }))
-    await user.click(expertise.getByRole('button', { name: 'Engineering' }))
-
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
     expect(expertise.queryByRole('list', { name: 'Languages' })).not.toBeInTheDocument()
     expect(expertise.getByRole('list', { name: 'Methods' })).toBeVisible()
   })
 
-  it('shows the categories and tags of an expanded domain in API order', async () => {
+  it('shows the categories and tags of a domain in API order', async () => {
     renderPage()
 
-    const expertise = await expandedExpertise('Engineering')
+    const expertise = await loadedExpertise('Engineering')
 
     const labels = ['Languages', 'Tooling'].map((name) => expertise.getByText(name))
     expect(labels[0]?.compareDocumentPosition(labels[1] as Node)).toBe(
@@ -223,7 +224,7 @@ describe('ResumePage', () => {
   it('shows the note of a tag after its name when it has one', async () => {
     renderPage()
 
-    const expertise = await expandedExpertise('Engineering')
+    const expertise = await loadedExpertise('Engineering')
 
     const tooling = within(expertise.getByRole('list', { name: 'Tooling' }))
     expect(tooling.getAllByRole('listitem').map((chip) => chip.textContent)).toEqual([
@@ -235,7 +236,7 @@ describe('ResumePage', () => {
   it('hides the separator before a note from assistive technology', async () => {
     renderPage()
 
-    const expertise = await expandedExpertise('Engineering')
+    const expertise = await loadedExpertise('Engineering')
 
     const tooling = within(expertise.getByRole('list', { name: 'Tooling' }))
     const chip = within(tooling.getByText(/Claude Code/))
@@ -246,7 +247,7 @@ describe('ResumePage', () => {
   it('shows the domains, categories, tags and notes of the expertise in French', async () => {
     renderPage({}, 'fr')
 
-    const expertise = await expandedExpertise('Ingénierie')
+    const expertise = await loadedExpertise('Ingénierie')
 
     const languages = within(expertise.getByRole('list', { name: 'Langages' }))
     expect(languages.getAllByRole('listitem').map((chip) => chip.textContent)).toEqual([
@@ -262,7 +263,7 @@ describe('ResumePage', () => {
   it('hides the categories without tags and the domains without categories', async () => {
     renderPage()
 
-    const expertise = await expandedExpertise('Engineering')
+    const expertise = await loadedExpertise('Engineering')
 
     expect(expertise.getAllByRole('heading', { level: 3 })).toHaveLength(1)
     expect(expertise.queryByText('Unused')).not.toBeInTheDocument()

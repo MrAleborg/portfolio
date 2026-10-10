@@ -11,11 +11,6 @@
   text-align: left;
 }
 
-/* Slot of the section index: empty for now. */
-.resume__index:empty {
-  display: none;
-}
-
 .resume__sections {
   display: flex;
   flex-direction: column;
@@ -24,7 +19,12 @@
 }
 
 .resume__anchor {
-  scroll-margin-top: calc(var(--header-height) + 3.5rem);
+  scroll-margin-top: calc(var(--header-height) + 3rem + 0.5rem);
+}
+
+/* Focusable so that the index can move focus to a section; the section itself shows no ring. */
+.resume__anchor:focus {
+  outline: none;
 }
 
 @media (min-width: 64rem) {

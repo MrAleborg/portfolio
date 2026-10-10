@@ -63,20 +63,22 @@ export function useSectionRegistry(variant: SectionVariant) {
 }
 
 /**
- * The open state of a top-level expandable entry, as `[expanded, setExpanded]`.
- * In a section, the entry is registered while mounted and follows its expand all / collapse
- * all command; anywhere else it is plain local state.
+ * The open state of an expandable entry, as `[expanded, setExpanded]`.
+ * In a section, a registered entry (the default) is counted while mounted and follows its
+ * expand all / collapse all command. Anywhere else, or with `register: false`, it is plain
+ * local state that the section never hears about.
  */
 export function useSectionEntry(
   initiallyOpen: boolean,
+  { register = true }: { register?: boolean } = {},
 ): readonly [boolean, (open: boolean) => void] {
   const section = useContext(SectionContext)
   const id = useId()
   const [expanded, setExpanded] = useState(initiallyOpen)
-  const command = section?.command ?? null
+  const command = (register && section?.command) || null
   const [followed, setFollowed] = useState(command)
-  const report = section?.report
-  const leave = section?.leave
+  const report = register ? section?.report : undefined
+  const leave = register ? section?.leave : undefined
 
   if (command !== followed) {
     setFollowed(command)

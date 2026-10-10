@@ -13,6 +13,8 @@ interface Messages {
   navResume: string
   navContact: string
   resumeTitle: string
+  /** Accessible name of the in-page navigation between the resume sections. */
+  resumeSectionsLabel: string
   contactTitle: string
   contactIntro: string
   contactLinksUnavailable: string
@@ -80,6 +82,7 @@ export const messages: Localized<Messages> = {
     navResume: 'Resume',
     navContact: 'Contact',
     resumeTitle: 'Resume',
+    resumeSectionsLabel: 'Resume sections',
     contactTitle: 'Contact',
     contactIntro: 'Write to me, or find me elsewhere.',
     contactLinksUnavailable: 'Links couldn’t be loaded.',
@@ -160,6 +163,7 @@ export const messages: Localized<Messages> = {
     navResume: 'CV',
     navContact: 'Contact',
     resumeTitle: 'CV',
+    resumeSectionsLabel: 'Sections du CV',
     contactTitle: 'Contact',
     contactIntro: 'Écrivez-moi, ou retrouvez-moi ailleurs.',
     contactLinksUnavailable: 'Les liens n’ont pas pu être chargés.',
