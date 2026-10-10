@@ -7,6 +7,12 @@ import type { Localized } from '@/domain/i18n/Locale'
 /** French elides "de" before a vowel (or a mute h). */
 const STARTS_WITH_VOWEL = /^[aeiouyhàâäéèêëîïôöùûü]/i
 
+/** The singular and plural forms of a unit of time, picked with `Intl.PluralRules`. */
+interface DurationUnit {
+  one: string
+  other: string
+}
+
 interface Messages {
   navLabel: string
   navHome: string
@@ -63,6 +69,9 @@ interface Messages {
   pageError: string
   /** End of a period that is still going on. */
   ongoing: string
+  /** Units of a duration such as "1 yr 10 mos". */
+  durationYears: DurationUnit
+  durationMonths: DurationUnit
   avatarAlt: (fullName: string) => string
   /** Label of the button that switches to the other language, written in that language. */
   switchLanguage: string
@@ -151,6 +160,8 @@ export const messages: Localized<Messages> = {
     sectionEmpty: 'Nothing to show yet.',
     pageError: 'This page could not be displayed. Reload to try again.',
     ongoing: 'Present',
+    durationYears: { one: 'yr', other: 'yrs' },
+    durationMonths: { one: 'mo', other: 'mos' },
     avatarAlt: (fullName) => `Portrait of ${fullName}`,
     switchLanguage: 'Français',
     switchToDark: 'Switch to dark mode',
@@ -233,6 +244,8 @@ export const messages: Localized<Messages> = {
     sectionEmpty: 'Rien à afficher pour le moment.',
     pageError: 'Cette page n’a pas pu s’afficher. Rechargez pour réessayer.',
     ongoing: 'aujourd’hui',
+    durationYears: { one: 'an', other: 'ans' },
+    durationMonths: { one: 'mois', other: 'mois' },
     avatarAlt: (fullName) =>
       `Portrait ${STARTS_WITH_VOWEL.test(fullName) ? 'd’' : 'de '}${fullName}`,
     switchLanguage: 'English',
