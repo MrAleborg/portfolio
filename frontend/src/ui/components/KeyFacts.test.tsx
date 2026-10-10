@@ -119,7 +119,7 @@ describe('KeyFacts', () => {
   })
 
   it('hides the experience under 1 year, keeping the other facts', () => {
-    renderFacts([experience('2025-11-01', null, [tag(1)])])
+    renderFacts([experience('2025-12-01', null, [tag(1)])])
 
     expect(terms()).toEqual(['Currently', 'Main stack'])
   })

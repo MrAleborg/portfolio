@@ -4,6 +4,7 @@ import type { ProfessionalExperienceRepository } from '@/domain/professionalExpe
 import type { ProfileRepository } from '@/domain/profile/ProfileRepository'
 import { useAsync } from '@/ui/async/useAsync'
 import { Avatar } from '@/ui/components/Avatar'
+import { KeyFacts } from '@/ui/components/KeyFacts'
 import { messages } from '@/ui/i18n/messages'
 import { useLocale } from '@/ui/i18n/useLocale'
 import { paragraphs } from '@/ui/text/paragraphs'
@@ -14,9 +15,11 @@ interface HomePageProps {
   experienceRepository: ProfessionalExperienceRepository
 }
 
-export function HomePage({ profileRepository }: HomePageProps) {
+export function HomePage({ profileRepository, experienceRepository }: HomePageProps) {
   const { locale } = useLocale()
   const state = useAsync(profileRepository.get)
+  // Loaded apart from the profile: the facts are optional, so a failure or a wait shows nothing.
+  const experiences = useAsync(experienceRepository.list)
 
   if (state.status === 'loading') {
     return <p role="status">{messages[locale].loading}</p>
@@ -44,6 +47,9 @@ export function HomePage({ profileRepository }: HomePageProps) {
             {text.homeContactCta}
           </Link>
         </div>
+        {experiences.status === 'loaded' && (
+          <KeyFacts experiences={experiences.value} desiredRole={state.value.desiredRole} />
+        )}
       </div>
       <Avatar
         src="/media/avatar.webp"
