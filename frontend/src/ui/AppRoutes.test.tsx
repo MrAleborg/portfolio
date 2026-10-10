@@ -1,9 +1,13 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import type { Locale } from '@/domain/i18n/Locale'
 import { fakeEducationRepository, masters } from '@/test/fakeEducationRepository'
-import { fakeProfileRepository } from '@/test/fakeProfileRepository'
+import {
+  failingProfileRepository,
+  fakeProfileRepository,
+  pendingProfileRepository,
+} from '@/test/fakeProfileRepository'
 import { fakeRepositories } from '@/test/fakeRepositories'
 import { AppRoutes } from '@/ui/AppRoutes'
 import { LocaleProvider } from '@/ui/i18n/LocaleProvider'
@@ -31,11 +35,14 @@ function navigation(name = 'Main') {
   return within(screen.getByRole('navigation', { name }))
 }
 
+function header() {
+  return within(screen.getByRole('banner'))
+}
+
 describe('AppRoutes', () => {
   it('links to every page', () => {
     renderAt('/')
 
-    expect(navigation().getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/')
     expect(navigation().getByRole('link', { name: 'Resume' })).toHaveAttribute(
       'href',
       '/resume',
@@ -46,7 +53,6 @@ describe('AppRoutes', () => {
     renderAt('/')
 
     expect(navigation().getAllByRole('link').map((link) => link.textContent)).toEqual([
-      'Home',
       'Resume',
       'Contact',
     ])
@@ -56,16 +62,46 @@ describe('AppRoutes', () => {
     )
   })
 
+  it('has no Home link in the navigation', () => {
+    renderAt('/')
+
+    expect(navigation().queryByRole('link', { name: 'Home' })).not.toBeInTheDocument()
+  })
+
+  it('shows the profile name in the header as a link to the home page', async () => {
+    renderAt('/resume')
+
+    expect(await header().findByRole('link', { name: 'Ada Lovelace' })).toHaveAttribute(
+      'href',
+      '/',
+    )
+  })
+
+  it('keeps the navigation and no site mark while the profile loads', () => {
+    renderAt('/resume', {
+      repositories: fakeRepositories({ profile: pendingProfileRepository() }),
+    })
+
+    expect(header().queryByRole('link', { name: 'Ada Lovelace' })).not.toBeInTheDocument()
+    expect(navigation().getByRole('link', { name: 'Resume' })).toBeInTheDocument()
+  })
+
+  it('shows no site mark but keeps the navigation when the profile fails to load', async () => {
+    const profile = failingProfileRepository()
+    renderAt('/resume', { repositories: fakeRepositories({ profile }) })
+    await waitFor(() => expect(profile.get).toHaveBeenCalled())
+
+    expect(header().queryByRole('link', { name: 'Ada Lovelace' })).not.toBeInTheDocument()
+    expect(navigation().getByRole('link', { name: 'Resume' })).toBeInTheDocument()
+    expect(navigation().getByRole('link', { name: 'Contact' })).toBeInTheDocument()
+  })
+
   it('shows the home page at the root', async () => {
     renderAt('/')
 
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Ada Lovelace' }),
     ).toBeInTheDocument()
-    expect(navigation().getByRole('link', { name: 'Home' })).toHaveAttribute(
-      'aria-current',
-      'page',
-    )
   })
 
   it('shows the resume page at /resume', async () => {
@@ -130,9 +166,6 @@ describe('AppRoutes', () => {
     renderAt('/', { locale: 'fr' })
 
     expect(
-      navigation('Principale').getByRole('link', { name: 'Accueil' }),
-    ).toBeInTheDocument()
-    expect(
       navigation('Principale').getByRole('link', { name: 'CV' }),
     ).toBeInTheDocument()
     expect(
@@ -145,6 +178,7 @@ describe('AppRoutes', () => {
     const profile = fakeProfileRepository()
     renderAt('/', { repositories: fakeRepositories({ profile }) })
     await screen.findByText('Analyst')
+    const loadsBefore = profile.get.mock.calls.length
 
     await user.click(
       screen.getByRole('button', { name: 'Français', hidden: true }),
@@ -152,9 +186,9 @@ describe('AppRoutes', () => {
 
     expect(screen.getByText('Analyste')).toBeInTheDocument()
     expect(
-      navigation('Principale').getByRole('link', { name: 'Accueil' }),
+      navigation('Principale').getByRole('link', { name: 'CV' }),
     ).toBeInTheDocument()
-    expect(profile.get).toHaveBeenCalledTimes(1)
+    expect(profile.get).toHaveBeenCalledTimes(loadsBefore)
   })
 
   it('switches the language of the resume without loading the education again', async () => {
@@ -208,7 +242,7 @@ describe('AppRoutes', () => {
       expect(await screen.findByRole('alert')).toHaveTextContent(
         'This page could not be displayed. Reload to try again.',
       )
-      expect(navigation().getByRole('link', { name: 'Home' })).toBeInTheDocument()
+      expect(navigation().getByRole('link', { name: 'Resume' })).toBeInTheDocument()
     })
 
     it('says so in French', async () => {
@@ -229,7 +263,7 @@ describe('AppRoutes', () => {
       })
       await screen.findByRole('alert')
 
-      await user.click(navigation().getByRole('link', { name: 'Home' }))
+      await user.click(await header().findByRole('link', { name: 'Ada Lovelace' }))
 
       expect(
         await screen.findByRole('heading', { level: 1, name: 'Ada Lovelace' }),

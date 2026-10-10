@@ -101,6 +101,48 @@ describe('ResumePage', () => {
 
   const titlesWithIcon = ['Expertise', ...sections.map((section) => section.en)]
 
+  /** The anchors of the sections, by fixed English slug, in page order. */
+  const anchors = [
+    { slug: 'expertise', title: 'Expertise' },
+    { slug: 'experience', title: 'Professional experience' },
+    { slug: 'projects', title: 'Personal projects' },
+    { slug: 'education', title: 'Education' },
+    { slug: 'certifications', title: 'Certifications' },
+    { slug: 'communications', title: 'Scientific communications' },
+    { slug: 'commitments', title: 'Commitments' },
+    { slug: 'hobbies', title: 'Hobbies' },
+  ]
+
+  it.each(anchors)('wraps the $title section in the #$slug anchor', ({ slug, title }) => {
+    renderPage()
+
+    const anchor = document.getElementById(slug)
+    expect(anchor).not.toBeNull()
+    expect(
+      within(anchor as HTMLElement).getByRole('heading', { level: 2, name: title }),
+    ).toBeInTheDocument()
+  })
+
+  it('places the eight anchors in order, from expertise to hobbies', () => {
+    renderPage()
+
+    const found = anchors.map(({ slug }) => document.getElementById(slug))
+    expect(found.every((anchor) => anchor !== null)).toBe(true)
+    found.slice(1).forEach((anchor, index) => {
+      expect(found[index]?.compareDocumentPosition(anchor as Node)).toBe(
+        Node.DOCUMENT_POSITION_FOLLOWING,
+      )
+    })
+  })
+
+  it('keeps the same anchor slugs in French', () => {
+    renderPage({}, 'fr')
+
+    anchors.forEach(({ slug }) => {
+      expect(document.getElementById(slug)).not.toBeNull()
+    })
+  })
+
   it.each(titlesWithIcon)('shows an icon in the %s heading', (title) => {
     renderPage()
 

@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react'
 import type { Locale } from '@/domain/i18n/Locale'
 import type { Tag } from '@/domain/tag/Tag'
-import { TagList } from '@/ui/components/TagList'
+import { TagGroup, TagList } from '@/ui/components/TagList'
 import { LocaleProvider } from '@/ui/i18n/LocaleProvider'
 
 const python: Tag = { id: 1, name: { en: 'Python', fr: 'Python' }, kind: 'skill' }
@@ -76,5 +76,40 @@ describe('TagList', () => {
     const { container } = renderTags([])
 
     expect(container).toBeEmptyDOMElement()
+  })
+
+  it('styles the skill chips as skills', () => {
+    renderTags([python, testing])
+
+    const skills = within(screen.getByRole('list', { name: 'Skills' })).getAllByRole('listitem')
+    skills.forEach((chip) => expect(chip).toHaveClass('tag', 'tag--skill'))
+  })
+
+  it('styles the tool chips as tools', () => {
+    renderTags([git])
+
+    const [chip] = within(screen.getByRole('list', { name: 'Tools' })).getAllByRole('listitem')
+    expect(chip).toHaveClass('tag', 'tag--tool')
+  })
+
+  it('styles the methodology chips as methodologies', () => {
+    renderTags([agile])
+
+    const [chip] = within(screen.getByRole('list', { name: 'Methodologies' })).getAllByRole('listitem')
+    expect(chip).toHaveClass('tag', 'tag--methodology')
+  })
+})
+
+describe('TagGroup', () => {
+  it('shows neutral chips, with no kind style, when it has no kind', () => {
+    render(
+      <LocaleProvider initialLocale="en">
+        <TagGroup label="Expertise" tags={[{ id: 1, name: { en: 'Backend', fr: 'Backend' } }]} />
+      </LocaleProvider>,
+    )
+
+    const [chip] = within(screen.getByRole('list', { name: 'Expertise' })).getAllByRole('listitem')
+    expect(chip).toHaveClass('tag')
+    expect(chip.className).not.toMatch(/tag--/)
   })
 })
