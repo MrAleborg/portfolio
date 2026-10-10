@@ -24,6 +24,8 @@ class Profile(models.Model):
     headline_fr = models.CharField(max_length=255)
     bio_en = models.TextField(blank=True)
     bio_fr = models.TextField(blank=True)
+    desired_role_en = models.CharField(max_length=255, blank=True)
+    desired_role_fr = models.CharField(max_length=255, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -35,6 +37,7 @@ class Profile(models.Model):
                 violation_error_message="There is a single profile.",
             ),
             translated_together("bio"),
+            translated_together("desired_role"),
         ]
 
     def __str__(self):

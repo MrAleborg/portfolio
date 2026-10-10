@@ -8,10 +8,11 @@ from owner.models import ContactLink, Profile
 class ProfileSerializer(serializers.ModelSerializer):
     headline = LocalizedField()
     bio = LocalizedField()
+    desired_role = LocalizedField()
 
     class Meta:
         model = Profile
-        fields = ["full_name", "headline", "bio"]
+        fields = ["full_name", "headline", "bio", "desired_role"]
 
 
 class ContactLinkSerializer(serializers.ModelSerializer):

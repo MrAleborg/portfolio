@@ -134,8 +134,8 @@ def test_put_replaces_the_existing_profile(staff_api_client):
     assert profile.desired_role_fr == "Ingénieure compilateur"
 
 
-def test_put_without_desired_role_empties_it(staff_api_client):
-    """PUT replaces the profile: an omitted optional field goes back to empty."""
+def test_put_without_desired_role_keeps_the_stored_one(staff_api_client):
+    """An omitted optional field is left alone on PUT, as the bio is."""
     make_profile(desired_role_en="Software engineer", desired_role_fr="Ingénieure")
 
     response = staff_api_client.put(
@@ -148,9 +148,10 @@ def test_put_without_desired_role_empties_it(staff_api_client):
     )
 
     assert response.status_code == 200
-    assert response.json()["desired_role"] == {"en": "", "fr": ""}
-    profile = Profile.objects.get()
-    assert (profile.desired_role_en, profile.desired_role_fr) == ("", "")
+    assert response.json()["desired_role"] == {
+        "en": "Software engineer",
+        "fr": "Ingénieure",
+    }
 
 
 def test_put_without_required_fields_is_a_bad_request(staff_api_client):
