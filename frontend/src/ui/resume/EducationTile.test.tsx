@@ -35,6 +35,17 @@ describe('EducationTile', () => {
       )
     })
 
+    it('is described by the element it is given', () => {
+      render(
+        <LocaleProvider initialLocale="en">
+          <p id="when">Sep 2015 – Jun 2017</p>
+          <EducationTile education={masters} describedBy="when" />
+        </LocaleProvider>,
+      )
+
+      expect(screen.getByRole('article')).toHaveAccessibleDescription('Sep 2015 – Jun 2017')
+    })
+
     it('is named by the degree alone when it has no field of study', () => {
       renderTile(doctorate)
 
@@ -47,12 +58,11 @@ describe('EducationTile', () => {
       expect(screen.getByText('Université de Rennes')).toBeInTheDocument()
     })
 
-    it('shows the period in time elements and the location', () => {
+    it('shows the location but leaves the period to the timeline', () => {
       renderTile(masters)
 
-      const [start, end] = screen.getAllByRole('time')
-      expect(start).toHaveTextContent('Sep 2015')
-      expect(end).toHaveTextContent('Jun 2017')
+      expect(screen.queryAllByRole('time')).toHaveLength(0)
+      expect(screen.getByRole('article')).not.toHaveTextContent('2015')
       expect(screen.getByText('Brittany')).toBeInTheDocument()
     })
 
@@ -75,12 +85,6 @@ describe('EducationTile', () => {
       expect(details).toHaveTextContent('With honours')
       expect(details).not.toHaveTextContent(/Computer Science/)
     })
-
-    it('shows an ongoing degree as lasting until now', () => {
-      renderTile(doctorate)
-
-      expect(screen.getByRole('article')).toHaveTextContent('Oct 2021 – Present')
-    })
   })
 
   describe('in French', () => {
@@ -90,12 +94,11 @@ describe('EducationTile', () => {
       expect(screen.getByRole('article')).toHaveAccessibleName('Master, Informatique')
     })
 
-    it('shows the period in time elements and the location', () => {
+    it('shows the location but leaves the period to the timeline', () => {
       renderTile(masters, 'fr')
 
-      const [start, end] = screen.getAllByRole('time')
-      expect(start).toHaveTextContent('sept. 2015')
-      expect(end).toHaveTextContent('juin 2017')
+      expect(screen.queryAllByRole('time')).toHaveLength(0)
+      expect(screen.getByRole('article')).not.toHaveTextContent('2015')
       expect(screen.getByText('Bretagne')).toBeInTheDocument()
     })
 
@@ -107,19 +110,13 @@ describe('EducationTile', () => {
       expect(screen.getByText('Mention bien')).toBeVisible()
       expect(screen.getByText('Mémoire sur les compilateurs.')).toBeVisible()
     })
-
-    it('shows an ongoing degree as lasting until now', () => {
-      renderTile(doctorate, 'fr')
-
-      expect(screen.getByRole('article')).toHaveTextContent('oct. 2021 – aujourd’hui')
-    })
   })
 
   it('leaves out the optional fields that are empty', () => {
     renderTile(doctorate)
 
     expect(screen.getByRole('article')).toHaveTextContent(
-      /^PhDInriaOct 2021 – Present$/,
+      /^PhDInria$/,
     )
   })
 

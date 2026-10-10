@@ -2,7 +2,6 @@ import type { ProfessionalExperience } from '@/domain/professionalExperience/Pro
 import { experienceTags } from '@/domain/professionalExperience/experienceTags'
 import { ExternalLink } from '@/ui/components/ExternalLink'
 import { LabelledList } from '@/ui/components/LabelledList'
-import { PeriodTime } from '@/ui/components/PeriodTime'
 import { TagChips } from '@/ui/components/TagList'
 import { Tile } from '@/ui/components/Tile'
 import { messages } from '@/ui/i18n/messages'
@@ -13,11 +12,13 @@ import './ExperienceTile.css'
 
 interface ExperienceTileProps {
   experience: ProfessionalExperience
+  /** The id of an element that describes the experience, e.g. its period. */
+  describedBy?: string
   /** Whether the details start open. */
   defaultExpanded?: boolean
 }
 
-export function ExperienceTile({ experience, defaultExpanded }: ExperienceTileProps) {
+export function ExperienceTile({ experience, describedBy, defaultExpanded }: ExperienceTileProps) {
   const { locale } = useLocale()
   const text = messages[locale]
   const description = paragraphs(experience.description[locale])
@@ -34,9 +35,9 @@ export function ExperienceTile({ experience, defaultExpanded }: ExperienceTilePr
   return (
     <Tile
       title={experience.position[locale]}
+      describedBy={describedBy}
       subtitle={experience.company}
       meta={[
-        <PeriodTime period={experience.period} />,
         experience.location[locale],
         text.employmentTypes[experience.employmentType],
       ]}

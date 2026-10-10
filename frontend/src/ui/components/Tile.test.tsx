@@ -45,6 +45,17 @@ describe('Tile', () => {
     ).toBeInTheDocument()
   })
 
+  it('is described by the element it points to', () => {
+    render(
+      <>
+        <p id="when">Sep 2015 – Jun 2017</p>
+        <Tile title="Master’s degree" describedBy="when" />
+      </>,
+    )
+
+    expect(screen.getByRole('article')).toHaveAccessibleDescription('Sep 2015 – Jun 2017')
+  })
+
   it('shows its title as a level 3 heading', () => {
     render(<Tile title="Master’s degree" />)
 
