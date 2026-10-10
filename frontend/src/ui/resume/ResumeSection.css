@@ -70,3 +70,14 @@
   grid-template-columns: 1fr;
   gap: 0;
 }
+
+/* Print opens every entry (see the tile's body), so there is nothing left to expand or collapse. */
+@media print {
+  .resume-section-header {
+    break-after: avoid;
+  }
+
+  .resume-section-toggle-all {
+    display: none;
+  }
+}

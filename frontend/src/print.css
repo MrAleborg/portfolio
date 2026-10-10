@@ -1,0 +1,27 @@
+/* Loaded after index.css, whose tokens it overrides (theme.test.ts expects each defined once there). */
+@page {
+  margin: 1.5cm;
+}
+
+/* Paper is light on white whatever theme the visitor picked, with a type scale a notch smaller. */
+@media print {
+  :root,
+  :root[data-theme] {
+    color-scheme: light;
+    --bg: #fff;
+    --surface: #fff;
+    --shadow: none;
+
+    /* Ratio 1.2 from 10.5pt. */
+    --step--1: 9pt;
+    --step-0: 10.5pt;
+    --step-1: 12.5pt;
+    --step-2: 15pt;
+    --step-3: 18pt;
+    --step-4: 21pt;
+
+    /* Keeps the tinted chips and filled dots when the browser leaves backgrounds out. */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

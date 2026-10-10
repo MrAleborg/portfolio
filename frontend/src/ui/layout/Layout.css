@@ -116,3 +116,22 @@
 :where(.layout__main) p {
   margin: 0;
 }
+
+@media print {
+  .layout {
+    min-height: 0;
+  }
+
+  .layout__sentinel,
+  .layout__header {
+    display: none;
+  }
+
+  .layout__main {
+    padding: 0;
+  }
+
+  .layout__main h1 {
+    margin-top: 0;
+  }
+}
