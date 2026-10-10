@@ -83,6 +83,20 @@ interface Messages {
   /** Labels of the button that opens or closes every entry of a section. */
   expandAll: string
   collapseAll: string
+  /** Calls to action under the bio on the home page. */
+  homeResumeCta: string
+  homeContactCta: string
+  /** Accessible name of the list of key facts on the home page. */
+  homeFactsLabel: string
+  /** Labels of the key facts. */
+  factExperience: string
+  factCurrently: string
+  factLookingFor: string
+  factMainStack: string
+  /** Years of experience, e.g. "10+ years". */
+  experienceYears: (years: number) => string
+  /** The current job, e.g. "Developer at Acme". */
+  currentRole: (position: string, company: string) => string
 }
 
 export const messages: Localized<Messages> = {
@@ -169,6 +183,15 @@ export const messages: Localized<Messages> = {
     settings: 'Settings',
     expandAll: 'Expand all',
     collapseAll: 'Collapse all',
+    homeResumeCta: 'See my resume',
+    homeContactCta: 'Get in touch',
+    homeFactsLabel: 'Key facts',
+    factExperience: 'Experience',
+    factCurrently: 'Currently',
+    factLookingFor: 'Looking for',
+    factMainStack: 'Main stack',
+    experienceYears: (years) => `${years}+ ${years === 1 ? 'year' : 'years'}`,
+    currentRole: (position, company) => `${position} at ${company}`,
   },
   fr: {
     navLabel: 'Principale',
@@ -254,5 +277,14 @@ export const messages: Localized<Messages> = {
     settings: 'Préférences',
     expandAll: 'Tout déplier',
     collapseAll: 'Tout replier',
+    homeResumeCta: 'Voir mon CV',
+    homeContactCta: 'Me contacter',
+    homeFactsLabel: 'En bref',
+    factExperience: 'Expérience',
+    factCurrently: 'Actuellement',
+    factLookingFor: 'Recherche',
+    factMainStack: 'Stack principale',
+    experienceYears: (years) => `${years}+ ${years < 2 ? 'an' : 'ans'}`,
+    currentRole: (position, company) => `${position} chez ${company}`,
   },
 }

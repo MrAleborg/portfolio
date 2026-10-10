@@ -55,6 +55,8 @@ class Command(BaseCommand):
             headline_fr="Ingénieur logiciel",
             bio_en="Fictional owner of the demo portfolio.",
             bio_fr="Propriétaire fictif du portfolio de démonstration.",
+            desired_role_en="Tech lead",
+            desired_role_fr="Tech lead",
         )
 
     def create_tags(self):

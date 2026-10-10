@@ -1,7 +1,7 @@
 """Tests for the read-only profile endpoint.
 
 Route: ``/api/v1/profile/``. It returns the owner's profile: full name, and
-headline and bio in every language (``{"en": ..., "fr": ...}``). There is one
+headline, bio and desired role in every language (``{"en": ..., "fr": ...}``). There is one
 profile, so no id; until the admin has created it the answer is ``404``.
 Write methods are rejected.
 """
@@ -46,6 +46,8 @@ def test_returns_the_profile_in_every_language(api_client):
         headline_fr="Analyste",
         bio_en="I write programs.",
         bio_fr="J’écris des programmes.",
+        desired_role_en="Software engineer",
+        desired_role_fr="Ingénieure logiciel",
     )
 
     response = api_client.get(URL)
@@ -55,7 +57,17 @@ def test_returns_the_profile_in_every_language(api_client):
         "full_name": "Ada Lovelace",
         "headline": {"en": "Analyst", "fr": "Analyste"},
         "bio": {"en": "I write programs.", "fr": "J’écris des programmes."},
+        "desired_role": {"en": "Software engineer", "fr": "Ingénieure logiciel"},
     }
+
+
+def test_desired_role_is_empty_in_every_language_when_unset(api_client):
+    """The desired role is optional: both languages come back as empty texts."""
+    make_profile()
+
+    response = api_client.get(URL)
+
+    assert response.json()["desired_role"] == {"en": "", "fr": ""}
 
 
 @pytest.mark.parametrize("method", ["post", "put", "patch", "delete"])

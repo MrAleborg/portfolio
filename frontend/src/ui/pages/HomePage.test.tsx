@@ -1,7 +1,15 @@
-import { render, screen } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router'
 import type { Locale } from '@/domain/i18n/Locale'
+import type { ProfessionalExperience } from '@/domain/professionalExperience/ProfessionalExperience'
+import type { ProfessionalExperienceRepository } from '@/domain/professionalExperience/ProfessionalExperienceRepository'
 import type { ProfileRepository } from '@/domain/profile/ProfileRepository'
+import {
+  fakeProfessionalExperienceRepository,
+  fullExperience,
+} from '@/test/fakeProfessionalExperienceRepository'
+import { failing, pending } from '@/test/fakeList'
 import {
   ada,
   failingProfileRepository,
@@ -12,11 +20,17 @@ import { LanguageSwitch } from '@/ui/components/LanguageSwitch'
 import { LocaleProvider } from '@/ui/i18n/LocaleProvider'
 import { HomePage } from '@/ui/pages/HomePage'
 
-function renderPage(repository: ProfileRepository, locale: Locale = 'en') {
+function renderPage(
+  repository: ProfileRepository,
+  locale: Locale = 'en',
+  experienceRepository: ProfessionalExperienceRepository = fakeProfessionalExperienceRepository(),
+) {
   return render(
-    <LocaleProvider initialLocale={locale}>
-      <HomePage profileRepository={repository} />
-    </LocaleProvider>,
+    <MemoryRouter>
+      <LocaleProvider initialLocale={locale}>
+        <HomePage profileRepository={repository} experienceRepository={experienceRepository} />
+      </LocaleProvider>
+    </MemoryRouter>,
   )
 }
 
@@ -64,6 +78,24 @@ describe('HomePage', () => {
       ).toHaveAttribute('src', '/media/avatar.webp')
     })
 
+    it('links to the resume with a primary call to action', async () => {
+      renderPage(fakeProfileRepository())
+
+      expect(await screen.findByRole('link', { name: 'See my resume' })).toHaveAttribute(
+        'href',
+        '/resume',
+      )
+    })
+
+    it('links to the contact page with a secondary call to action', async () => {
+      renderPage(fakeProfileRepository())
+
+      expect(await screen.findByRole('link', { name: 'Get in touch' })).toHaveAttribute(
+        'href',
+        '/contact',
+      )
+    })
+
     it('says when the profile could not be loaded', async () => {
       renderPage(failingProfileRepository())
 
@@ -104,6 +136,24 @@ describe('HomePage', () => {
       ).toBeInTheDocument()
     })
 
+    it('links to the resume with a primary call to action', async () => {
+      renderPage(fakeProfileRepository(), 'fr')
+
+      expect(await screen.findByRole('link', { name: 'Voir mon CV' })).toHaveAttribute(
+        'href',
+        '/resume',
+      )
+    })
+
+    it('links to the contact page with a secondary call to action', async () => {
+      renderPage(fakeProfileRepository(), 'fr')
+
+      expect(await screen.findByRole('link', { name: 'Me contacter' })).toHaveAttribute(
+        'href',
+        '/contact',
+      )
+    })
+
     it('says when the profile could not be loaded', async () => {
       renderPage(failingProfileRepository(), 'fr')
 
@@ -128,15 +178,18 @@ describe('HomePage', () => {
   it('shows a repeated paragraph each time, and no stale one after a language switch', async () => {
     const user = userEvent.setup()
     render(
-      <LocaleProvider initialLocale="en">
-        <LanguageSwitch />
-        <HomePage
-          profileRepository={fakeProfileRepository({
-            ...ada,
-            bio: { en: 'Same.\n\nSame.', fr: 'Other.\n\nSame.' },
-          })}
-        />
-      </LocaleProvider>,
+      <MemoryRouter>
+        <LocaleProvider initialLocale="en">
+          <LanguageSwitch />
+          <HomePage
+            experienceRepository={fakeProfessionalExperienceRepository()}
+            profileRepository={fakeProfileRepository({
+              ...ada,
+              bio: { en: 'Same.\n\nSame.', fr: 'Other.\n\nSame.' },
+            })}
+          />
+        </LocaleProvider>
+      </MemoryRouter>,
     )
     expect(await screen.findAllByText('Same.')).toHaveLength(2)
 
@@ -145,5 +198,57 @@ describe('HomePage', () => {
     expect(
       screen.getAllByText(/Same|Other/).map((paragraph) => paragraph.textContent),
     ).toEqual(['Other.', 'Same.'])
+  })
+
+  describe('key facts', () => {
+    it('shows the facts after the calls to action once the experiences have loaded', async () => {
+      renderPage(fakeProfileRepository())
+
+      const facts = await screen.findByRole('region', { name: 'Key facts' })
+      const lastCallToAction = screen.getByRole('link', { name: 'Get in touch' })
+      expect(within(facts).getByText('Consultant at Globex')).toBeInTheDocument()
+      expect(
+        lastCallToAction.compareDocumentPosition(facts) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
+    })
+
+    it('shows the desired role of the profile when no job is ongoing', async () => {
+      const finished: ProfessionalExperience = {
+        ...fullExperience,
+        period: { start: '2019-09-01', end: '2022-08-31' },
+      }
+      renderPage(
+        fakeProfileRepository(),
+        'en',
+        fakeProfessionalExperienceRepository([finished]),
+      )
+
+      expect(await screen.findByText('Engineer')).toBeInTheDocument()
+    })
+
+    it('keeps saying it is loading, without the hero yet, while the experiences are loading', async () => {
+      renderPage(fakeProfileRepository(), 'en', { list: pending<ProfessionalExperience>() })
+      await act(async () => {})
+
+      expect(screen.getByRole('status')).toHaveTextContent('Loading…')
+      expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument()
+    })
+
+    it('shows the profile alert as soon as the profile fails, even while the experiences are loading', async () => {
+      renderPage(failingProfileRepository(), 'en', { list: pending<ProfessionalExperience>() })
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'The profile could not be loaded. Please try again later.',
+      )
+    })
+
+    it('shows the profile and the calls to action without facts or alert when the experiences fail to load', async () => {
+      renderPage(fakeProfileRepository(), 'en', { list: failing<ProfessionalExperience>() })
+
+      expect(await screen.findByRole('heading', { level: 1, name: 'Ada Lovelace' })).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'Get in touch' })).toBeInTheDocument()
+      expect(screen.queryByRole('region', { name: 'Key facts' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    })
   })
 })

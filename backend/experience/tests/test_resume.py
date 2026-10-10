@@ -183,6 +183,8 @@ def test_profile_is_serialized_when_it_exists(api_client):
         headline_fr="Analyste",
         bio_en="I write programs.",
         bio_fr="J’écris des programmes.",
+        desired_role_en="Software engineer",
+        desired_role_fr="Ingénieure logiciel",
     )
 
     response = api_client.get(URL)
@@ -191,6 +193,7 @@ def test_profile_is_serialized_when_it_exists(api_client):
         "full_name": "Ada Lovelace",
         "headline": {"en": "Analyst", "fr": "Analyste"},
         "bio": {"en": "I write programs.", "fr": "J’écris des programmes."},
+        "desired_role": {"en": "Software engineer", "fr": "Ingénieure logiciel"},
     }
 
 

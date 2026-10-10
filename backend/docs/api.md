@@ -356,12 +356,13 @@ so the route has no id, and no list.
 {
   "full_name": "Ada Lovelace",
   "headline": {"en": "Analyst", "fr": "Analyste"},
-  "bio": {"en": "I write programs.", "fr": "J’écris des programmes."}
+  "bio": {"en": "I write programs.", "fr": "J’écris des programmes."},
+  "desired_role": {"en": "Software engineer", "fr": "Ingénieure logiciel"}
 }
 ```
 
-- `headline` and `bio` are translated; `full_name` is not. `bio` may be empty
-  in every language.
+- `headline`, `bio` and `desired_role` are translated; `full_name` is not.
+  `bio` and `desired_role` may be empty in every language.
 - `404` until the profile is created through the
   [admin API](admin_api.md#profile-apiv1adminprofile). Write methods are
   `405`.
@@ -428,7 +429,7 @@ whole resume at once ([`ResumeView`](../experience/views.py)).
 
 ```json
 {
-  "profile": {"full_name": "Ada Lovelace", "headline": {…}, "bio": {…}},
+  "profile": {"full_name": "Ada Lovelace", "headline": {…}, "bio": {…}, "desired_role": {…}},
   "education": […],
   "certifications": […],
   "professional_experiences": […],

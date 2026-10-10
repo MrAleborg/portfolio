@@ -15,7 +15,12 @@ export function AppRoutes({ repositories }: AppRoutesProps) {
       <Route element={<Layout profileRepository={repositories.profile} />}>
         <Route
           index
-          element={<HomePage profileRepository={repositories.profile} />}
+          element={
+            <HomePage
+              profileRepository={repositories.profile}
+              experienceRepository={repositories.experience}
+            />
+          }
         />
         <Route
           path="resume"

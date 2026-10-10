@@ -1,7 +1,8 @@
 """Tests for the Profile model: who the portfolio belongs to.
 
-There is a single owner, so at most one profile row. The bio is optional but,
-like every optional translated text, filled in every language or in none.
+There is a single owner, so at most one profile row. The bio and the desired
+role are optional but, like every optional translated text, filled in every
+language or in none.
 """
 
 import pytest
@@ -46,6 +47,34 @@ def test_bio_cannot_be_filled_in_one_language_only(language):
 
     with pytest.raises(IntegrityError):
         make_profile(**bio)
+
+
+@pytest.mark.parametrize("language", LANGUAGES)
+def test_desired_role_cannot_be_filled_in_one_language_only(language):
+    desired_role = {
+        f"desired_role_{other}": "Engineer" if other == language else ""
+        for other in LANGUAGES
+    }
+
+    with pytest.raises(IntegrityError):
+        make_profile(**desired_role)
+
+
+def test_desired_role_can_be_filled_in_every_language():
+    profile = make_profile(desired_role_en="Engineer", desired_role_fr="Ingénieur")
+
+    profile.refresh_from_db()
+    assert (profile.desired_role_en, profile.desired_role_fr) == (
+        "Engineer",
+        "Ingénieur",
+    )
+
+
+def test_desired_role_is_empty_by_default():
+    profile = make_profile()
+
+    profile.refresh_from_db()
+    assert (profile.desired_role_en, profile.desired_role_fr) == ("", "")
 
 
 def test_str_is_the_full_name():

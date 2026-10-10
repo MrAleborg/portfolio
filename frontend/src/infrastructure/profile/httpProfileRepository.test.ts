@@ -5,6 +5,7 @@ const body = {
   full_name: 'Ada Lovelace',
   headline: { en: 'Analyst', fr: 'Analyste' },
   bio: { en: 'I write programs.', fr: 'J’écris des programmes.' },
+  desired_role: { en: 'Engineer', fr: 'Ingénieure' },
 }
 
 describe('httpProfileRepository', () => {
@@ -23,7 +24,18 @@ describe('httpProfileRepository', () => {
       fullName: 'Ada Lovelace',
       headline: { en: 'Analyst', fr: 'Analyste' },
       bio: { en: 'I write programs.', fr: 'J’écris des programmes.' },
+      desiredRole: { en: 'Engineer', fr: 'Ingénieure' },
     })
+  })
+
+  it('has an empty desired role when the API does not send one yet', async () => {
+    const withoutDesiredRole = { full_name: body.full_name, headline: body.headline, bio: body.bio }
+    const repository = createHttpProfileRepository(
+      'https://api.example.com',
+      respondWith(200, withoutDesiredRole),
+    )
+
+    await expect(repository.get()).resolves.toMatchObject({ desiredRole: { en: '', fr: '' } })
   })
 
   it('fails while the profile does not exist yet', async () => {

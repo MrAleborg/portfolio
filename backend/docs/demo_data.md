@@ -90,7 +90,7 @@ Entries are listed by their English text.
 
 | Resource | Id | Entry | Notes |
 |---|---|---|---|
-| Profile | 1 | Demo Owner, Software engineer | With a bio |
+| Profile | 1 | Demo Owner, Software engineer | With a bio and a desired role (Tech lead) |
 | Education | 1 | Master's degree, Demo University (2015–2017) | French: Master |
 | | 2 | Bachelor's degree, Demo Institute of Technology (2012–2015) | French: Licence |
 | Experience | 1 | Backend developer @ Acme Corp | Ongoing (`end_date` null) |
@@ -161,7 +161,7 @@ relative to `http://localhost:8000/api/v1/experience/`; see
 | `commitments/4/` | `404` |
 | `scientific-communications/` | Communications 1, 2, 3, 4 (by `display_order`, although 4 is the newest), one of each `kind`. Not 5. No `description` |
 | `scientific-communications/5/` | `404` |
-| `/api/v1/profile/` (absolute path) | Demo Owner, with headline and bio in both languages |
+| `/api/v1/profile/` (absolute path) | Demo Owner, with headline, bio and desired role in both languages |
 
 No response should contain `is_visible`, `display_order`, `created_at` or
 `updated_at`.
