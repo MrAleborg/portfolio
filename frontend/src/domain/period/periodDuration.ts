@@ -1,15 +1,11 @@
 import type { Period } from '@/domain/period/Period'
+import { monthIndex } from '@/domain/period/monthIndex'
 
 /** A length of time in whole months, split into years and the months left over. */
 export interface PeriodDuration {
   years: number
   /** 0 to 11. */
   months: number
-}
-
-/** The number of months from year 0 to the given month (0 for January). */
-function monthIndex(year: number, month: number): number {
-  return year * 12 + month
 }
 
 /**

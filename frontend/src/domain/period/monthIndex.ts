@@ -1,4 +1,4 @@
-/** Skeleton for the red gate: behavior comes in the green step. */
-export function monthIndex(_year: number, _month: number): number {
-  throw new Error('Not implemented')
+/** The number of months from year 0 to the given month (0 for January). */
+export function monthIndex(year: number, month: number): number {
+  return year * 12 + month
 }

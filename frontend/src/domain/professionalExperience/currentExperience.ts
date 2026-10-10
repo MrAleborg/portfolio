@@ -1,8 +1,8 @@
 import type { ProfessionalExperience } from '@/domain/professionalExperience/ProfessionalExperience'
 
-/** Skeleton for the red gate: behavior comes in the green step. */
+/** The first ongoing experience (no end date) in the given order, if any. */
 export function currentExperience(
-  _experiences: ProfessionalExperience[],
+  experiences: ProfessionalExperience[],
 ): ProfessionalExperience | undefined {
-  throw new Error('Not implemented')
+  return experiences.find((experience) => experience.period.end === null)
 }
