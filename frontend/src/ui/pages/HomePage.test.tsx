@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router'
 import type { Locale } from '@/domain/i18n/Locale'
 import type { ProfileRepository } from '@/domain/profile/ProfileRepository'
 import {
@@ -14,9 +15,11 @@ import { HomePage } from '@/ui/pages/HomePage'
 
 function renderPage(repository: ProfileRepository, locale: Locale = 'en') {
   return render(
-    <LocaleProvider initialLocale={locale}>
-      <HomePage profileRepository={repository} />
-    </LocaleProvider>,
+    <MemoryRouter>
+      <LocaleProvider initialLocale={locale}>
+        <HomePage profileRepository={repository} />
+      </LocaleProvider>
+    </MemoryRouter>,
   )
 }
 
@@ -64,6 +67,24 @@ describe('HomePage', () => {
       ).toHaveAttribute('src', '/media/avatar.webp')
     })
 
+    it('links to the resume with a primary call to action', async () => {
+      renderPage(fakeProfileRepository())
+
+      expect(await screen.findByRole('link', { name: 'See my resume' })).toHaveAttribute(
+        'href',
+        '/resume',
+      )
+    })
+
+    it('links to the contact page with a secondary call to action', async () => {
+      renderPage(fakeProfileRepository())
+
+      expect(await screen.findByRole('link', { name: 'Get in touch' })).toHaveAttribute(
+        'href',
+        '/contact',
+      )
+    })
+
     it('says when the profile could not be loaded', async () => {
       renderPage(failingProfileRepository())
 
@@ -104,6 +125,24 @@ describe('HomePage', () => {
       ).toBeInTheDocument()
     })
 
+    it('links to the resume with a primary call to action', async () => {
+      renderPage(fakeProfileRepository(), 'fr')
+
+      expect(await screen.findByRole('link', { name: 'Voir mon CV' })).toHaveAttribute(
+        'href',
+        '/resume',
+      )
+    })
+
+    it('links to the contact page with a secondary call to action', async () => {
+      renderPage(fakeProfileRepository(), 'fr')
+
+      expect(await screen.findByRole('link', { name: 'Me contacter' })).toHaveAttribute(
+        'href',
+        '/contact',
+      )
+    })
+
     it('says when the profile could not be loaded', async () => {
       renderPage(failingProfileRepository(), 'fr')
 
@@ -128,15 +167,17 @@ describe('HomePage', () => {
   it('shows a repeated paragraph each time, and no stale one after a language switch', async () => {
     const user = userEvent.setup()
     render(
-      <LocaleProvider initialLocale="en">
-        <LanguageSwitch />
-        <HomePage
-          profileRepository={fakeProfileRepository({
-            ...ada,
-            bio: { en: 'Same.\n\nSame.', fr: 'Other.\n\nSame.' },
-          })}
-        />
-      </LocaleProvider>,
+      <MemoryRouter>
+        <LocaleProvider initialLocale="en">
+          <LanguageSwitch />
+          <HomePage
+            profileRepository={fakeProfileRepository({
+              ...ada,
+              bio: { en: 'Same.\n\nSame.', fr: 'Other.\n\nSame.' },
+            })}
+          />
+        </LocaleProvider>
+      </MemoryRouter>,
     )
     expect(await screen.findAllByText('Same.')).toHaveLength(2)
 
