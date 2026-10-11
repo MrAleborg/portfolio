@@ -141,12 +141,32 @@ describe('Footer', () => {
       expect(iconOf(link)).toBeNull()
     })
 
-    it('keeps the email link named by its address alone once it has an icon', async () => {
-      renderFooter()
+    it('puts each icon before its label', async () => {
+      renderFooter({
+        contact: fakeContactRepository([...contactLinks, website]),
+      })
 
-      const link = await screen.findByRole('link', { name: 'ada@example.com' })
+      const links = [
+        await screen.findByRole('link', { name: 'ada@example.com' }),
+        screen.getByRole('link', { name: /^LinkedIn/ }),
+        screen.getByRole('link', { name: /^GitHub/ }),
+        screen.getByRole('link', { name: /^Website/ }),
+      ]
 
-      expect(iconOf(link)).not.toBeNull()
+      for (const link of links) {
+        expect(link.firstChild).toBe(iconOf(link))
+      }
+    })
+
+    it('keeps the links named by their label alone, icons or not', async () => {
+      renderFooter({
+        contact: fakeContactRepository([...contactLinks, website]),
+      })
+
+      expect(await screen.findByRole('link', { name: 'ada@example.com' })).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'LinkedIn (opens in a new tab)' })).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'GitHub (opens in a new tab)' })).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'Website (opens in a new tab)' })).toBeInTheDocument()
     })
   })
 

@@ -23,17 +23,20 @@
 
 .footer__links a {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.375rem;
   overflow-wrap: anywhere;
+  text-align: start;
   color: var(--text);
   text-decoration: none;
 }
 
+/* On the label's first line, so it stays there when a long address wraps. */
 .footer__links svg {
   flex-shrink: 0;
   width: 1em;
   height: 1em;
+  margin-top: calc((1lh - 1em) / 2);
 }
 
 .footer__links a:hover {

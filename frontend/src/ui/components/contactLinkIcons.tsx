@@ -1,16 +1,9 @@
 import type { ReactElement } from 'react'
 import type { ContactLinkKind } from '@/domain/contact/ContactLink'
+import { LUCIDE_ICON } from '@/ui/components/lucideIcon'
 
 // Decorative icons for the contact links (Lucide line shapes), hidden from assistive technology.
-const ICON = {
-  'aria-hidden': true,
-  fill: 'none',
-  stroke: 'currentColor',
-  strokeWidth: 2,
-  strokeLinecap: 'round',
-  strokeLinejoin: 'round',
-  viewBox: '0 0 24 24',
-} as const
+const ICON = { ...LUCIDE_ICON, 'aria-hidden': true } as const
 
 const mailIcon = (
   <svg {...ICON}>
