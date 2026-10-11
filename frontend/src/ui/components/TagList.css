@@ -17,22 +17,9 @@
 }
 
 .tag {
-  padding: 0.125rem 0.5rem;
   font-size: var(--step--1);
   color: var(--text-strong);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 999px;
   overflow-wrap: anywhere;
-}
-
-/* A kind colours its chips: its colour as text on a 12% tint of it, without a visible border. */
-.tag--skill,
-.tag--tool,
-.tag--methodology {
-  color: var(--tag-color);
-  background: color-mix(in srgb, var(--tag-color) 12%, var(--surface));
-  border-color: transparent;
 }
 
 .tag--skill {
@@ -51,9 +38,28 @@
   color: var(--text);
 }
 
-/* A chip with a note can wrap onto several lines: a pill would turn into an oval. */
-.tag:has(.tag__note) {
-  border-radius: 0.75rem;
+/* On screen a tag is a chip; on paper it is text (see below), so none of this is undone there. */
+@media screen {
+  .tag {
+    padding: 0.125rem 0.5rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+  }
+
+  /* A kind colours its chips: its colour as text on a 12% tint of it, without a visible border. */
+  .tag--skill,
+  .tag--tool,
+  .tag--methodology {
+    color: var(--tag-color);
+    background: color-mix(in srgb, var(--tag-color) 12%, var(--surface));
+    border-color: transparent;
+  }
+
+  /* A chip with a note can wrap onto several lines: a pill would turn into an oval. */
+  .tag:has(.tag__note) {
+    border-radius: 0.75rem;
+  }
 }
 
 /* On paper a group is one line of text, "Label: a · b · c", not a row of chips. */
@@ -102,10 +108,7 @@
   }
 
   .tag {
-    padding: 0;
     font-size: inherit;
     color: var(--text);
-    background: none;
-    border: 0;
   }
 }
