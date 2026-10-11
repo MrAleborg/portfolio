@@ -85,6 +85,14 @@ const sections = [
 ]
 
 describe('ResumePage', () => {
+  it('opens with the name, headline and contact links of the owner, for print', async () => {
+    renderPage()
+
+    expect(await screen.findByText('Ada Lovelace')).toBeInTheDocument()
+    expect(screen.getByText('Analyst')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'ada@example.com' })).toBeInTheDocument()
+  })
+
   it('shows the title as the main heading', () => {
     renderPage()
 

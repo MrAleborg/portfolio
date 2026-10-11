@@ -1,0 +1,39 @@
+/* On paper only: on screen the page opens with its title and the header of the site has the name. */
+.resume-print-header {
+  display: none;
+}
+
+@media print {
+  .resume-print-header {
+    display: block;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+    break-after: avoid;
+  }
+
+  .resume-print-header__name {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--step-3);
+    font-weight: 600;
+    color: var(--text-strong);
+  }
+
+  .resume-print-header__headline {
+    margin: 0.25rem 0 0;
+    font-size: var(--step-1);
+    font-weight: 500;
+    color: var(--subtitle);
+  }
+
+  .resume-print-header__contact {
+    margin: 0.25rem 0 0;
+    font-size: var(--step--1);
+    color: var(--text);
+  }
+
+  .resume-print-header__contact a {
+    color: var(--text);
+    text-decoration: none;
+  }
+}

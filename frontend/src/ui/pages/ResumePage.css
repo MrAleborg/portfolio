@@ -62,6 +62,11 @@
     margin: 0;
   }
 
+  /* The name heads the page, in the print header; without it the title stays. */
+  .resume-print-header ~ .resume__title {
+    display: none;
+  }
+
   .resume__sections {
     grid-column: 1;
     gap: 1.25rem;
