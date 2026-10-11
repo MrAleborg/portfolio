@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ReactElement } from 'react'
 import { Tile } from '@/ui/components/Tile'
@@ -35,6 +35,100 @@ function renderInSection(
     </LocaleProvider>,
   )
 }
+
+type Listener = () => void
+
+/** A Web Animation that runs until the test finishes it, like a browser one would. */
+class FakeAnimation {
+  onfinish: Listener | null = null
+  oncancel: Listener | null = null
+  finished: Promise<FakeAnimation>
+  private settle!: { resolve: (a: FakeAnimation) => void; reject: (e: unknown) => void }
+  private state: 'running' | 'finished' | 'idle' = 'running'
+  private listeners: Record<string, Listener[]> = {}
+
+  target: Element
+  keyframes: unknown
+  options: KeyframeAnimationOptions
+
+  constructor(target: Element, keyframes: unknown, options: KeyframeAnimationOptions) {
+    this.target = target
+    this.keyframes = keyframes
+    this.options = options
+    this.finished = new Promise((resolve, reject) => {
+      this.settle = { resolve, reject }
+    })
+    this.finished.catch(() => {}) // a cancelled animation is not an error
+  }
+
+  get playState() {
+    return this.state
+  }
+
+  addEventListener(type: string, listener: Listener) {
+    ;(this.listeners[type] ??= []).push(listener)
+  }
+
+  removeEventListener(type: string, listener: Listener) {
+    this.listeners[type] = (this.listeners[type] ?? []).filter((l) => l !== listener)
+  }
+
+  finish() {
+    if (this.state !== 'running') return
+    this.state = 'finished'
+    this.settle.resolve(this)
+    this.onfinish?.()
+    this.listeners.finish?.forEach((listener) => listener())
+  }
+
+  cancel() {
+    if (this.state !== 'running') return
+    this.state = 'idle'
+    this.settle.reject(new DOMException('The animation was cancelled.', 'AbortError'))
+    this.oncancel?.()
+    this.listeners.cancel?.forEach((listener) => listener())
+  }
+}
+
+/** Makes `element.animate` available, as in a browser, and keeps what it started. */
+function stubAnimate() {
+  const animations: FakeAnimation[] = []
+  Object.defineProperty(Element.prototype, 'animate', {
+    configurable: true,
+    writable: true,
+    value(this: Element, keyframes: unknown, options: KeyframeAnimationOptions) {
+      const animation = new FakeAnimation(this, keyframes, options)
+      animations.push(animation)
+      return animation
+    },
+  })
+  return animations
+}
+
+async function finishAll(animations: FakeAnimation[]) {
+  await act(async () => {
+    animations.forEach((animation) => animation.finish())
+  })
+}
+
+function stubReducedMotion(reduce: boolean) {
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    matches: reduce && query === '(prefers-reduced-motion: reduce)',
+    media: query,
+    addEventListener() {},
+    removeEventListener() {},
+  }))
+}
+
+function renderOpenTile() {
+  return render(
+    <Tile title="Master’s degree" preview={<p>First lines.</p>} defaultExpanded>
+      <p>Thesis on compilers.</p>
+    </Tile>,
+  )
+}
+
+const defaultMatchMedia = window.matchMedia
 
 describe('Tile', () => {
   it('is an article named by its title', () => {
@@ -233,6 +327,140 @@ describe('Tile', () => {
       render(<Tile title="Master’s degree" preview={<p>First lines.</p>} />)
 
       expect(screen.queryByText('First lines.')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('motion', () => {
+    afterEach(() => {
+      delete (Element.prototype as Partial<Element>).animate
+      vi.stubGlobal('matchMedia', defaultMatchMedia)
+    })
+
+    it('shows its details at once when opened', async () => {
+      const user = userEvent.setup()
+      stubAnimate()
+      renderTileWithContent()
+
+      await user.click(screen.getByRole('button', { name: 'Master’s degree' }))
+
+      expect(
+        screen.getByRole('button', { name: 'Master’s degree' }),
+      ).toHaveAttribute('aria-expanded', 'true')
+      expect(screen.getByText('Thesis on compilers.')).toBeVisible()
+    })
+
+    it('animates its card and fades its details for 200 ms, ease-out, when opened', async () => {
+      const user = userEvent.setup()
+      const animations = stubAnimate()
+      renderTileWithContent()
+
+      await user.click(screen.getByRole('button', { name: 'Master’s degree' }))
+
+      const details = screen.getByText('Thesis on compilers.').parentElement
+      expect(animations.map((animation) => animation.target)).toEqual(
+        expect.arrayContaining([screen.getByRole('article'), details]),
+      )
+      animations.forEach((animation) =>
+        expect(animation.options).toMatchObject({ duration: 200, easing: 'ease-out' }),
+      )
+    })
+
+    it('keeps its details visible while it closes, then hides them and brings the preview back', async () => {
+      const user = userEvent.setup()
+      const animations = stubAnimate()
+      renderOpenTile()
+
+      await user.click(screen.getByRole('button', { name: 'Master’s degree' }))
+
+      expect(screen.getByText('Thesis on compilers.')).toBeVisible()
+
+      await finishAll(animations)
+
+      expect(screen.getByText('Thesis on compilers.')).not.toBeVisible()
+      expect(screen.getByText('First lines.')).toBeVisible()
+    })
+
+    it('hides its details at once when closed with reduced motion', async () => {
+      const user = userEvent.setup()
+      stubAnimate()
+      stubReducedMotion(true)
+      renderOpenTile()
+
+      await user.click(screen.getByRole('button', { name: 'Master’s degree' }))
+
+      expect(screen.getByText('Thesis on compilers.')).not.toBeVisible()
+      expect(screen.getByText('First lines.')).toBeVisible()
+    })
+
+    it('hides its details at once when closed in a browser without element.animate', async () => {
+      const user = userEvent.setup()
+      expect(Element.prototype.animate).toBeUndefined()
+      renderOpenTile()
+
+      await user.click(screen.getByRole('button', { name: 'Master’s degree' }))
+
+      expect(screen.getByText('Thesis on compilers.')).not.toBeVisible()
+      expect(screen.getByText('First lines.')).toBeVisible()
+    })
+
+    it('ends open when reopened while it closes', async () => {
+      const user = userEvent.setup()
+      const animations = stubAnimate()
+      renderOpenTile()
+
+      await user.click(screen.getByRole('button', { name: 'Master’s degree' }))
+      await user.click(screen.getByRole('button', { name: 'Master’s degree' }))
+      await finishAll(animations)
+
+      expect(
+        screen.getByRole('button', { name: 'Master’s degree' }),
+      ).toHaveAttribute('aria-expanded', 'true')
+      expect(screen.getByText('Thesis on compilers.')).toBeVisible()
+    })
+
+    it('ends closed when closed again while it opens', async () => {
+      const user = userEvent.setup()
+      const animations = stubAnimate()
+      render(
+        <Tile title="Master’s degree" preview={<p>First lines.</p>}>
+          <p>Thesis on compilers.</p>
+        </Tile>,
+      )
+
+      await user.click(screen.getByRole('button', { name: 'Master’s degree' }))
+      await user.click(screen.getByRole('button', { name: 'Master’s degree' }))
+      await finishAll(animations)
+
+      expect(
+        screen.getByRole('button', { name: 'Master’s degree' }),
+      ).toHaveAttribute('aria-expanded', 'false')
+      expect(screen.getByText('Thesis on compilers.')).not.toBeVisible()
+      expect(screen.getByText('First lines.')).toBeVisible()
+    })
+
+    it('keeps the details of every tile visible while expand all and collapse all animate', async () => {
+      const user = userEvent.setup()
+      const animations = stubAnimate()
+      renderInSection([
+        <Tile key="a" title="First">
+          <p>First details.</p>
+        </Tile>,
+        <Tile key="b" title="Second">
+          <p>Second details.</p>
+        </Tile>,
+      ])
+
+      await user.click(screen.getByRole('button', { name: 'Expand all' }))
+      await finishAll(animations)
+      await user.click(screen.getByRole('button', { name: 'Collapse all' }))
+
+      expect(screen.getByText('First details.')).toBeVisible()
+      expect(screen.getByText('Second details.')).toBeVisible()
+
+      await finishAll(animations)
+
+      expect(screen.getByText('First details.')).not.toBeVisible()
+      expect(screen.getByText('Second details.')).not.toBeVisible()
     })
   })
 

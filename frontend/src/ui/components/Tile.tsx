@@ -1,5 +1,6 @@
 import { Children, Fragment, useId, type ReactNode } from 'react'
 import { useSectionEntry, useSectionVariant } from '@/ui/resume/SectionContext'
+import { useCollapseMotion } from '@/ui/components/useCollapseMotion'
 import './Tile.css'
 
 interface TileProps {
@@ -39,6 +40,7 @@ export function Tile({
   const [expanded, setExpanded] = useSectionEntry(defaultExpanded, {
     register: headingLevel === 3 && hasDetails,
   })
+  const { cardRef, bodyRef, previewRef, open } = useCollapseMotion(expanded)
   const isRow = useSectionVariant() === 'row' && headingLevel === 3
   const metaItems = meta.filter(Boolean)
   const Heading = `h${headingLevel}` as const
@@ -51,7 +53,7 @@ export function Tile({
     .join(' ')
 
   return (
-    <article className={className} aria-labelledby={titleId} aria-describedby={describedBy}>
+    <article ref={cardRef} className={className} aria-labelledby={titleId} aria-describedby={describedBy}>
       <Heading id={titleId} className="tile__title">
         {hasDetails ? (
           <button
@@ -80,10 +82,12 @@ export function Tile({
         </p>
       )}
       {hasDetails && !expanded && preview && (
-        <div className="tile__preview">{preview}</div>
+        <div ref={previewRef} className="tile__preview" hidden={open}>
+          {preview}
+        </div>
       )}
       {hasDetails && (
-        <div id={bodyId} className="tile__body" hidden={!expanded}>
+        <div ref={bodyRef} id={bodyId} className="tile__body" hidden={!open}>
           {children}
         </div>
       )}
