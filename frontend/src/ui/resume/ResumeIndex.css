@@ -40,12 +40,12 @@
 }
 
 .resume-index[data-overflow-start]::before {
-  left: 0;
+  inset-inline-start: 1rem; /* the list's clip line: the nav's side padding lies outside it */
   background: linear-gradient(to left, transparent, var(--bg));
 }
 
 .resume-index[data-overflow-end]::after {
-  right: 0;
+  inset-inline-end: 1rem;
   background: linear-gradient(to right, transparent, var(--bg));
 }
 

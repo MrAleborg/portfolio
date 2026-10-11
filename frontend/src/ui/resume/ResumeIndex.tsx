@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, type MouseEvent } from 'react'
+import { useCallback, useEffect, useRef, type FocusEvent, type MouseEvent } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import { messages } from '@/ui/i18n/messages'
 import { useLocale } from '@/ui/i18n/useLocale'
@@ -21,6 +21,8 @@ const OFF_TARGET_PX = 2
 const MAX_CORRECTIONS = 2
 /** Sub-pixel scroll positions: an end this close (px) counts as reached. */
 const EDGE_TOLERANCE_PX = 1
+/** The width of the fade over each edge of the chip bar (`ResumeIndex.css`), in rem. */
+const FADE_REM = 2
 
 function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -127,7 +129,9 @@ function useChipBar(active: string | undefined) {
     measure()
     element.addEventListener('scroll', measure, { passive: true })
     const resizeObserver = new ResizeObserver(measure)
+    // The list's own box stays put when only its chips change width (language, web font).
     resizeObserver.observe(element)
+    element.querySelectorAll('li').forEach((chip) => resizeObserver.observe(chip))
     return () => {
       element.removeEventListener('scroll', measure)
       resizeObserver.disconnect()
@@ -147,7 +151,23 @@ function useChipBar(active: string | undefined) {
     }
   }, [active, measure])
 
-  return { nav, bar }
+  // Chrome leaves a partly visible chip where it is when it gets the focus, under a fade: bring it
+  // 2rem clear of the edge. Only `scrollLeft` moves, so the page cannot move vertically.
+  function keepFocusClearOfFades(event: FocusEvent<HTMLElement>) {
+    const element = bar.current
+    if (!element || element.scrollWidth <= element.clientWidth) return
+    const fade = FADE_REM * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16)
+    const { offsetLeft: left, offsetWidth: width } = event.target
+    const { scrollLeft, clientWidth, scrollWidth } = element
+    let target = scrollLeft
+    if (left - scrollLeft < fade) target = left - fade
+    else if (left + width - scrollLeft > clientWidth - fade)
+      target = left + width + fade - clientWidth
+    element.scrollLeft = Math.min(Math.max(0, target), scrollWidth - clientWidth)
+    measure()
+  }
+
+  return { nav, bar, keepFocusClearOfFades }
 }
 
 export function ResumeIndex() {
@@ -156,8 +176,7 @@ export function ResumeIndex() {
   const navigate = useNavigate()
   const { hash } = useLocation()
   const cancelCorrection = useRef(() => {})
-  // Before `useDeepLink`: a test that stubs `ResizeObserver` reaches the last observer built.
-  const { nav, bar } = useChipBar(active)
+  const { nav, bar, keepFocusClearOfFades } = useChipBar(active)
   const stopDeepLink = useDeepLink()
 
   useEffect(() => () => cancelCorrection.current(), [])
@@ -179,7 +198,7 @@ export function ResumeIndex() {
 
   return (
     <nav ref={nav} className="resume-index" aria-label={text.resumeSectionsLabel}>
-      <ul ref={bar}>
+      <ul ref={bar} onFocus={keepFocusClearOfFades}>
         {resumeSections.map(({ id, titleKey, icon: Icon }) => (
           <li key={id}>
             <a
