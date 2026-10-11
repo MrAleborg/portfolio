@@ -18,6 +18,8 @@ interface Messages {
   navHome: string
   navResume: string
   navContact: string
+  /** Accessible name of the contact links in the footer. */
+  footerLabel: string
   resumeTitle: string
   /** Accessible name of the in-page navigation between the resume sections. */
   resumeSectionsLabel: string
@@ -105,6 +107,7 @@ export const messages: Localized<Messages> = {
     navHome: 'Home',
     navResume: 'Resume',
     navContact: 'Contact',
+    footerLabel: 'Contact links',
     resumeTitle: 'Resume',
     resumeSectionsLabel: 'Resume sections',
     contactTitle: 'Contact',
@@ -198,6 +201,7 @@ export const messages: Localized<Messages> = {
     navHome: 'Accueil',
     navResume: 'CV',
     navContact: 'Contact',
+    footerLabel: 'Liens de contact',
     resumeTitle: 'CV',
     resumeSectionsLabel: 'Sections du CV',
     contactTitle: 'Contact',

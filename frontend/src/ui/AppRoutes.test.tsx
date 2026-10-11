@@ -114,7 +114,9 @@ describe('AppRoutes', () => {
       'aria-current',
       'page',
     )
-    expect(await screen.findByRole('link', { name: 'ada@example.com' })).toBeInTheDocument()
+    expect(
+      await within(screen.getByRole('main')).findByRole('link', { name: 'ada@example.com' }),
+    ).toBeInTheDocument()
   })
 
   it('goes to the contact page from the navigation', async () => {
@@ -204,6 +206,55 @@ describe('AppRoutes', () => {
       'true',
     )
     expect(screen.getByText('Mémoire sur les compilateurs.')).toBeVisible()
+  })
+
+  describe('footer', () => {
+    it.each(['/', '/resume', '/contact'])('is the only content information of %s', async (path) => {
+      renderAt(path)
+
+      await screen.findByRole('contentinfo')
+
+      expect(screen.getAllByRole('contentinfo')).toHaveLength(1)
+    })
+
+    it('comes after the main content', async () => {
+      renderAt('/')
+
+      const footer = await screen.findByRole('contentinfo')
+
+      expect(screen.getByRole('main').compareDocumentPosition(footer)).toBe(
+        Node.DOCUMENT_POSITION_FOLLOWING,
+      )
+    })
+
+    it('does not load the profile a second time', async () => {
+      const profile = fakeProfileRepository()
+      renderAt('/contact', { repositories: fakeRepositories({ profile }) })
+
+      expect(await within(await screen.findByRole('contentinfo')).findByText(/^© \d{4} Ada Lovelace$/)).toBeInTheDocument()
+
+      expect(profile.get).toHaveBeenCalledTimes(1)
+    })
+
+    it.each(['/', '/resume', '/contact'])('shows the contact links and the copyright on %s', async (path) => {
+      renderAt(path)
+      const footer = within(await screen.findByRole('contentinfo'))
+
+      expect(await footer.findByRole('link', { name: 'ada@example.com' })).toHaveAttribute(
+        'href',
+        'mailto:ada@example.com',
+      )
+      expect(footer.getByRole('link', { name: /^GitHub/ })).toBeInTheDocument()
+      expect(await footer.findByText(/^© \d{4} Ada Lovelace$/)).toBeInTheDocument()
+    })
+
+    it('labels its links in French', async () => {
+      renderAt('/', { locale: 'fr' })
+
+      expect(
+        await screen.findByRole('navigation', { name: 'Liens de contact' }),
+      ).toBeInTheDocument()
+    })
   })
 
   describe('scroll position', () => {

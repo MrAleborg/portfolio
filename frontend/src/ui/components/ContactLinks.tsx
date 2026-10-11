@@ -1,5 +1,6 @@
 import type { ContactLink } from '@/domain/contact/ContactLink'
 import { contactAddress } from '@/ui/components/contactAddress'
+import { contactLinkLabel } from '@/ui/components/contactLinkLabel'
 import { ExternalLink } from '@/ui/components/ExternalLink'
 import { messages } from '@/ui/i18n/messages'
 import { useLocale } from '@/ui/i18n/useLocale'
@@ -13,18 +14,6 @@ export function ContactLinks({ links }: ContactLinksProps) {
   const text = messages[useLocale().locale]
   const emails = links.filter((link) => link.kind === 'email')
   const others = links.filter((link) => link.kind !== 'email')
-
-  function label(link: ContactLink) {
-    switch (link.kind) {
-      case 'linkedin':
-      case 'github':
-        return text.contactLinkKinds[link.kind]
-      case 'website':
-        return text.websiteLink
-      default:
-        return contactAddress(link)
-    }
-  }
 
   return (
     <>
@@ -45,7 +34,7 @@ export function ContactLinks({ links }: ContactLinksProps) {
         <div className="contact-links__others">
           {others.map((link) => (
             <ExternalLink key={`${link.kind}:${link.url}`} href={link.url}>
-              {label(link)}
+              {contactLinkLabel(link, text)}
             </ExternalLink>
           ))}
         </div>
