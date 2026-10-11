@@ -10,6 +10,8 @@ import { useLocale } from '@/ui/i18n/useLocale'
 import { paragraphs } from '@/ui/text/paragraphs'
 import './HomePage.css'
 
+const NO_ROLE = { en: '', fr: '' }
+
 interface HomePageProps {
   profileRepository: ProfileRepository
   experienceRepository: ProfessionalExperienceRepository
@@ -48,13 +50,12 @@ export function HomePage({ profileRepository, experienceRepository }: HomePagePr
             {text.homeContactCta}
           </Link>
         </div>
-        {experiences.status === 'loaded' && (
-          <KeyFacts
-            experiences={experiences.value}
-            desiredRole={state.value.desiredRole}
-            chosenStack={state.value.mainStack}
-          />
-        )}
+        {/* If the experiences failed, only the chosen main stack can still be shown: the other facts need them. */}
+        <KeyFacts
+          experiences={experiences.status === 'loaded' ? experiences.value : []}
+          desiredRole={experiences.status === 'loaded' ? state.value.desiredRole : NO_ROLE}
+          chosenStack={state.value.mainStack}
+        />
       </div>
       <Avatar
         src="/media/avatar.webp"
