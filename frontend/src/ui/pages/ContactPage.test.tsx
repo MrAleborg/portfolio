@@ -1,6 +1,7 @@
-import { render, screen } from '@testing-library/react'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { act, isInaccessible, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { ContactLink } from '@/domain/contact/ContactLink'
 import type { ContactRepository } from '@/domain/contact/ContactRepository'
 import { ContactSendError } from '@/domain/contact/ContactSendError'
 import type { Locale } from '@/domain/i18n/Locale'
@@ -8,7 +9,6 @@ import {
   contactLinks,
   failingContactRepository,
   fakeContactRepository,
-  pendingContactRepository,
   pendingSendContactRepository,
   refusingContactRepository,
 } from '@/test/fakeContactRepository'
@@ -24,15 +24,10 @@ function renderPage(repository: ContactRepository, locale: Locale = 'en') {
   )
 }
 
-/** The link whose accessible name starts with the given text (it may be followed by a hint). */
-function linkStartingWith(text: string) {
-  return screen.findByRole('link', { name: (name) => name.startsWith(text) })
+/** Lets the pending requests settle, so the assertions see their outcome. */
+async function settle() {
+  await act(async () => {})
 }
-
-const email: ContactLink = { kind: 'email', url: 'mailto:ada@example.com' }
-const linkedin: ContactLink = { kind: 'linkedin', url: 'https://www.linkedin.com/in/ada' }
-const github: ContactLink = { kind: 'github', url: 'https://github.com/ada' }
-const website: ContactLink = { kind: 'website', url: 'https://ada.example.com' }
 
 describe('ContactPage', () => {
   describe('introduction', () => {
@@ -42,129 +37,33 @@ describe('ContactPage', () => {
       expect(screen.getByRole('heading', { level: 1, name: 'Contact' })).toBeInTheDocument()
     })
 
-    it('invites the visitor to write or to look elsewhere', () => {
-      renderPage(fakeContactRepository())
+    it.each<[Locale, RegExp]>([
+      ['en', /bottom of every page/],
+      ['fr', /bas de chaque page/],
+    ])('goes straight from the title to the form, with no introduction in %s', (locale, oldIntro) => {
+      const { container } = renderPage(fakeContactRepository(), locale)
 
-      expect(screen.getByText('Write to me, or find me elsewhere.')).toBeInTheDocument()
-    })
-
-    it('says so in French', () => {
-      renderPage(fakeContactRepository(), 'fr')
-
-      expect(screen.getByRole('heading', { level: 1, name: 'Contact' })).toBeInTheDocument()
-      expect(screen.getByText('Écrivez-moi, ou retrouvez-moi ailleurs.')).toBeInTheDocument()
+      const title = screen.getByRole('heading', { level: 1, name: 'Contact' })
+      expect(title.nextElementSibling).toBe(container.querySelector('form'))
+      expect(screen.queryByText(oldIntro)).not.toBeInTheDocument()
     })
   })
 
-  describe('links', () => {
-    it('says the links are loading', () => {
-      renderPage(pendingContactRepository())
+  describe('contact links', () => {
+    // The footer lists them on every page: the page itself does not load them.
+    it('does not load the contact links', async () => {
+      const repository = fakeContactRepository()
+      renderPage(repository)
+      await settle()
 
-      expect(screen.getByRole('status')).toHaveTextContent('Loading…')
+      expect(repository.links).not.toHaveBeenCalled()
     })
 
-    it('shows the links in the order the repository returns them', async () => {
-      renderPage(fakeContactRepository([email, linkedin, github, website]))
-
-      await linkStartingWith('GitHub')
-      expect(screen.getAllByRole('link').map((link) => link.getAttribute('href'))).toEqual([
-        'mailto:ada@example.com',
-        'https://www.linkedin.com/in/ada',
-        'https://github.com/ada',
-        'https://ada.example.com',
-      ])
-    })
-
-    it('shows email links first, then the other links in the order received', async () => {
-      renderPage(fakeContactRepository([github, email, linkedin, website]))
-
-      await linkStartingWith('GitHub')
-      expect(screen.getAllByRole('link').map((link) => link.getAttribute('href'))).toEqual([
-        'mailto:ada@example.com',
-        'https://github.com/ada',
-        'https://www.linkedin.com/in/ada',
-        'https://ada.example.com',
-      ])
-    })
-
-    it('shows no row of other links when there are only email links', async () => {
-      const { container } = renderPage(fakeContactRepository([email]))
-
-      await screen.findByRole('link', { name: 'ada@example.com' })
-      expect(container.querySelector('.contact-links__others')).toBeNull()
-    })
-
-    it('shows no line of email links when there are none', async () => {
-      const { container } = renderPage(fakeContactRepository([github]))
-
-      await linkStartingWith('GitHub')
-      expect(container.querySelector('.contact-links__emails')).toBeNull()
-    })
-
-    it('shows two links to the same address of different kinds, each once', async () => {
-      const error = vi.spyOn(console, 'error').mockImplementation(() => {})
-      renderPage(
-        fakeContactRepository([
-          { kind: 'website', url: 'https://ada.example.com' },
-          { kind: 'other', url: 'https://ada.example.com' },
-        ]),
-      )
-
-      await linkStartingWith('Website')
-      const complaints = error.mock.calls.length
-      error.mockRestore()
-      expect(screen.getAllByRole('link')).toHaveLength(2)
-      expect(complaints).toBe(0)
-    })
-
-    it('shows an email link as its address, without the mailto scheme', async () => {
-      renderPage(fakeContactRepository([email]))
-
-      expect(await screen.findByRole('link', { name: 'ada@example.com' })).toHaveAttribute(
-        'href',
-        'mailto:ada@example.com',
-      )
-    })
-
-    it('shows an email link large, and the other links regular', async () => {
-      renderPage(fakeContactRepository([email, github]))
-
-      expect(await screen.findByRole('link', { name: 'ada@example.com' })).toHaveClass(
-        'contact-links__link--large',
-      )
-      expect(await linkStartingWith('GitHub')).not.toHaveClass('contact-links__link--large')
-    })
-
-    it.each<[string, ContactLink]>([
-      ['LinkedIn', linkedin],
-      ['GitHub', github],
-      ['Website', website],
-    ])('names the %s link in English', async (label, link) => {
-      renderPage(fakeContactRepository([link]))
-
-      expect(await linkStartingWith(label)).toHaveAttribute('href', link.url)
-    })
-
-    it('names a website link in French', async () => {
-      renderPage(fakeContactRepository([website]), 'fr')
-
-      expect(await linkStartingWith('Site web')).toHaveAttribute('href', website.url)
-    })
-
-    it.each([
-      ['https://www.example.com/me/', 'example.com/me'],
-      ['http://blog.example.org/', 'blog.example.org'],
-      ['https://example.com/a/b', 'example.com/a/b'],
-    ])('shows an other link %s as its address without scheme, www. or trailing slash', async (url, text) => {
-      renderPage(fakeContactRepository([{ kind: 'other', url }]))
-
-      expect(await linkStartingWith(text)).toHaveAttribute('href', url)
-    })
-
-    it('says when the links could not be loaded, and still shows the form', async () => {
+    it('shows no alert when the links could not be loaded, and still shows the form', async () => {
       renderPage(failingContactRepository())
+      await settle()
 
-      expect(await screen.findByRole('alert')).toBeInTheDocument()
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
       expect(screen.getByRole('textbox', { name: 'Message' })).toBeInTheDocument()
       expect(screen.getByRole('button', { name: 'Send message' })).toBeInTheDocument()
     })
@@ -290,17 +189,58 @@ describe('ContactPage', () => {
       expect(await screen.findByRole('button', { name: 'Envoi…' })).toBeDisabled()
     })
 
-    it('replaces the form with a confirmation naming the address it will reply to', async () => {
+    it('replaces the form with a "Message sent" heading', async () => {
       const user = userEvent.setup()
       renderPage(fakeContactRepository())
 
       await fillAndSend(user)
 
-      expect(await screen.findByRole('status')).toHaveTextContent(
-        'Message sent. I’ll reply to grace@example.com.',
-      )
+      expect(await screen.findByRole('heading', { level: 2, name: 'Message sent' })).toBeInTheDocument()
       expect(screen.queryByRole('textbox', { name: 'Message' })).not.toBeInTheDocument()
       expect(screen.queryByRole('button', { name: 'Send message' })).not.toBeInTheDocument()
+    })
+
+    it('shows the address it will reply to', async () => {
+      const user = userEvent.setup()
+      renderPage(fakeContactRepository())
+
+      await fillAndSend(user)
+
+      expect(await screen.findByText('I’ll reply to grace@example.com.')).toBeInTheDocument()
+    })
+
+    it('has the heading describe itself with the reply, so it is read when the heading takes the focus', async () => {
+      const user = userEvent.setup()
+      renderPage(fakeContactRepository())
+
+      await fillAndSend(user)
+
+      const heading = await screen.findByRole('heading', { level: 2, name: 'Message sent' })
+      expect(heading).toHaveFocus()
+      expect(heading).toHaveAccessibleDescription('I’ll reply to grace@example.com.')
+    })
+
+    it('does not rely on a live region, which screen readers skip when it appears already filled', async () => {
+      const user = userEvent.setup()
+      renderPage(fakeContactRepository())
+
+      await fillAndSend(user)
+
+      await screen.findByRole('heading', { level: 2, name: 'Message sent' })
+      expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    })
+
+    it('draws the check mark as an image hidden from assistive technology', async () => {
+      const user = userEvent.setup()
+      const { container } = renderPage(fakeContactRepository())
+
+      await fillAndSend(user)
+
+      await screen.findByRole('heading', { level: 2, name: 'Message sent' })
+      expect(screen.queryByText('✓')).not.toBeInTheDocument()
+      const mark = container.querySelector('svg')
+      expect(mark).not.toBeNull()
+      expect(isInaccessible(mark!)).toBe(true)
     })
 
     it('confirms in French', async () => {
@@ -309,9 +249,23 @@ describe('ContactPage', () => {
 
       await fillAndSend(user, 'Envoyer le message')
 
-      expect(await screen.findByRole('status')).toHaveTextContent(
-        'Message envoyé. Je vous répondrai à grace@example.com.',
-      )
+      const heading = await screen.findByRole('heading', { level: 2, name: 'Message envoyé' })
+      expect(heading).toHaveFocus()
+      expect(heading).toHaveAccessibleDescription('Je vous répondrai à grace@example.com.')
+      expect(screen.getByText('Je vous répondrai à grace@example.com.')).toBeInTheDocument()
+    })
+
+    describe('styles', () => {
+      const css = readFileSync(
+        join(import.meta.dirname, '../components/ContactForm.css'),
+        'utf8',
+      ).replace(/\/\*[\s\S]*?\*\//g, '')
+
+      it('does not animate the confirmation when the reader prefers reduced motion', () => {
+        expect(css).toMatch(
+          /@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{[^}]*\.contact-sent\s*\{[^}]*animation:\s*none/,
+        )
+      })
     })
 
     describe('when the server refuses the values', () => {
@@ -501,13 +455,13 @@ describe('ContactPage', () => {
       })
     })
 
-    it('moves the focus to the confirmation once the message is sent', async () => {
+    it('moves the focus to the confirmation heading once the message is sent', async () => {
       const user = userEvent.setup()
       renderPage(fakeContactRepository())
 
       await fillAndSend(user)
 
-      expect(await screen.findByRole('status')).toHaveFocus()
+      expect(await screen.findByRole('heading', { level: 2, name: 'Message sent' })).toHaveFocus()
     })
 
     describe('when sending again after a failure', () => {
@@ -549,23 +503,18 @@ describe('ContactPage', () => {
     })
   })
 
-  it('switches the texts when the language changes, without loading the links again', async () => {
+  it('switches the texts when the language changes', async () => {
     const user = userEvent.setup()
-    const repository = fakeContactRepository([email, website])
     render(
       <LocaleProvider initialLocale="en">
         <LanguageSwitch />
-        <ContactPage contactRepository={repository} />
+        <ContactPage contactRepository={fakeContactRepository()} />
       </LocaleProvider>,
     )
-    await linkStartingWith('Website')
 
     await user.click(screen.getByRole('button', { name: 'Français' }))
 
-    expect(screen.getByText('Écrivez-moi, ou retrouvez-moi ailleurs.')).toBeInTheDocument()
-    expect(await linkStartingWith('Site web')).toBeInTheDocument()
     expect(screen.getByRole('textbox', { name: 'Nom' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Envoyer le message' })).toBeInTheDocument()
-    expect(repository.links).toHaveBeenCalledTimes(1)
   })
 })
