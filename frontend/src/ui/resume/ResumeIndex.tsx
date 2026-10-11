@@ -1,4 +1,4 @@
-import { useEffect, useRef, type MouseEvent } from 'react'
+import { useCallback, useEffect, useRef, type FocusEvent, type MouseEvent } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import { messages } from '@/ui/i18n/messages'
 import { useLocale } from '@/ui/i18n/useLocale'
@@ -19,6 +19,10 @@ const SETTLE_STILL_MS = 150
 const OFF_TARGET_PX = 2
 /** The correction itself may toggle the address bar once more. */
 const MAX_CORRECTIONS = 2
+/** Sub-pixel scroll positions: an end this close (px) counts as reached. */
+const EDGE_TOLERANCE_PX = 1
+/** The width of the fade over each edge of the chip bar (`ResumeIndex.css`), in rem. */
+const FADE_REM = 2
 
 function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -99,26 +103,83 @@ function useDeepLink(): () => void {
   return () => stopAligning.current()
 }
 
+/**
+ * The chip bar's scrolling: it keeps the chip of the `active` section in view, and tells the
+ * stylesheet which way the bar can still scroll, with `data-overflow-start` and `data-overflow-end`
+ * on the navigation (it draws a fade over each of those edges). Those are measured when the bar
+ * mounts, scrolls or resizes, and after the bar was scrolled by code. They are set on the element,
+ * not held in state: nothing else reads them.
+ */
+function useChipBar(active: string | undefined) {
+  const nav = useRef<HTMLElement>(null)
+  const bar = useRef<HTMLUListElement>(null)
+  const measure = useCallback(() => {
+    if (!nav.current || !bar.current) return
+    const { scrollLeft, clientWidth, scrollWidth } = bar.current
+    nav.current.toggleAttribute('data-overflow-start', scrollLeft > EDGE_TOLERANCE_PX)
+    nav.current.toggleAttribute(
+      'data-overflow-end',
+      scrollLeft + clientWidth < scrollWidth - EDGE_TOLERANCE_PX,
+    )
+  }, [])
+
+  useEffect(() => {
+    const element = bar.current
+    if (!element) return
+    measure()
+    element.addEventListener('scroll', measure, { passive: true })
+    const resizeObserver = new ResizeObserver(measure)
+    // The list's own box stays put when only its chips change width (language, web font).
+    resizeObserver.observe(element)
+    element.querySelectorAll('li').forEach((chip) => resizeObserver.observe(chip))
+    return () => {
+      element.removeEventListener('scroll', measure)
+      resizeObserver.disconnect()
+    }
+  }, [measure])
+
+  // Set `scrollLeft` rather than calling `scrollIntoView`, which could also move the page vertically.
+  useEffect(() => {
+    const element = bar.current
+    const chip = element?.querySelector<HTMLElement>('[aria-current]')
+    if (element && chip) {
+      element.scrollLeft = Math.max(
+        0,
+        chip.offsetLeft - (element.clientWidth - chip.offsetWidth) / 2,
+      )
+      measure()
+    }
+  }, [active, measure])
+
+  // Chrome leaves a partly visible chip where it is when it gets the focus, under a fade: bring it
+  // 2rem clear of the edge. Only `scrollLeft` moves, so the page cannot move vertically.
+  function keepFocusClearOfFades(event: FocusEvent<HTMLElement>) {
+    const element = bar.current
+    if (!element || element.scrollWidth <= element.clientWidth) return
+    const fade = FADE_REM * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16)
+    const { offsetLeft: left, offsetWidth: width } = event.target
+    const { scrollLeft, clientWidth, scrollWidth } = element
+    let target = scrollLeft
+    if (left - scrollLeft < fade) target = left - fade
+    else if (left + width - scrollLeft > clientWidth - fade)
+      target = left + width + fade - clientWidth
+    element.scrollLeft = Math.min(Math.max(0, target), scrollWidth - clientWidth)
+    measure()
+  }
+
+  return { nav, bar, keepFocusClearOfFades }
+}
+
 export function ResumeIndex() {
   const text = messages[useLocale().locale]
   const active = useActiveSection(sectionIds)
-  const list = useRef<HTMLUListElement>(null)
   const navigate = useNavigate()
   const { hash } = useLocation()
   const cancelCorrection = useRef(() => {})
+  const { nav, bar, keepFocusClearOfFades } = useChipBar(active)
   const stopDeepLink = useDeepLink()
 
   useEffect(() => () => cancelCorrection.current(), [])
-
-  // On the chip bar, keep the active chip in view. Set `scrollLeft` rather than calling
-  // `scrollIntoView`, which could also move the page vertically.
-  useEffect(() => {
-    const bar = list.current
-    const chip = bar?.querySelector<HTMLElement>('[aria-current]')
-    if (bar && chip) {
-      bar.scrollLeft = Math.max(0, chip.offsetLeft - (bar.clientWidth - chip.offsetWidth) / 2)
-    }
-  }, [active])
 
   function scrollToSection(event: MouseEvent<HTMLAnchorElement>, id: string) {
     const target = document.getElementById(id)
@@ -136,8 +197,8 @@ export function ResumeIndex() {
   }
 
   return (
-    <nav className="resume-index" aria-label={text.resumeSectionsLabel}>
-      <ul ref={list}>
+    <nav ref={nav} className="resume-index" aria-label={text.resumeSectionsLabel}>
+      <ul ref={bar} onFocus={keepFocusClearOfFades}>
         {resumeSections.map(({ id, titleKey, icon: Icon }) => (
           <li key={id}>
             <a

@@ -28,6 +28,27 @@
   display: none;
 }
 
+/* A fade over each edge the bar can still scroll towards (attributes set by ResumeIndex.tsx). */
+.resume-index[data-overflow-start]::before,
+.resume-index[data-overflow-end]::after {
+  content: '';
+  position: absolute;
+  z-index: 1; /* above the list, which is positioned too */
+  inset-block: 0;
+  width: 2rem;
+  pointer-events: none; /* chips under the fade stay clickable */
+}
+
+.resume-index[data-overflow-start]::before {
+  inset-inline-start: 1rem; /* the list's clip line: the nav's side padding lies outside it */
+  background: linear-gradient(to left, transparent, var(--bg));
+}
+
+.resume-index[data-overflow-end]::after {
+  inset-inline-end: 1rem;
+  background: linear-gradient(to right, transparent, var(--bg));
+}
+
 .resume-index li {
   flex: none;
 }
@@ -68,6 +89,11 @@
     padding-inline: 0;
     background: none;
     border-bottom: 0;
+  }
+
+  .resume-index[data-overflow-start]::before,
+  .resume-index[data-overflow-end]::after {
+    display: none;
   }
 
   .resume-index ul {

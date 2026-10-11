@@ -45,6 +45,11 @@ function renderIndex(locale: Locale = 'en', scrollMargin = '126px') {
   )
 }
 
+/** The element the page observes, to keep a deep link aligned while the sections above it grow. */
+function sectionsContainer(): Element {
+  return document.querySelector('.resume__sections')!
+}
+
 function stubIntersectionObserver() {
   let callback: IntersectionObserverCallback = () => {}
   const rootMargins: (string | undefined)[] = []
@@ -84,24 +89,37 @@ function stubIntersectionObserver() {
 }
 
 function stubResizeObserver() {
-  let callback: ResizeObserverCallback = () => {}
+  const observers: { callback: ResizeObserverCallback; targets: Set<Element> }[] = []
   vi.stubGlobal(
     'ResizeObserver',
     class {
-      constructor(onResize: ResizeObserverCallback) {
-        callback = onResize
+      private readonly watch = {
+        callback: (() => {}) as ResizeObserverCallback,
+        targets: new Set<Element>(),
       }
-      observe() {}
-      unobserve() {}
+      constructor(onResize: ResizeObserverCallback) {
+        this.watch.callback = onResize
+        observers.push(this.watch)
+      }
+      observe(target: Element) {
+        this.watch.targets.add(target)
+      }
+      unobserve(target: Element) {
+        this.watch.targets.delete(target)
+      }
       disconnect() {
-        callback = () => {}
+        this.watch.targets.clear()
       }
     },
   )
   return {
-    /** The sections grew or shrank. */
-    resize() {
-      act(() => callback([], {} as ResizeObserver))
+    /** The element grew or shrank: every observer still watching it hears of it. */
+    resize(element: Element) {
+      act(() =>
+        observers
+          .filter(({ targets }) => targets.has(element))
+          .forEach(({ callback }) => callback([], {} as ResizeObserver)),
+      )
     },
   }
 }
@@ -710,7 +728,7 @@ describe('ResumeIndex', () => {
       renderIndex()
       scrollIntoView.mockClear()
 
-      resizing.resize()
+      resizing.resize(sectionsContainer())
 
       expect(scrollIntoView).toHaveBeenCalledTimes(1)
       expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'auto', block: 'start' })
@@ -728,7 +746,7 @@ describe('ResumeIndex', () => {
       interact(document.body)
       scrollIntoView.mockClear()
 
-      resizing.resize()
+      resizing.resize(sectionsContainer())
 
       expect(scrollIntoView).not.toHaveBeenCalled()
     })
@@ -739,7 +757,7 @@ describe('ResumeIndex', () => {
       fireEvent.click(screen.getByRole('link', { name: 'Hobbies' }))
       scrollIntoView.mockClear()
 
-      resizing.resize()
+      resizing.resize(sectionsContainer())
 
       expect(scrollIntoView).not.toHaveBeenCalled()
     })
@@ -753,7 +771,7 @@ describe('ResumeIndex', () => {
       act(() => {
         vi.advanceTimersByTime(3000)
       })
-      resizing.resize()
+      resizing.resize(sectionsContainer())
 
       expect(scrollIntoView).not.toHaveBeenCalled()
     })
@@ -761,10 +779,11 @@ describe('ResumeIndex', () => {
     it('stops aligning once the page is left', () => {
       const resizing = stubResizeObserver()
       const { unmount } = renderIndex()
+      const sections = sectionsContainer()
       unmount()
       scrollIntoView.mockClear()
 
-      resizing.resize()
+      resizing.resize(sections)
 
       expect(scrollIntoView).not.toHaveBeenCalled()
     })
@@ -800,6 +819,141 @@ describe('ResumeIndex', () => {
       renderIndex()
 
       expect(screen.getByRole('list').scrollLeft).toBe(0)
+    })
+  })
+
+  describe('chip bar edge fade', () => {
+    const navigationName = 'Resume sections'
+
+    /** The bar as the browser lays it out: `scrollLeft` of `scrollWidth` shown through `clientWidth`. */
+    function layOutBar(bar: HTMLElement, { scrollLeft = 0, scrollWidth = 800, clientWidth = 300 }) {
+      Object.defineProperty(bar, 'scrollLeft', { value: scrollLeft, configurable: true })
+      Object.defineProperty(bar, 'scrollWidth', { value: scrollWidth, configurable: true })
+      Object.defineProperty(bar, 'clientWidth', { value: clientWidth, configurable: true })
+    }
+
+    function scrollBar(bar: HTMLElement, layout: Parameters<typeof layOutBar>[1]) {
+      layOutBar(bar, layout)
+      act(() => {
+        fireEvent.scroll(bar)
+      })
+    }
+
+    it('fades the end of the bar as soon as it opens, when chips are already hidden to the right', () => {
+      vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockReturnValue(800)
+      vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(300)
+
+      renderIndex()
+
+      const nav = screen.getByRole('navigation', { name: navigationName })
+      expect(nav).toHaveAttribute('data-overflow-end')
+      expect(nav).not.toHaveAttribute('data-overflow-start')
+    })
+
+    it.each([
+      ['at its start, where chips are hidden to the right', 0, false, true],
+      ['at its start, give or take a sub-pixel', 0.5, false, true],
+      ['in the middle', 200, true, true],
+      ['at its end, where chips are hidden to the left', 500, true, false],
+      ['at its end, give or take a sub-pixel', 499.5, true, false],
+    ])('fades the bar %s', (_, scrollLeft, start, end) => {
+      renderIndex()
+
+      scrollBar(screen.getByRole('list'), { scrollLeft, scrollWidth: 800, clientWidth: 300 })
+
+      const nav = screen.getByRole('navigation', { name: navigationName })
+      expect(nav.hasAttribute('data-overflow-start')).toBe(start)
+      expect(nav.hasAttribute('data-overflow-end')).toBe(end)
+    })
+
+    it('fades neither end once the bar is wide enough to show every chip', () => {
+      const resizing = stubResizeObserver()
+      renderIndex()
+      const bar = screen.getByRole('list')
+      scrollBar(bar, { scrollLeft: 0, scrollWidth: 800, clientWidth: 300 })
+      const nav = screen.getByRole('navigation', { name: navigationName })
+      expect(nav).toHaveAttribute('data-overflow-end')
+
+      layOutBar(bar, { scrollLeft: 0, scrollWidth: 300, clientWidth: 300 })
+      resizing.resize(bar)
+
+      expect(nav).not.toHaveAttribute('data-overflow-start')
+      expect(nav).not.toHaveAttribute('data-overflow-end')
+    })
+
+    it('fades the end of the bar when only the chips grow, as when the language changes', () => {
+      const resizing = stubResizeObserver()
+      renderIndex()
+      const bar = screen.getByRole('list')
+      layOutBar(bar, { scrollLeft: 0, scrollWidth: 300, clientWidth: 300 })
+      resizing.resize(bar)
+      const nav = screen.getByRole('navigation', { name: navigationName })
+      expect(nav).not.toHaveAttribute('data-overflow-end')
+
+      layOutBar(bar, { scrollLeft: 0, scrollWidth: 800, clientWidth: 300 })
+      resizing.resize(within(bar).getAllByRole('listitem')[0]!)
+
+      expect(nav).toHaveAttribute('data-overflow-end')
+    })
+
+    it('fades the start of the bar once the active chip is brought into view, which fires no scroll', () => {
+      vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockReturnValue(800)
+      vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(300)
+      vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(100)
+      vi.spyOn(HTMLElement.prototype, 'offsetLeft', 'get').mockImplementation(function (
+        this: HTMLElement,
+      ) {
+        return this.textContent === 'Education' ? 400 : 0
+      })
+      const observer = stubIntersectionObserver()
+      renderIndex()
+      const nav = screen.getByRole('navigation', { name: navigationName })
+      expect(nav).not.toHaveAttribute('data-overflow-start')
+
+      observer.report({ education: true })
+
+      expect(nav).toHaveAttribute('data-overflow-start')
+      expect(nav).toHaveAttribute('data-overflow-end')
+    })
+  })
+
+  describe('chip bar focus', () => {
+    /** A 300px-wide bar over 800px of chips, each 100px wide, the one named at `chipLeft`. */
+    function layOutBarWithChip(name: string, chipLeft: number, scrollLeft: number) {
+      vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockReturnValue(800)
+      vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(300)
+      vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(100)
+      vi.spyOn(HTMLElement.prototype, 'offsetLeft', 'get').mockImplementation(function (
+        this: HTMLElement,
+      ) {
+        return this.textContent === name ? chipLeft : 0
+      })
+      renderIndex()
+      screen.getByRole('list').scrollLeft = scrollLeft
+    }
+
+    function focus(name: string) {
+      act(() => screen.getByRole('link', { name }).focus())
+    }
+
+    it.each([
+      ['partly under the end fade, to 2rem clear of it', 250, 0, 82],
+      ['partly under the start fade, to 2rem clear of it', 210, 200, 178],
+      ['at the end of the bar, as far as it goes', 700, 0, 500],
+    ])('scrolls the bar to a chip focused %s', (_, left, from, to) => {
+      layOutBarWithChip('Education', left, from)
+
+      focus('Education')
+
+      expect(screen.getByRole('list').scrollLeft).toBe(to)
+    })
+
+    it('leaves the bar where it is when the focused chip is already clear of the fades', () => {
+      layOutBarWithChip('Education', 200, 100)
+
+      focus('Education')
+
+      expect(screen.getByRole('list').scrollLeft).toBe(100)
     })
   })
 })
