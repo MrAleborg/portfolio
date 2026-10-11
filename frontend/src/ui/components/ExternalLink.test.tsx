@@ -87,6 +87,20 @@ describe('ExternalLink', () => {
       expect(css()).toMatch(/\.external-link::after\s*\{[^}]*overflow-wrap:\s*anywhere/)
     })
 
+    it('hides the address of a repeated link when printing', () => {
+      expect(css()).toMatch(
+        /@media\s+print\s*\{[\s\S]*\.external-link--repeat::after\s*\{[^}]*content:\s*none/,
+      )
+    })
+
+    it('lets the repeated link rule win by coming after the one that prints the address', () => {
+      const text = css()
+
+      expect(text.indexOf('.external-link--repeat::after')).toBeGreaterThan(
+        text.indexOf('.external-link::after'),
+      )
+    })
+
     it('adds nothing on screen', () => {
       expect(css().replace(/@media\s+print\s*\{[\s\S]*\}\s*$/, '').trim()).toBe('')
     })
