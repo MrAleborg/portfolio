@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { render, screen, within } from '@testing-library/react'
 import type { Period } from '@/domain/period/Period'
 import { Tile } from '@/ui/components/Tile'
@@ -113,5 +115,42 @@ describe('Timeline', () => {
     const [first, second] = screen.getAllByRole('listitem')
     expect(within(first!).getByRole('article')).toHaveAccessibleName('Developer')
     expect(within(second!).getByRole('article')).toHaveAccessibleName('Tech lead')
+  })
+
+  describe('styles', () => {
+    // jsdom applies no stylesheet, so the print layout is checked in the stylesheet itself.
+    const css = readFileSync(join(import.meta.dirname, 'Timeline.css'), 'utf8').replace(
+      /\/\*[\s\S]*?\*\//g,
+      '',
+    )
+
+    /** The rules that apply whatever the medium: the stylesheet without its @media blocks. */
+    function unconditionalCss() {
+      let depth = 0
+      let kept = ''
+      let skipping = false
+      for (let i = 0; i < css.length; i++) {
+        const char = css[i]
+        if (char === '{') {
+          if (depth === 0 && /@media[^{]*$/.test(kept)) {
+            kept = kept.slice(0, kept.lastIndexOf('@media'))
+            skipping = true
+          }
+          depth++
+        }
+        if (!skipping) kept += char
+        if (char === '}') {
+          depth--
+          if (depth === 0) skipping = false
+        }
+      }
+      return kept
+    }
+
+    it('hides the dot outside the screen, so it is not an empty block between a date and its entry', () => {
+      const rule = /(?:^|\})\s*\.timeline__dot\s*\{([^}]*)\}/.exec(unconditionalCss())
+
+      expect(rule?.[1] ?? 'no rule for .timeline__dot outside @media').toMatch(/display:\s*none/)
+    })
   })
 })
