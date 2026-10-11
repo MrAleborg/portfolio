@@ -1,12 +1,6 @@
 .tag-summary {
   display: grid;
   gap: 1.25rem;
-  padding: 1.25rem 1.5rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-top: 3px solid var(--accent);
-  border-radius: 0.75rem;
-  box-shadow: var(--shadow);
 }
 
 .tag-summary__domain {
@@ -26,15 +20,21 @@
   font-size: inherit;
 }
 
+/* On screen the domains are in a card; on paper they are blocks of text. */
+@media screen {
+  .tag-summary {
+    padding: 1.25rem 1.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--accent);
+    border-radius: 0.75rem;
+    box-shadow: var(--shadow);
+  }
+}
+
 @media print {
-  /* No card: the domains are blocks of text. */
   .tag-summary {
     gap: 0.75rem;
-    padding: 0;
-    background: none;
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
   }
 
   .tag-summary__domain {

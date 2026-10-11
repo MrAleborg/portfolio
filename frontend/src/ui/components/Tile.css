@@ -1,11 +1,5 @@
 .tile {
-  padding: 1.25rem 1.5rem;
   text-align: left;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-top: 3px solid var(--accent);
-  border-radius: 0.75rem;
-  box-shadow: var(--shadow);
 }
 
 .tile__title {
@@ -80,8 +74,6 @@
 
 .tile__body {
   margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--border);
 }
 
 .tile__body > * {
@@ -97,14 +89,6 @@
   text-decoration: underline;
 }
 
-.tile--nested {
-  padding: 1rem 1.25rem;
-  border-top-width: 1px;
-  border-top-color: var(--border);
-  border-radius: 0.5rem;
-  box-shadow: none;
-}
-
 .tile--nested .tile__title {
   font-size: var(--step-0);
 }
@@ -117,24 +101,52 @@
   margin: 0;
 }
 
-/* The lighter look of a tile in a secondary section: a ruled row instead of a card. */
-.tile--row {
-  padding: 1rem 0;
-  background: none;
-  border: 0;
-  border-top: 1px solid var(--border);
-  border-radius: 0;
-  box-shadow: none;
-}
+/*
+ * On screen an entry is a card, or in a secondary section a ruled row. On paper it is a flat
+ * block of text with none of this, so it is set here and not undone in the print rules below.
+ */
+@media screen {
+  .tile {
+    padding: 1.25rem 1.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--accent);
+    border-radius: 0.75rem;
+    box-shadow: var(--shadow);
+  }
 
-.tile-list > li:last-child > .tile--row {
-  border-bottom: 1px solid var(--border);
-}
+  .tile__body {
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border);
+  }
 
-.tile--row > .tile__body {
-  margin-top: 0.75rem;
-  padding-top: 0;
-  border-top: 0;
+  /* A project in a job: a lighter card. */
+  .tile--nested {
+    padding: 1rem 1.25rem;
+    border-top-width: 1px;
+    border-top-color: var(--border);
+    border-radius: 0.5rem;
+    box-shadow: none;
+  }
+
+  /* The lighter look of a tile in a secondary section: a ruled row instead of a card. */
+  .tile--row {
+    padding: 1rem 0;
+    background: none;
+    border: 0;
+    border-top: 1px solid var(--border);
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .tile-list > li:last-child > .tile--row {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tile--row > .tile__body {
+    padding-top: 0;
+    border-top: 0;
+  }
 }
 
 @media (min-width: 48rem), print {
@@ -166,22 +178,10 @@
 }
 
 /*
- * On paper an entry is not a card but a flat block of text, open, with its details under its
- * header. A card may run over a page, but its header stays with the start of its details.
+ * On paper an entry is a flat block of text, open, with its details under its header. An entry
+ * may run over a page, but its header stays with the start of its details.
  */
 @media print {
-  .tile {
-    padding: 0;
-    background: none;
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
-  }
-
-  .tile-list > li:last-child > .tile--row {
-    border-bottom: 0;
-  }
-
   /* A project in a job: a smaller heading, set in under the job. */
   .tile--nested {
     margin-left: 1rem;
@@ -194,15 +194,13 @@
     break-after: avoid;
   }
 
-  .tile--row {
+  /* A short entry stays whole; one that holds nested tiles may run over a page, or it would leave a gap. */
+  .tile--row:not(:has(.tile--nested)) {
     break-inside: avoid;
   }
 
-  .tile__body,
-  .tile--row > .tile__body {
+  .tile__body {
     margin-top: 0.25rem;
-    padding-top: 0;
-    border-top: 0;
     orphans: 3;
     widows: 3;
   }
