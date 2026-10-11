@@ -37,21 +37,15 @@ describe('ContactPage', () => {
       expect(screen.getByRole('heading', { level: 1, name: 'Contact' })).toBeInTheDocument()
     })
 
-    it('invites the visitor to write, and points to the links at the bottom of every page', () => {
-      renderPage(fakeContactRepository())
+    it.each<[Locale, RegExp]>([
+      ['en', /bottom of every page/],
+      ['fr', /bas de chaque page/],
+    ])('goes straight from the title to the form, with no introduction in %s', (locale, oldIntro) => {
+      const { container } = renderPage(fakeContactRepository(), locale)
 
-      expect(
-        screen.getByText('Write to me here. My email and profiles are at the bottom of every page.'),
-      ).toBeInTheDocument()
-    })
-
-    it('says so in French', () => {
-      renderPage(fakeContactRepository(), 'fr')
-
-      expect(screen.getByRole('heading', { level: 1, name: 'Contact' })).toBeInTheDocument()
-      expect(
-        screen.getByText('Écrivez-moi ici. Mon email et mes profils sont en bas de chaque page.'),
-      ).toBeInTheDocument()
+      const title = screen.getByRole('heading', { level: 1, name: 'Contact' })
+      expect(title.nextElementSibling).toBe(container.querySelector('form'))
+      expect(screen.queryByText(oldIntro)).not.toBeInTheDocument()
     })
   })
 
@@ -520,9 +514,6 @@ describe('ContactPage', () => {
 
     await user.click(screen.getByRole('button', { name: 'Français' }))
 
-    expect(
-      screen.getByText('Écrivez-moi ici. Mon email et mes profils sont en bas de chaque page.'),
-    ).toBeInTheDocument()
     expect(screen.getByRole('textbox', { name: 'Nom' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Envoyer le message' })).toBeInTheDocument()
   })

@@ -13,7 +13,6 @@ export function ContactPage({ contactRepository }: ContactPageProps) {
   return (
     <>
       <h1>{text.contactTitle}</h1>
-      <p>{text.contactIntro}</p>
       <ContactForm repository={contactRepository} />
     </>
   )

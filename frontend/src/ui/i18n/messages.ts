@@ -24,7 +24,6 @@ interface Messages {
   /** Accessible name of the in-page navigation between the resume sections. */
   resumeSectionsLabel: string
   contactTitle: string
-  contactIntro: string
   contactName: string
   contactEmail: string
   contactSubject: string
@@ -111,7 +110,6 @@ export const messages: Localized<Messages> = {
     resumeTitle: 'Resume',
     resumeSectionsLabel: 'Resume sections',
     contactTitle: 'Contact',
-    contactIntro: 'Write to me here. My email and profiles are at the bottom of every page.',
     contactName: 'Name',
     contactEmail: 'Email',
     contactSubject: 'Subject',
@@ -205,7 +203,6 @@ export const messages: Localized<Messages> = {
     resumeTitle: 'CV',
     resumeSectionsLabel: 'Sections du CV',
     contactTitle: 'Contact',
-    contactIntro: 'Écrivez-moi ici. Mon email et mes profils sont en bas de chaque page.',
     contactName: 'Nom',
     contactEmail: 'E-mail',
     contactSubject: 'Objet',
