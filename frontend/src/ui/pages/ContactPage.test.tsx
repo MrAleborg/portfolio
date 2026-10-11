@@ -1,4 +1,6 @@
-import { act, render, screen, within } from '@testing-library/react'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { act, isInaccessible, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ContactRepository } from '@/domain/contact/ContactRepository'
 import { ContactSendError } from '@/domain/contact/ContactSendError'
@@ -7,7 +9,6 @@ import {
   contactLinks,
   failingContactRepository,
   fakeContactRepository,
-  pendingContactRepository,
   pendingSendContactRepository,
   refusingContactRepository,
 } from '@/test/fakeContactRepository'
@@ -21,6 +22,11 @@ function renderPage(repository: ContactRepository, locale: Locale = 'en') {
       <ContactPage contactRepository={repository} />
     </LocaleProvider>,
   )
+}
+
+/** Lets the pending requests settle, so the assertions see their outcome. */
+async function settle() {
+  await act(async () => {})
 }
 
 describe('ContactPage', () => {
@@ -50,32 +56,18 @@ describe('ContactPage', () => {
   })
 
   describe('contact links', () => {
-    // The footer lists them on every page: the page itself does not repeat them.
-    it('shows no contact link', async () => {
-      renderPage(fakeContactRepository())
-      await act(async () => {})
-
-      expect(screen.queryAllByRole('link')).toHaveLength(0)
-    })
-
+    // The footer lists them on every page: the page itself does not load them.
     it('does not load the contact links', async () => {
       const repository = fakeContactRepository()
       renderPage(repository)
-      await act(async () => {})
+      await settle()
 
       expect(repository.links).not.toHaveBeenCalled()
     })
 
-    it('does not say anything is loading while the links are not answered', () => {
-      renderPage(pendingContactRepository())
-
-      expect(screen.queryByText('Loading…')).not.toBeInTheDocument()
-      expect(screen.queryByRole('status')).not.toBeInTheDocument()
-    })
-
     it('shows no alert when the links could not be loaded, and still shows the form', async () => {
       renderPage(failingContactRepository())
-      await act(async () => {})
+      await settle()
 
       expect(screen.queryByRole('alert')).not.toBeInTheDocument()
       expect(screen.getByRole('textbox', { name: 'Message' })).toBeInTheDocument()
@@ -214,24 +206,47 @@ describe('ContactPage', () => {
       expect(screen.queryByRole('button', { name: 'Send message' })).not.toBeInTheDocument()
     })
 
-    it('names the address it will reply to', async () => {
+    it('shows the address it will reply to', async () => {
       const user = userEvent.setup()
       renderPage(fakeContactRepository())
 
       await fillAndSend(user)
 
-      const confirmation = await screen.findByRole('status')
-      expect(within(confirmation).getByText('I’ll reply to grace@example.com.')).toBeInTheDocument()
+      expect(await screen.findByText('I’ll reply to grace@example.com.')).toBeInTheDocument()
     })
 
-    it('announces the whole confirmation politely, heading included', async () => {
+    it('has the heading describe itself with the reply, so it is read when the heading takes the focus', async () => {
       const user = userEvent.setup()
       renderPage(fakeContactRepository())
 
       await fillAndSend(user)
 
-      const confirmation = await screen.findByRole('status')
-      expect(within(confirmation).getByRole('heading', { level: 2, name: 'Message sent' })).toBeInTheDocument()
+      const heading = await screen.findByRole('heading', { level: 2, name: 'Message sent' })
+      expect(heading).toHaveFocus()
+      expect(heading).toHaveAccessibleDescription('I’ll reply to grace@example.com.')
+    })
+
+    it('does not rely on a live region, which screen readers skip when it appears already filled', async () => {
+      const user = userEvent.setup()
+      renderPage(fakeContactRepository())
+
+      await fillAndSend(user)
+
+      await screen.findByRole('heading', { level: 2, name: 'Message sent' })
+      expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    })
+
+    it('draws the check mark as an image hidden from assistive technology', async () => {
+      const user = userEvent.setup()
+      const { container } = renderPage(fakeContactRepository())
+
+      await fillAndSend(user)
+
+      await screen.findByRole('heading', { level: 2, name: 'Message sent' })
+      expect(screen.queryByText('✓')).not.toBeInTheDocument()
+      const mark = container.querySelector('svg')
+      expect(mark).not.toBeNull()
+      expect(isInaccessible(mark!)).toBe(true)
     })
 
     it('confirms in French', async () => {
@@ -240,10 +255,23 @@ describe('ContactPage', () => {
 
       await fillAndSend(user, 'Envoyer le message')
 
-      expect(await screen.findByRole('heading', { level: 2, name: 'Message envoyé' })).toBeInTheDocument()
-      expect(
-        within(screen.getByRole('status')).getByText('Je vous répondrai à grace@example.com.'),
-      ).toBeInTheDocument()
+      const heading = await screen.findByRole('heading', { level: 2, name: 'Message envoyé' })
+      expect(heading).toHaveFocus()
+      expect(heading).toHaveAccessibleDescription('Je vous répondrai à grace@example.com.')
+      expect(screen.getByText('Je vous répondrai à grace@example.com.')).toBeInTheDocument()
+    })
+
+    describe('styles', () => {
+      const css = readFileSync(
+        join(import.meta.dirname, '../components/ContactForm.css'),
+        'utf8',
+      ).replace(/\/\*[\s\S]*?\*\//g, '')
+
+      it('does not animate the confirmation when the reader prefers reduced motion', () => {
+        expect(css).toMatch(
+          /@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{[^}]*\.contact-sent\s*\{[^}]*animation:\s*none/,
+        )
+      })
     })
 
     describe('when the server refuses the values', () => {

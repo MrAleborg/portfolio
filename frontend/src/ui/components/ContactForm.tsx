@@ -55,14 +55,31 @@ export function ContactForm({ repository }: ContactFormProps) {
 
   if (sentTo !== undefined) {
     return (
-      <div role="status" className="contact-sent">
+      <div className="contact-sent">
         <span className="contact-sent__mark" aria-hidden="true">
-          ✓
+          {/* The check of Lucide. */}
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={3}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M20 6 9 17l-5-5" />
+          </svg>
         </span>
-        <h2 ref={confirmationTitle} tabIndex={-1} className="contact-sent__title">
+        <h2
+          ref={confirmationTitle}
+          tabIndex={-1}
+          aria-describedby={`${id}-reply`}
+          className="contact-sent__title"
+        >
           {text.contactSentTitle}
         </h2>
-        <p className="contact-sent__reply">{text.contactSentReply(sentTo)}</p>
+        <p id={`${id}-reply`} className="contact-sent__reply">
+          {text.contactSentReply(sentTo)}
+        </p>
       </div>
     )
   }

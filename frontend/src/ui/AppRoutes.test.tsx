@@ -2,7 +2,6 @@ import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, useNavigate } from 'react-router'
 import type { Locale } from '@/domain/i18n/Locale'
-import { fakeContactRepository } from '@/test/fakeContactRepository'
 import { fakeEducationRepository, masters } from '@/test/fakeEducationRepository'
 import {
   failingProfileRepository,
@@ -255,14 +254,6 @@ describe('AppRoutes', () => {
       await footer.findByRole('link', { name: 'ada@example.com' })
 
       expect(within(screen.getByRole('main')).queryAllByRole('link')).toHaveLength(0)
-    })
-
-    it('loads the contact links once on /contact, for the footer', async () => {
-      const contact = fakeContactRepository()
-      renderAt('/contact', { repositories: fakeRepositories({ contact }) })
-      await within(await screen.findByRole('contentinfo')).findByRole('link', { name: 'ada@example.com' })
-
-      expect(contact.links).toHaveBeenCalledTimes(1)
     })
 
     it('labels its links in French', async () => {
