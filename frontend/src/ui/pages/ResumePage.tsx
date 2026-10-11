@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useRef, type ReactNode } from 'react'
 import { messages } from '@/ui/i18n/messages'
 import { useLocale } from '@/ui/i18n/useLocale'
 import { CertificationSection } from '@/ui/resume/CertificationSection'
@@ -12,6 +12,7 @@ import { resumeSections, type ResumeSectionId } from '@/ui/resume/resumeSections
 import { ScientificCommunicationSection } from '@/ui/resume/ScientificCommunicationSection'
 import { SideProjectSection } from '@/ui/resume/SideProjectSection'
 import { TagSection } from '@/ui/resume/TagSection'
+import { usePrintOnceLinks } from '@/ui/resume/usePrintOnceLinks'
 import type { Repositories } from '@/ui/Repositories'
 import './ResumePage.css'
 
@@ -21,6 +22,8 @@ interface ResumePageProps {
 
 export function ResumePage({ repositories }: ResumePageProps) {
   const text = messages[useLocale().locale]
+  const page = useRef<HTMLDivElement>(null)
+  usePrintOnceLinks(page)
 
   const sectionById: Record<ResumeSectionId, ReactNode> = {
     expertise: <TagSection repository={repositories.tag} />,
@@ -41,7 +44,7 @@ export function ResumePage({ repositories }: ResumePageProps) {
   }
 
   return (
-    <div className="resume">
+    <div className="resume" ref={page}>
       <ResumePrintHeader
         profileRepository={repositories.profile}
         contactRepository={repositories.contact}

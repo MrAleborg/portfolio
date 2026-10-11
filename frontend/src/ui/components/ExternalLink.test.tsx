@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { render, screen } from '@testing-library/react'
 import type { Locale } from '@/domain/i18n/Locale'
 import { ExternalLink } from '@/ui/components/ExternalLink'
@@ -58,5 +60,49 @@ describe('ExternalLink', () => {
     expect(screen.getByRole('link')).toHaveAccessibleName(
       'See online : Acme Corp (s’ouvre dans un nouvel onglet)',
     )
+  })
+
+  it('is marked as an external link, so the print styles can reach it', () => {
+    renderLink()
+
+    expect(screen.getByRole('link')).toHaveClass('external-link')
+  })
+
+  describe('styles', () => {
+    // jsdom does not render ::after, so the printed address is checked in the stylesheet itself.
+    function css() {
+      return readFileSync(join(import.meta.dirname, 'ExternalLink.css'), 'utf8').replace(
+        /\/\*[\s\S]*?\*\//g,
+        '',
+      )
+    }
+
+    it('prints the address in parentheses after the link', () => {
+      expect(css()).toMatch(
+        /@media\s+print\s*\{\s*\.external-link::after\s*\{[^}]*content:\s*' \(' attr\(href\) '\)'/,
+      )
+    })
+
+    it('lets a long address wrap anywhere', () => {
+      expect(css()).toMatch(/\.external-link::after\s*\{[^}]*overflow-wrap:\s*anywhere/)
+    })
+
+    it('hides the address of a repeated link when printing', () => {
+      expect(css()).toMatch(
+        /@media\s+print\s*\{[\s\S]*\.external-link--repeat::after\s*\{[^}]*content:\s*none/,
+      )
+    })
+
+    it('lets the repeated link rule win by coming after the one that prints the address', () => {
+      const text = css()
+
+      expect(text.indexOf('.external-link--repeat::after')).toBeGreaterThan(
+        text.indexOf('.external-link::after'),
+      )
+    })
+
+    it('adds nothing on screen', () => {
+      expect(css().replace(/@media\s+print\s*\{[\s\S]*\}\s*$/, '').trim()).toBe('')
+    })
   })
 })

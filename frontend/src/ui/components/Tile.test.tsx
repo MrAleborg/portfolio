@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ReactElement } from 'react'
@@ -812,6 +814,48 @@ describe('Tile', () => {
       expect(
         screen.getByRole('article', { name: 'Project', hidden: true }),
       ).not.toHaveClass('tile--row')
+    })
+  })
+
+  describe('print styles', () => {
+    // jsdom does not paginate, so the page breaks are checked in the stylesheet itself.
+    const css = readFileSync(join(import.meta.dirname, 'Tile.css'), 'utf8').replace(
+      /\/\*[\s\S]*?\*\//g,
+      '',
+    )
+    const printCss = css.slice(css.search(/@media\s+print\s*\{/))
+
+    /** The declarations of every print rule whose selector list names exactly this selector. */
+    function printRules(selector: string) {
+      return [...printCss.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+        .filter(([, selectors]) => selectors?.split(',').some((s) => s.trim() === selector))
+        .map(([, , declarations]) => declarations ?? '')
+    }
+
+    it('lets a nested project run over a page, instead of moving whole to the next one', () => {
+      const avoiding = printRules('.tile--nested').filter((rule) =>
+        /break-inside:\s*avoid/.test(rule),
+      )
+
+      expect(avoiding).toEqual([])
+    })
+
+    it('still keeps a row whole on a page', () => {
+      expect(printRules('.tile--row').some((rule) => /break-inside:\s*avoid/.test(rule))).toBe(true)
+    })
+
+    it.each(['.tile__title', '.tile__subtitle', '.tile__meta', '.tile__label'])(
+      'keeps %s with what follows it',
+      (selector) => {
+        expect(printRules(selector).some((rule) => /break-after:\s*avoid/.test(rule))).toBe(true)
+      },
+    )
+
+    it('leaves at least 3 lines of the body at the end and at the start of a page', () => {
+      const body = printRules('.tile__body').join(';')
+
+      expect(body).toMatch(/orphans:\s*3\b/)
+      expect(body).toMatch(/widows:\s*3\b/)
     })
   })
 })
