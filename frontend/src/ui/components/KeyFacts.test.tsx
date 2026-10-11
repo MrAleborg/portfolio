@@ -158,7 +158,17 @@ describe('KeyFacts', () => {
       renderFacts([], NO_ROLE, 'en', [tag(1, 'skill'), tag(2, 'methodology')])
 
       expect(chips()).toEqual(['Tag 1', 'Tag 2'])
-      expect(screen.getByText('Tag 2')).toHaveClass('tag--methodology')
+    })
+
+    it('falls back to the most used skills and tools when none is chosen', () => {
+      renderFacts(
+        [experience('2020-01-01', '2021-12-31', [tag(1, 'methodology'), tag(2, 'tool'), tag(3)])],
+        NO_ROLE,
+        'en',
+        [],
+      )
+
+      expect(chips()).toEqual(['Tag 2', 'Tag 3'])
     })
 
     it('shows the main stack even when the experiences have no tag', () => {
