@@ -72,6 +72,7 @@ def test_detail_returns_id_and_name(staff_api_client, route):
         "name": {"en": "Project management", "fr": "Gestion de projet"},
         "categories": [],
         "note": {"en": "", "fr": ""},
+        "main_stack_position": None,
     }
 
 
@@ -90,6 +91,7 @@ def test_create_sets_the_kind_of_the_route(staff_api_client, route):
         "name": {"en": "Python", "fr": "Python"},
         "categories": [],
         "note": {"en": "", "fr": ""},
+        "main_stack_position": None,
     }
     assert tag.kind == model.KIND
 
@@ -334,3 +336,103 @@ def test_list_runs_a_fixed_number_of_queries(
         response = staff_api_client.get(list_url(basename))
 
     assert response.status_code == 200
+
+
+def test_main_stack_position_is_empty_by_default(route):
+    """A new tag is not in the main stack until the owner picks a position."""
+    _, _, model, _ = route
+
+    tag = model.objects.create(name_en="Docker", name_fr="Docker")
+
+    assert tag.main_stack_position is None
+
+
+def test_create_with_a_main_stack_position(staff_api_client, route):
+    """The position is written on creation and returned."""
+    basename, _, model, _ = route
+
+    response = staff_api_client.post(
+        list_url(basename),
+        {"name": {"en": "Docker", "fr": "Docker"}, "main_stack_position": 2},
+        format="json",
+    )
+
+    assert response.status_code == 201
+    assert response.json()["main_stack_position"] == 2
+    assert model.objects.get().main_stack_position == 2
+
+
+def test_create_without_a_main_stack_position_leaves_it_empty(staff_api_client, route):
+    """The position is optional."""
+    basename, _, model, _ = route
+
+    response = staff_api_client.post(
+        list_url(basename), {"name": {"en": "Docker", "fr": "Docker"}}, format="json"
+    )
+
+    assert response.status_code == 201
+    assert model.objects.get().main_stack_position is None
+
+
+def test_update_sets_the_main_stack_position(staff_api_client, route):
+    """PATCH puts an existing tag in the main stack."""
+    basename, _, model, _ = route
+    tag = model.objects.create(name_en="Docker", name_fr="Docker")
+
+    response = staff_api_client.patch(
+        detail_url(basename, tag.id), {"main_stack_position": 0}, format="json"
+    )
+
+    assert response.status_code == 200
+    assert response.json()["main_stack_position"] == 0
+    tag.refresh_from_db()
+    assert tag.main_stack_position == 0
+
+
+def test_null_removes_a_tag_from_the_main_stack(staff_api_client, route):
+    """Sending null clears the position."""
+    basename, _, model, _ = route
+    tag = model.objects.create(
+        name_en="Docker", name_fr="Docker", main_stack_position=3
+    )
+
+    response = staff_api_client.patch(
+        detail_url(basename, tag.id), {"main_stack_position": None}, format="json"
+    )
+
+    assert response.status_code == 200
+    assert response.json()["main_stack_position"] is None
+    tag.refresh_from_db()
+    assert tag.main_stack_position is None
+
+
+def test_other_updates_keep_the_main_stack_position(staff_api_client, route):
+    """Leaving the field out of a PATCH does not clear it."""
+    basename, _, model, _ = route
+    tag = model.objects.create(
+        name_en="Docker", name_fr="Docker", main_stack_position=3
+    )
+
+    staff_api_client.patch(
+        detail_url(basename, tag.id),
+        {"note": {"en": "Daily", "fr": "Au quotidien"}},
+        format="json",
+    )
+
+    tag.refresh_from_db()
+    assert tag.main_stack_position == 3
+
+
+def test_negative_main_stack_position_is_a_bad_request(staff_api_client, route):
+    """The position is not negative; the error names the field."""
+    basename, _, model, _ = route
+
+    response = staff_api_client.post(
+        list_url(basename),
+        {"name": {"en": "Docker", "fr": "Docker"}, "main_stack_position": -1},
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert list(response.json()) == ["main_stack_position"]
+    assert not model.objects.exists()

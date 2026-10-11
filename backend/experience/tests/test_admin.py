@@ -135,6 +135,28 @@ def test_change_page_loads(admin_client, model):
     assert response.status_code == 200
 
 
+def test_tag_changelist_shows_the_main_stack_position(admin_client):
+    """The owner sees which tags are in the main stack from the list."""
+    Tag.objects.create(
+        name_en="Docker", name_fr="Docker", kind=Tag.Kind.TOOL, main_stack_position=4
+    )
+
+    response = admin_client.get(admin_url(Tag, "changelist"))
+
+    assert "main_stack_position" in response.context["cl"].list_display
+    assert 'class="field-main_stack_position">4<' in response.content.decode()
+
+
+def test_tag_change_page_edits_the_main_stack_position(admin_client):
+    """The tag form has the position, so the owner can set or clear it."""
+    tag = make(Tag)
+
+    response = admin_client.get(admin_url(Tag, "change", tag.pk))
+
+    form = response.context["adminform"].form
+    assert "main_stack_position" in form.fields
+
+
 def test_project_page_edits_its_missions_inline(admin_client):
     """The project form embeds its missions."""
     response = admin_client.get(admin_url(Project, "add"))
