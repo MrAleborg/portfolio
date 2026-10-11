@@ -330,7 +330,7 @@ describe('ResumePage', () => {
 
     expect(
       within(screen.getByRole('region', { name: 'Education' })).getByRole('status'),
-    ).toBeInTheDocument()
+    ).toHaveTextContent('Loading Education…')
   })
 
   it('says when the education could not be loaded', async () => {

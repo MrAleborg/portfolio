@@ -1,4 +1,4 @@
-import { useId, type Key, type ReactElement, type ReactNode } from 'react'
+import { useDeferredValue, useId, type Key, type ReactElement, type ReactNode } from 'react'
 import type { AsyncState } from '@/ui/async/useAsync'
 import { TileList } from '@/ui/components/TileList'
 import { messages } from '@/ui/i18n/messages'
@@ -34,6 +34,8 @@ type ResumeSectionProps<T> = {
   state: AsyncState<readonly T[]>
   /** `row` is the lighter look of secondary sections; the entries read it from the section. */
   variant?: SectionVariant
+  /** How many placeholders to show while loading, for a section that loads as a single block. */
+  placeholderCount?: number
 } & Rendering<T>
 
 /** A titled part of the resume that shows its entries as tiles, or its own way, once loaded. */
@@ -42,6 +44,10 @@ export function ResumeSection<T>(props: ResumeSectionProps<T>) {
   const text = messages[useLocale().locale]
   const titleId = useId()
   const { context, count, allOpen, toggleAll } = useSectionRegistry(variant)
+  const loading = state.status === 'loading'
+  // The text goes into the status after it is in the page: many screen readers
+  // ignore a live region that already holds text when it appears.
+  const announce = useDeferredValue(loading, false)
 
   return (
     <SectionContext.Provider value={context}>
@@ -71,14 +77,17 @@ export function ResumeSection<T>(props: ResumeSectionProps<T>) {
             </button>
           )}
         </div>
-        {state.status === 'loading' && (
-          <div role="status">
-            <span className="visually-hidden">{text.loading}</span>
-            <SectionSkeleton
-              variant={variant}
-              singleColumn={props.singleColumn || props.renderItems !== undefined}
-            />
-          </div>
+        <div role="status">
+          {announce && loading && (
+            <span className="visually-hidden">{text.loadingSection(title)}</span>
+          )}
+        </div>
+        {loading && (
+          <SectionSkeleton
+            variant={variant}
+            placeholderCount={props.placeholderCount}
+            singleColumn={props.singleColumn || props.renderItems !== undefined}
+          />
         )}
         {state.status === 'error' && (
           <p role="alert">{text.sectionUnavailable}</p>

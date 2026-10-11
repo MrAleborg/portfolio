@@ -1,13 +1,21 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { isInaccessible, render, screen, within } from '@testing-library/react'
+import {
+  getDefaultNormalizer,
+  isInaccessible,
+  render,
+  screen,
+  within,
+} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState, type ReactElement } from 'react'
 import type { Locale } from '@/domain/i18n/Locale'
 import type { AsyncState } from '@/ui/async/useAsync'
 import { Tile } from '@/ui/components/Tile'
 import { LocaleProvider } from '@/ui/i18n/LocaleProvider'
+import { HobbySection } from '@/ui/resume/HobbySection'
 import { ResumeSection } from '@/ui/resume/ResumeSection'
+import { TagSection } from '@/ui/resume/TagSection'
 import { useSectionEntry, useSectionVariant } from '@/ui/resume/SectionContext'
 
 interface Item {
@@ -61,7 +69,7 @@ describe('ResumeSection', () => {
     it('says the items are loading', () => {
       renderSection({ status: 'loading' })
 
-      expect(section().getByRole('status')).toHaveTextContent('Loading…')
+      expect(section().getByRole('status')).toHaveTextContent('Loading Things…')
     })
 
     it('says when the items could not be loaded', () => {
@@ -84,7 +92,7 @@ describe('ResumeSection', () => {
     it('says the items are loading', () => {
       renderSection({ status: 'loading' }, 'fr')
 
-      expect(section().getByRole('status')).toHaveTextContent('Chargement…')
+      expect(section().getByRole('status').textContent).toBe('Chargement\u202f: Things…')
     })
 
     it('says when the items could not be loaded', () => {
@@ -104,7 +112,12 @@ describe('ResumeSection', () => {
 
   describe('while loading', () => {
     function renderLoading(
-      props: { variant?: 'card' | 'row'; singleColumn?: boolean; locale?: Locale } = {},
+      props: {
+        variant?: 'card' | 'row'
+        singleColumn?: boolean
+        placeholderCount?: number
+        locale?: Locale
+      } = {},
     ) {
       const { locale = 'en', ...sectionProps } = props
       return render(
@@ -123,8 +136,10 @@ describe('ResumeSection', () => {
 
     /** The part of the placeholders that assistive technology skips. */
     function hiddenSkeleton() {
-      const container = section().getByRole('status').querySelector('[aria-hidden="true"]')
-      if (!container) throw new Error('No aria-hidden placeholders inside the status')
+      const container = screen
+        .getByRole('region', { name: 'Things' })
+        .querySelector('div[aria-hidden="true"]')
+      if (!container) throw new Error('No aria-hidden placeholders in the section')
       return container
     }
 
@@ -137,15 +152,18 @@ describe('ResumeSection', () => {
     it('announces the loading with visually hidden text', () => {
       renderLoading()
 
-      expect(section().getByRole('status')).toHaveTextContent('Loading…')
-      expect(section().getByText('Loading…')).toHaveClass('visually-hidden')
+      expect(section().getByRole('status')).toHaveTextContent('Loading Things…')
+      expect(section().getByText('Loading Things…')).toHaveClass('visually-hidden')
     })
 
     it('announces the loading in French with visually hidden text', () => {
       renderLoading({ locale: 'fr' })
 
-      expect(section().getByText('Chargement…')).toHaveClass('visually-hidden')
-      expect(section().getByRole('status')).toHaveTextContent('Chargement…')
+      expect(
+        section().getByText('Chargement\u202f: Things…', {
+          normalizer: getDefaultNormalizer({ collapseWhitespace: false }),
+        }),
+      ).toHaveClass('visually-hidden')
     })
 
     it('shows two card placeholders in a card section', () => {
@@ -158,6 +176,18 @@ describe('ResumeSection', () => {
       renderLoading({ variant: 'row' })
 
       expect(hiddenSkeleton().querySelectorAll('li')).toHaveLength(3)
+    })
+
+    it('shows as many card placeholders as asked', () => {
+      renderLoading({ placeholderCount: 1 })
+
+      expect(hiddenSkeleton().querySelectorAll('li')).toHaveLength(1)
+    })
+
+    it('shows as many row placeholders as asked', () => {
+      renderLoading({ variant: 'row', placeholderCount: 5 })
+
+      expect(hiddenSkeleton().querySelectorAll('li')).toHaveLength(5)
     })
 
     it('lays the card placeholders out like the tiles', () => {
@@ -187,6 +217,49 @@ describe('ResumeSection', () => {
       expect(hiddenSkeleton().querySelector('.tile-list')).toHaveClass('tile-list--single')
     })
 
+    it('keeps the placeholders out of the status', () => {
+      renderLoading()
+
+      expect(section().getByRole('status').querySelector('[aria-hidden]')).toBeNull()
+      expect(hiddenSkeleton()).toBeInTheDocument()
+    })
+
+    it('adds the loading text to a status already in the page, so it gets announced', () => {
+      const added: string[] = []
+      const observer = new MutationObserver(() => {})
+      observer.observe(document.body, { childList: true, subtree: true })
+
+      renderLoading()
+
+      // A region that holds text from the moment it appears is not announced by many
+      // screen readers; the text has to be added inside it afterwards.
+      for (const record of observer.takeRecords()) {
+        const inStatus = (record.target as Element).closest?.('[role="status"]')
+        if (inStatus) added.push(...[...record.addedNodes].map((node) => node.textContent ?? ''))
+      }
+      observer.disconnect()
+      expect(added.join('')).toContain('Loading Things…')
+    })
+
+    it('empties the status when the loading ends in an error', () => {
+      const { rerender } = renderLoading()
+
+      rerender(
+        <LocaleProvider initialLocale="en">
+          <ResumeSection
+            title="Things"
+            icon={<svg />}
+            state={{ status: 'error' }}
+            getKey={(item: Item) => item.id}
+            renderTile={(item: Item) => <Tile title={item.name} />}
+          />
+        </LocaleProvider>,
+      )
+
+      expect(section().getByRole('status')).toBeEmptyDOMElement()
+      expect(section().getByRole('alert')).toBeInTheDocument()
+    })
+
     it('is not mistaken for entries', () => {
       renderLoading()
 
@@ -210,8 +283,40 @@ describe('ResumeSection', () => {
         </LocaleProvider>,
       )
 
-      expect(section().queryByRole('status')).not.toBeInTheDocument()
+      expect(section().getByRole('status')).toBeEmptyDOMElement()
       expect(section().getByRole('article')).toHaveTextContent('First')
+    })
+
+    describe('in sections shown as a single block', () => {
+      const neverLoads = { list: () => new Promise<never>(() => {}) }
+
+      it('shows one placeholder while the expertise loads', () => {
+        render(
+          <LocaleProvider initialLocale="en">
+            <TagSection repository={neverLoads} />
+          </LocaleProvider>,
+        )
+
+        expect(
+          screen
+            .getByRole('region', { name: 'Expertise' })
+            .querySelectorAll('div[aria-hidden="true"] li'),
+        ).toHaveLength(1)
+      })
+
+      it('shows one placeholder while the hobbies load', () => {
+        render(
+          <LocaleProvider initialLocale="en">
+            <HobbySection repository={neverLoads} />
+          </LocaleProvider>,
+        )
+
+        expect(
+          screen
+            .getByRole('region', { name: 'Hobbies' })
+            .querySelectorAll('div[aria-hidden="true"] li'),
+        ).toHaveLength(1)
+      })
     })
 
     describe('styles', () => {
