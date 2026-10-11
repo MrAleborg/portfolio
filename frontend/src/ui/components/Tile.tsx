@@ -81,13 +81,19 @@ export function Tile({
           ))}
         </p>
       )}
-      {hasDetails && !expanded && preview && (
-        <div ref={previewRef} className="tile__preview" hidden={open}>
+      {hasDetails && preview && (
+        <div ref={previewRef} className="tile__preview" hidden={expanded || open}>
           {preview}
         </div>
       )}
       {hasDetails && (
-        <div ref={bodyRef} id={bodyId} className="tile__body" hidden={!open}>
+        <div
+          ref={bodyRef}
+          id={bodyId}
+          className="tile__body"
+          hidden={!open}
+          inert={open && !expanded}
+        >
           {children}
         </div>
       )}

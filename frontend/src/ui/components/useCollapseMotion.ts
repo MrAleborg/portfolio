@@ -22,7 +22,6 @@ export function useCollapseMotion(expanded: boolean) {
   const previewRef = useRef<HTMLDivElement>(null)
   const [open, setOpen] = useState(expanded)
   const previousExpanded = useRef(expanded)
-  const restHeight = useRef(0)
   const running = useRef<Animation[]>([])
 
   if (expanded !== open && (expanded || !canAnimate())) setOpen(expanded)
@@ -35,26 +34,25 @@ export function useCollapseMotion(expanded: boolean) {
     if (!card || !body) return
 
     const interrupted = running.current.length > 0
-    const height = card.getBoundingClientRect().height
+    const live = card.getBoundingClientRect().height
     const opacity = interrupted ? Number.parseFloat(getComputedStyle(body).opacity) : undefined
     running.current.forEach((animation) => animation.cancel())
     running.current = []
-    card.style.overflow = ''
+    card.style.overflowY = ''
     if (!canAnimate()) return
 
-    const from = expanded && !interrupted ? restHeight.current : height
-    let to = card.getBoundingClientRect().height
-    if (!expanded) {
-      // Measure the closed card, showing its closed layout for a moment, before any paint.
-      const preview = previewRef.current
-      body.hidden = true
-      if (preview) preview.hidden = false
-      to = card.getBoundingClientRect().height
-      body.hidden = false
-      if (preview) preview.hidden = true
-    }
+    // The card is laid out open; measure it closed too, as it is now, before any paint.
+    const openHeight = card.getBoundingClientRect().height
+    const preview = previewRef.current
+    body.hidden = true
+    if (preview) preview.hidden = false
+    const closedHeight = card.getBoundingClientRect().height
+    body.hidden = false
+    if (preview) preview.hidden = true
 
-    card.style.overflow = 'hidden'
+    const from = interrupted ? live : expanded ? closedHeight : openHeight
+    const to = expanded ? openHeight : closedHeight
+    card.style.overflowY = 'clip'
     const cardAnimation = card.animate({ height: [`${from}px`, `${to}px`] }, TIMING)
     const bodyAnimation = body.animate(
       { opacity: [opacity ?? (expanded ? 0 : 1), expanded ? 1 : 0] },
@@ -63,17 +61,10 @@ export function useCollapseMotion(expanded: boolean) {
     running.current = [cardAnimation, bodyAnimation]
     cardAnimation.onfinish = () => {
       running.current = []
-      card.style.overflow = ''
+      card.style.overflowY = ''
       if (!expanded) flushSync(() => setOpen(false))
     }
   }, [expanded])
-
-  useLayoutEffect(() => {
-    const card = cardRef.current
-    if (card && running.current.length === 0) {
-      restHeight.current = card.getBoundingClientRect().height
-    }
-  })
 
   useLayoutEffect(
     () => () => {

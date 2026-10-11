@@ -36,57 +36,30 @@ function renderInSection(
   )
 }
 
-type Listener = () => void
-
 /** A Web Animation that runs until the test finishes it, like a browser one would. */
 class FakeAnimation {
-  onfinish: Listener | null = null
-  oncancel: Listener | null = null
-  finished: Promise<FakeAnimation>
-  private settle!: { resolve: (a: FakeAnimation) => void; reject: (e: unknown) => void }
-  private state: 'running' | 'finished' | 'idle' = 'running'
-  private listeners: Record<string, Listener[]> = {}
-
+  onfinish: (() => void) | null = null
   target: Element
   keyframes: unknown
   options: KeyframeAnimationOptions
+  private ended = false
 
   constructor(target: Element, keyframes: unknown, options: KeyframeAnimationOptions) {
     this.target = target
     this.keyframes = keyframes
     this.options = options
-    this.finished = new Promise((resolve, reject) => {
-      this.settle = { resolve, reject }
-    })
-    this.finished.catch(() => {}) // a cancelled animation is not an error
   }
 
-  get playState() {
-    return this.state
-  }
-
-  addEventListener(type: string, listener: Listener) {
-    ;(this.listeners[type] ??= []).push(listener)
-  }
-
-  removeEventListener(type: string, listener: Listener) {
-    this.listeners[type] = (this.listeners[type] ?? []).filter((l) => l !== listener)
-  }
-
+  /** Does nothing once cancelled or finished, as a browser's animation. */
   finish() {
-    if (this.state !== 'running') return
-    this.state = 'finished'
-    this.settle.resolve(this)
+    if (this.ended) return
+    this.ended = true
     this.onfinish?.()
-    this.listeners.finish?.forEach((listener) => listener())
   }
 
+  /** A cancelled animation never fires its finish event. */
   cancel() {
-    if (this.state !== 'running') return
-    this.state = 'idle'
-    this.settle.reject(new DOMException('The animation was cancelled.', 'AbortError'))
-    this.oncancel?.()
-    this.listeners.cancel?.forEach((listener) => listener())
+    this.ended = true
   }
 }
 
@@ -109,6 +82,31 @@ async function finishAll(animations: FakeAnimation[]) {
   await act(async () => {
     animations.forEach((animation) => animation.finish())
   })
+}
+
+/**
+ * jsdom has no layout: gives each card the height its current layout would have, a title
+ * of 40px plus 200px of details or 60px of preview, or nothing at all inside a hidden parent.
+ */
+function stubLayout(previewHeight = { current: 60 }) {
+  vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+    this: Element,
+  ) {
+    const shown = (selector: string) => {
+      const element = this.querySelector<HTMLElement>(`:scope > ${selector}`)
+      return element !== null && !element.hidden
+    }
+    const height = this.closest('[hidden]')
+      ? 0
+      : 40 + (shown('.tile__body') ? 200 : 0) + (shown('.tile__preview') ? previewHeight.current : 0)
+    return { height } as DOMRect
+  })
+}
+
+/** The height keyframes of the animation of the card of the tile with this title. */
+function cardKeyframes(animations: FakeAnimation[], title: string) {
+  const card = screen.getByRole('article', { name: title, hidden: true })
+  return animations.find((animation) => animation.target === card)?.keyframes
 }
 
 function stubReducedMotion(reduce: boolean) {
@@ -305,7 +303,7 @@ describe('Tile', () => {
 
       await user.click(screen.getByRole('button', { name: 'Master’s degree' }))
 
-      expect(screen.queryByText('First lines.')).not.toBeInTheDocument()
+      expect(screen.getByText('First lines.')).not.toBeVisible()
       expect(screen.getByText('Thesis on compilers.')).toBeVisible()
     })
 
@@ -334,6 +332,7 @@ describe('Tile', () => {
     afterEach(() => {
       delete (Element.prototype as Partial<Element>).animate
       vi.stubGlobal('matchMedia', defaultMatchMedia)
+      vi.restoreAllMocks()
     })
 
     it('shows its details at once when opened', async () => {
@@ -438,6 +437,139 @@ describe('Tile', () => {
       expect(screen.getByText('First lines.')).toBeVisible()
     })
 
+    it('fades its details in from 0 to 1 when opened and out from 1 to 0 when closed', async () => {
+      const user = userEvent.setup()
+      const animations = stubAnimate()
+      renderTileWithContent()
+      const details = screen.getByText('Thesis on compilers.').parentElement
+      const fadeOf = () =>
+        animations.filter((animation) => animation.target === details).map((a) => a.keyframes)
+
+      await user.click(screen.getByRole('button', { name: 'Master’s degree' }))
+      await finishAll(animations)
+      await user.click(screen.getByRole('button', { name: 'Master’s degree' }))
+
+      expect(fadeOf()).toEqual([{ opacity: [0, 1] }, { opacity: [1, 0] }])
+    })
+
+    it('slides its card from its closed height to its open height when opened', async () => {
+      const user = userEvent.setup()
+      const animations = stubAnimate()
+      stubLayout()
+      render(
+        <Tile title="Master’s degree" preview={<p>First lines.</p>}>
+          <p>Thesis on compilers.</p>
+        </Tile>,
+      )
+
+      await user.click(screen.getByRole('button', { name: 'Master’s degree' }))
+
+      expect(cardKeyframes(animations, 'Master’s degree')).toEqual({
+        height: ['100px', '240px'],
+      })
+    })
+
+    it('slides its card from its open height to its closed height when closed', async () => {
+      const user = userEvent.setup()
+      const animations = stubAnimate()
+      stubLayout()
+      renderOpenTile()
+
+      await user.click(screen.getByRole('button', { name: 'Master’s degree' }))
+
+      expect(cardKeyframes(animations, 'Master’s degree')).toEqual({
+        height: ['240px', '100px'],
+      })
+    })
+
+    it('opens from its closed height as it is when clicked, not as it was when last drawn', async () => {
+      const user = userEvent.setup()
+      const animations = stubAnimate()
+      const previewHeight = { current: 60 }
+      stubLayout(previewHeight)
+      render(
+        <Tile title="Master’s degree" preview={<p>First lines.</p>}>
+          <p>Thesis on compilers.</p>
+        </Tile>,
+      )
+
+      previewHeight.current = 80 // e.g. the window got narrower, or a font finished loading
+      await user.click(screen.getByRole('button', { name: 'Master’s degree' }))
+
+      expect(cardKeyframes(animations, 'Master’s degree')).toEqual({
+        height: ['120px', '240px'],
+      })
+    })
+
+    it('opens a tile nested in a closed tile from its own closed height, not from nothing', async () => {
+      const user = userEvent.setup()
+      const animations = stubAnimate()
+      stubLayout()
+      render(
+        <Tile title="Job">
+          <Tile title="Project" headingLevel={4} preview={<p>Project lines.</p>}>
+            <p>Project details.</p>
+          </Tile>
+        </Tile>,
+      )
+      await user.click(screen.getByRole('button', { name: 'Job' }))
+      await finishAll(animations)
+
+      await user.click(screen.getByRole('button', { name: 'Project' }))
+
+      expect(cardKeyframes(animations, 'Project')).toEqual({ height: ['100px', '240px'] })
+    })
+
+    it('keeps its links out of reach while its details fade out', async () => {
+      const user = userEvent.setup()
+      const animations = stubAnimate()
+      render(
+        <Tile title="Master’s degree" defaultExpanded>
+          <a href="https://example.org">Thesis</a>
+        </Tile>,
+      )
+      const details = screen.getByRole('link', { name: 'Thesis' }).parentElement
+      expect(details).not.toHaveAttribute('inert')
+
+      await user.click(screen.getByRole('button', { name: 'Master’s degree' }))
+
+      expect(details).toHaveAttribute('inert')
+
+      await user.click(screen.getByRole('button', { name: 'Master’s degree' }))
+      await finishAll(animations)
+
+      expect(details).not.toHaveAttribute('inert')
+    })
+
+    it('clips its card only vertically, and only while it animates', async () => {
+      const user = userEvent.setup()
+      const animations = stubAnimate()
+      renderTileWithContent()
+
+      await user.click(screen.getByRole('button', { name: 'Master’s degree' }))
+
+      const card = screen.getByRole('article')
+      expect(card.style.overflowY).toBe('clip')
+      expect(card.style.overflowX).toBe('')
+
+      await finishAll(animations)
+
+      expect(card.style.overflowY).toBe('')
+    })
+
+    it('can be removed while it closes, without error', async () => {
+      const user = userEvent.setup()
+      const animations = stubAnimate()
+      const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
+      const { unmount } = renderOpenTile()
+
+      await user.click(screen.getByRole('button', { name: 'Master’s degree' }))
+      unmount()
+      await finishAll(animations)
+
+      expect(logged).not.toHaveBeenCalled()
+    })
+
     it('keeps the details of every tile visible while expand all and collapse all animate', async () => {
       const user = userEvent.setup()
       const animations = stubAnimate()
@@ -451,6 +583,14 @@ describe('Tile', () => {
       ])
 
       await user.click(screen.getByRole('button', { name: 'Expand all' }))
+
+      expect(animations.map((animation) => animation.target)).toEqual(
+        expect.arrayContaining([
+          screen.getByRole('article', { name: 'First' }),
+          screen.getByRole('article', { name: 'Second' }),
+        ]),
+      )
+
       await finishAll(animations)
       await user.click(screen.getByRole('button', { name: 'Collapse all' }))
 
