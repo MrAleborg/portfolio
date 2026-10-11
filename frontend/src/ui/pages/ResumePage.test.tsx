@@ -10,6 +10,11 @@ import {
 import type { Certification } from '@/domain/certification/Certification'
 import type { Specialization } from '@/domain/specialization/Specialization'
 import { failing } from '@/test/fakeList'
+import {
+  fakeProfessionalExperienceRepository,
+  fullExperience,
+  minimalExperience,
+} from '@/test/fakeProfessionalExperienceRepository'
 import { fakeRepositories } from '@/test/fakeRepositories'
 import { engineering, fakeTagRepository } from '@/test/fakeTagRepository'
 import { LocaleProvider } from '@/ui/i18n/LocaleProvider'
@@ -339,5 +344,27 @@ describe('ResumePage', () => {
     expect(
       await within(screen.getByRole('region', { name: 'Education' })).findByRole('alert'),
     ).toBeInTheDocument()
+  })
+
+  describe('when printed', () => {
+    it('shows an address once, however many entries link to it', async () => {
+      renderPage({
+        experience: fakeProfessionalExperienceRepository([
+          fullExperience,
+          { ...minimalExperience, companyUrl: fullExperience.companyUrl },
+        ]),
+      })
+      const links = await screen.findAllByRole('link', {
+        name: /^Website: (Acme|Globex)/,
+        hidden: true,
+      })
+
+      window.dispatchEvent(new Event('beforeprint'))
+
+      expect(links.map((link) => link.classList.contains('external-link--repeat'))).toEqual([
+        false,
+        true,
+      ])
+    })
   })
 })
