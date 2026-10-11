@@ -58,6 +58,7 @@ export function TagSection({ repository }: TagSectionProps) {
       title={text.expertiseTitle}
       icon={<LayersIcon />}
       state={state}
+      placeholderCount={1}
       renderItems={(domains) => (
         <div className="tag-summary">
           {domains.map((domain) => (

@@ -7,7 +7,9 @@ import type { Locale } from '@/domain/i18n/Locale'
 import type { AsyncState } from '@/ui/async/useAsync'
 import { Tile } from '@/ui/components/Tile'
 import { LocaleProvider } from '@/ui/i18n/LocaleProvider'
+import { HobbySection } from '@/ui/resume/HobbySection'
 import { ResumeSection } from '@/ui/resume/ResumeSection'
+import { TagSection } from '@/ui/resume/TagSection'
 import { useSectionEntry, useSectionVariant } from '@/ui/resume/SectionContext'
 
 interface Item {
@@ -104,7 +106,12 @@ describe('ResumeSection', () => {
 
   describe('while loading', () => {
     function renderLoading(
-      props: { variant?: 'card' | 'row'; singleColumn?: boolean; locale?: Locale } = {},
+      props: {
+        variant?: 'card' | 'row'
+        singleColumn?: boolean
+        placeholderCount?: number
+        locale?: Locale
+      } = {},
     ) {
       const { locale = 'en', ...sectionProps } = props
       return render(
@@ -160,6 +167,18 @@ describe('ResumeSection', () => {
       expect(hiddenSkeleton().querySelectorAll('li')).toHaveLength(3)
     })
 
+    it('shows as many card placeholders as asked', () => {
+      renderLoading({ placeholderCount: 1 })
+
+      expect(hiddenSkeleton().querySelectorAll('li')).toHaveLength(1)
+    })
+
+    it('shows as many row placeholders as asked', () => {
+      renderLoading({ variant: 'row', placeholderCount: 5 })
+
+      expect(hiddenSkeleton().querySelectorAll('li')).toHaveLength(5)
+    })
+
     it('lays the card placeholders out like the tiles', () => {
       renderLoading()
 
@@ -212,6 +231,38 @@ describe('ResumeSection', () => {
 
       expect(section().queryByRole('status')).not.toBeInTheDocument()
       expect(section().getByRole('article')).toHaveTextContent('First')
+    })
+
+    describe('in sections shown as a single block', () => {
+      const neverLoads = { list: () => new Promise<never>(() => {}) }
+
+      it('shows one placeholder while the expertise loads', () => {
+        render(
+          <LocaleProvider initialLocale="en">
+            <TagSection repository={neverLoads} />
+          </LocaleProvider>,
+        )
+
+        expect(
+          within(screen.getByRole('region', { name: 'Expertise' }))
+            .getByRole('status')
+            .querySelectorAll('[aria-hidden="true"] li'),
+        ).toHaveLength(1)
+      })
+
+      it('shows one placeholder while the hobbies load', () => {
+        render(
+          <LocaleProvider initialLocale="en">
+            <HobbySection repository={neverLoads} />
+          </LocaleProvider>,
+        )
+
+        expect(
+          within(screen.getByRole('region', { name: 'Hobbies' }))
+            .getByRole('status')
+            .querySelectorAll('[aria-hidden="true"] li'),
+        ).toHaveLength(1)
+      })
     })
 
     describe('styles', () => {

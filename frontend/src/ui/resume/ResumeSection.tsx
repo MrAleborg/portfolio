@@ -34,6 +34,8 @@ type ResumeSectionProps<T> = {
   state: AsyncState<readonly T[]>
   /** `row` is the lighter look of secondary sections; the entries read it from the section. */
   variant?: SectionVariant
+  /** How many placeholders to show while loading, for a section that loads as a single block. */
+  placeholderCount?: number
 } & Rendering<T>
 
 /** A titled part of the resume that shows its entries as tiles, or its own way, once loaded. */
@@ -76,6 +78,7 @@ export function ResumeSection<T>(props: ResumeSectionProps<T>) {
             <span className="visually-hidden">{text.loading}</span>
             <SectionSkeleton
               variant={variant}
+              placeholderCount={props.placeholderCount}
               singleColumn={props.singleColumn || props.renderItems !== undefined}
             />
           </div>
