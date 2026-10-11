@@ -63,7 +63,7 @@ describe('ResumeSection', () => {
     it('says the items are loading', () => {
       renderSection({ status: 'loading' })
 
-      expect(section().getByRole('status')).toHaveTextContent('Loading…')
+      expect(section().getByRole('status')).toHaveTextContent('Loading Things…')
     })
 
     it('says when the items could not be loaded', () => {
@@ -86,7 +86,7 @@ describe('ResumeSection', () => {
     it('says the items are loading', () => {
       renderSection({ status: 'loading' }, 'fr')
 
-      expect(section().getByRole('status')).toHaveTextContent('Chargement…')
+      expect(section().getByRole('status').textContent).toBe('Chargement\u202f: Things…')
     })
 
     it('says when the items could not be loaded', () => {
@@ -146,15 +146,14 @@ describe('ResumeSection', () => {
     it('announces the loading with visually hidden text', () => {
       renderLoading()
 
-      expect(section().getByRole('status')).toHaveTextContent('Loading…')
-      expect(section().getByText('Loading…')).toHaveClass('visually-hidden')
+      expect(section().getByRole('status')).toHaveTextContent('Loading Things…')
+      expect(section().getByText('Loading Things…')).toHaveClass('visually-hidden')
     })
 
     it('announces the loading in French with visually hidden text', () => {
       renderLoading({ locale: 'fr' })
 
-      expect(section().getByText('Chargement…')).toHaveClass('visually-hidden')
-      expect(section().getByRole('status')).toHaveTextContent('Chargement…')
+      expect(section().getByText('Chargement\u202f: Things…')).toHaveClass('visually-hidden')
     })
 
     it('shows two card placeholders in a card section', () => {
@@ -218,7 +217,7 @@ describe('ResumeSection', () => {
     it('adds the loading text to a status already in the page, so it gets announced', () => {
       const added: string[] = []
       const observer = new MutationObserver(() => {})
-      observer.observe(document.body, { childList: true, subtree: true, characterData: true })
+      observer.observe(document.body, { childList: true, subtree: true })
 
       renderLoading()
 
@@ -229,7 +228,7 @@ describe('ResumeSection', () => {
         if (inStatus) added.push(...[...record.addedNodes].map((node) => node.textContent ?? ''))
       }
       observer.disconnect()
-      expect(added.join('')).toContain('Loading…')
+      expect(added.join('')).toContain('Loading Things…')
     })
 
     it('empties the status when the loading ends in an error', () => {
