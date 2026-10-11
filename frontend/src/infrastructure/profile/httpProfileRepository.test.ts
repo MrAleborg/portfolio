@@ -6,6 +6,10 @@ const body = {
   headline: { en: 'Analyst', fr: 'Analyste' },
   bio: { en: 'I write programs.', fr: 'J’écris des programmes.' },
   desired_role: { en: 'Engineer', fr: 'Ingénieure' },
+  main_stack: [
+    { id: 7, name: { en: 'Python', fr: 'Python' }, kind: 'skill' },
+    { id: 3, name: { en: 'Scrum', fr: 'Scrum' }, kind: 'methodology' },
+  ],
 }
 
 describe('httpProfileRepository', () => {
@@ -25,7 +29,21 @@ describe('httpProfileRepository', () => {
       headline: { en: 'Analyst', fr: 'Analyste' },
       bio: { en: 'I write programs.', fr: 'J’écris des programmes.' },
       desiredRole: { en: 'Engineer', fr: 'Ingénieure' },
+      mainStack: [
+        { id: 7, name: { en: 'Python', fr: 'Python' }, kind: 'skill' },
+        { id: 3, name: { en: 'Scrum', fr: 'Scrum' }, kind: 'methodology' },
+      ],
     })
+  })
+
+  it('has an empty main stack when the API does not send one yet', async () => {
+    const withoutMainStack = { full_name: body.full_name, headline: body.headline, bio: body.bio }
+    const repository = createHttpProfileRepository(
+      'https://api.example.com',
+      respondWith(200, withoutMainStack),
+    )
+
+    await expect(repository.get()).resolves.toMatchObject({ mainStack: [] })
   })
 
   it('has an empty desired role when the API does not send one yet', async () => {

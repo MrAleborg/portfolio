@@ -10,6 +10,7 @@ in every language: ``{"en": ..., "fr": ...}``.
 import pytest
 from django.urls import reverse
 
+from experience.models import Skill
 from experience.tests.admin_api.helpers import timestamps
 from owner.models import Profile
 
@@ -284,3 +285,35 @@ def test_delete_is_not_allowed(staff_api_client):
 
     assert response.status_code == 405
     assert Profile.objects.exists()
+
+
+def test_main_stack_is_not_part_of_the_admin_profile(staff_api_client):
+    """The main stack is chosen on the tags; the profile only shows it publicly."""
+    make_profile()
+    Skill.objects.create(name_en="Python", name_fr="Python", main_stack_position=1)
+
+    response = staff_api_client.get(URL)
+
+    assert "main_stack" not in response.json()
+
+
+def test_put_ignores_a_main_stack_in_the_payload(staff_api_client):
+    """Writing the profile, as the resume import does, never touches tags."""
+    skill = Skill.objects.create(
+        name_en="Python", name_fr="Python", main_stack_position=1
+    )
+
+    response = staff_api_client.put(
+        URL,
+        {
+            "full_name": "Ada Lovelace",
+            "headline": {"en": "Analyst", "fr": "Analyste"},
+            "main_stack": [],
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201
+    assert "main_stack" not in response.json()
+    skill.refresh_from_db()
+    assert skill.main_stack_position == 1

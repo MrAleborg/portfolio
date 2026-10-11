@@ -1,5 +1,6 @@
 import type { Localized } from '@/domain/i18n/Locale'
 import type { ProfileRepository } from '@/domain/profile/ProfileRepository'
+import type { TagDto } from '@/infrastructure/http/dtos'
 import { getJson } from '@/infrastructure/http/getJson'
 
 interface ProfileDto {
@@ -8,6 +9,8 @@ interface ProfileDto {
   bio: Localized<string>
   /** Missing from an API that predates the field. */
   desired_role?: Localized<string>
+  /** Missing from an API that predates the field. */
+  main_stack?: TagDto[]
 }
 
 export function createHttpProfileRepository(
@@ -22,6 +25,7 @@ export function createHttpProfileRepository(
         headline: dto.headline,
         bio: dto.bio,
         desiredRole: dto.desired_role ?? { en: '', fr: '' },
+        mainStack: dto.main_stack ?? [],
       }
     },
   }

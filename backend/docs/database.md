@@ -88,6 +88,7 @@ erDiagram
         varchar kind "tool | methodology | skill"
         varchar note_en "optional"
         varchar note_fr "optional"
+        smallint main_stack_position "null = not in the main stack"
     }
 
     TagCategory {
@@ -237,6 +238,9 @@ Both levels are ordered by `position`, then English name.
   removes its links, the tags stay.
 - **A tag may carry a note** (`note_en`, `note_fr`), free text shown next to
   it, e.g. "used daily for agentic coding".
+- **The main stack is chosen on the tag**: `main_stack_position` empty means
+  not in the main stack; lower values come first, ties are ordered by
+  `name_en`, any kind can be chosen, and the home page shows the first 5.
 
 ```python
 ai = TagCategory.objects.create(name_en="AI & Data Science", name_fr="IA et science des données")

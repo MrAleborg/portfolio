@@ -206,7 +206,7 @@ class TagSerializer(serializers.ModelSerializer):
     note = LocalizedField(required=False, allow_blank=True)
 
     class Meta:
-        fields = ["id", "name", "categories", "note"]
+        fields = ["id", "name", "categories", "note", "main_stack_position"]
 
     def validate_name(self, columns):
         """`columns` is {"name_en": ..., "name_fr": ...}; errors are per language."""

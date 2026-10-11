@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import avatarSrc from '@/assets/avatar.svg?no-inline'
+import type { Localized } from '@/domain/i18n/Locale'
 import type { ProfessionalExperienceRepository } from '@/domain/professionalExperience/ProfessionalExperienceRepository'
 import type { ProfileRepository } from '@/domain/profile/ProfileRepository'
 import { useAsync } from '@/ui/async/useAsync'
@@ -10,6 +11,8 @@ import { useLocale } from '@/ui/i18n/useLocale'
 import { paragraphs } from '@/ui/text/paragraphs'
 import './HomePage.css'
 
+const NO_ROLE: Localized<string> = { en: '', fr: '' }
+
 interface HomePageProps {
   profileRepository: ProfileRepository
   experienceRepository: ProfessionalExperienceRepository
@@ -18,7 +21,7 @@ interface HomePageProps {
 export function HomePage({ profileRepository, experienceRepository }: HomePageProps) {
   const { locale } = useLocale()
   const state = useAsync(profileRepository.get)
-  // Loaded in parallel with the profile. The facts are optional: if they fail, the hero shows without them.
+  // Loaded in parallel with the profile. The facts are optional: if they fail, the hero shows without them, except the chosen main stack.
   const experiences = useAsync(experienceRepository.list)
 
   if (state.status === 'error') {
@@ -31,6 +34,8 @@ export function HomePage({ profileRepository, experienceRepository }: HomePagePr
   }
 
   const text = messages[locale]
+  // Without the experiences, only the chosen main stack can show: the other facts need them.
+  const loadedExperiences = experiences.status === 'loaded' ? experiences.value : null
 
   return (
     <div className="home">
@@ -48,9 +53,11 @@ export function HomePage({ profileRepository, experienceRepository }: HomePagePr
             {text.homeContactCta}
           </Link>
         </div>
-        {experiences.status === 'loaded' && (
-          <KeyFacts experiences={experiences.value} desiredRole={state.value.desiredRole} />
-        )}
+        <KeyFacts
+          experiences={loadedExperiences ?? []}
+          desiredRole={loadedExperiences ? state.value.desiredRole : NO_ROLE}
+          chosenStack={state.value.mainStack}
+        />
       </div>
       <Avatar
         src="/media/avatar.webp"

@@ -6,6 +6,7 @@ export const ada: Profile = {
   headline: { en: 'Analyst', fr: 'Analyste' },
   bio: { en: 'I write programs.', fr: 'J’écris des programmes.' },
   desiredRole: { en: 'Engineer', fr: 'Ingénieure' },
+  mainStack: [],
 }
 
 /** A repository that answers with the given profile. */

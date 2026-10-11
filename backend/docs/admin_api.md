@@ -242,15 +242,17 @@ of the certifications on its path.
 
 ### `skills/`, `tools/`, `methodologies/`
 
-A tag has a `name` (required), the ids of its `categories` and an optional
-`note`; its kind is the route it is created on.
+A tag has a `name` (required), the ids of its `categories`, an optional
+`note` and an optional `main_stack_position`; its kind is the route it is
+created on.
 
 ```json
 {
   "id": 12,
   "name": {"en": "API design", "fr": "Conception d'API"},
   "categories": [3],
-  "note": {"en": "", "fr": ""}
+  "note": {"en": "", "fr": ""},
+  "main_stack_position": null
 }
 ```
 
@@ -265,6 +267,10 @@ A tag has a `name` (required), the ids of its `categories` and an optional
   on `categories`. Left out on creation, it is empty.
 - `note` is free text shown next to the tag in the Expertise section (e.g.
   "used daily for agentic coding"), translated like any optional text.
+- `main_stack_position` chooses the tags of the home page's "Main stack", of
+  any kind. Lower values come first and equal values are ordered by English
+  name; only the first 5 are shown. `null` (the default) keeps the tag out of
+  the main stack, and sending `null` removes it. A negative value is a `400`.
 
 ### `tag-categories/`
 
@@ -366,6 +372,9 @@ is the same as for the other routes: staff token, else `401` or `403`.
   optional (empty in every language when left out on creation).
 - The [writing rules](#writing-rules) above apply: translated texts in every
   language, per-language errors, read-only timestamps.
+- The public profile's `main_stack` is not part of this one (ignored if sent):
+  the main stack is chosen with `main_stack_position` on
+  [`skills/`, `tools/` and `methodologies/`](#skills-tools-methodologies).
 
 ## Contact links: `/api/v1/admin/profile/contact-links/`
 

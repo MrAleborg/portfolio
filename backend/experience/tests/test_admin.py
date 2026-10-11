@@ -135,6 +135,41 @@ def test_change_page_loads(admin_client, model):
     assert response.status_code == 200
 
 
+def test_tag_changelist_shows_the_main_stack_position(admin_client):
+    """The owner sees which tags are in the main stack from the list."""
+    Tag.objects.create(
+        name_en="Docker", name_fr="Docker", kind=Tag.Kind.TOOL, main_stack_position=4
+    )
+
+    response = admin_client.get(admin_url(Tag, "changelist"))
+
+    assert 'class="field-main_stack_position">4<' in response.content.decode()
+
+
+def test_tag_change_page_sets_and_clears_the_main_stack_position(admin_client):
+    """The owner puts a tag in the main stack from its form, and takes it out."""
+    tag = make(Tag)
+    url = admin_url(Tag, "change", tag.pk)
+    form = {
+        "name_en": tag.name_en,
+        "name_fr": tag.name_fr,
+        "kind": tag.kind,
+        "note_en": "",
+        "note_fr": "",
+    }
+
+    set_response = admin_client.post(url, {**form, "main_stack_position": "4"})
+    tag.refresh_from_db()
+    position_after_set = tag.main_stack_position
+    clear_response = admin_client.post(url, {**form, "main_stack_position": ""})
+    tag.refresh_from_db()
+
+    assert set_response.status_code == 302
+    assert position_after_set == 4
+    assert clear_response.status_code == 302
+    assert tag.main_stack_position is None
+
+
 def test_project_page_edits_its_missions_inline(admin_client):
     """The project form embeds its missions."""
     response = admin_client.get(admin_url(Project, "add"))

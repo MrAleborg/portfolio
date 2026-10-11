@@ -226,6 +226,20 @@ describe('HomePage', () => {
       expect(await screen.findByText('Engineer')).toBeInTheDocument()
     })
 
+    it('shows the main stack chosen on the profile', async () => {
+      const chosen = [
+        { id: 90, name: { en: 'Kanban', fr: 'Kanban' }, kind: 'methodology' as const },
+        { id: 91, name: { en: 'Rust', fr: 'Rust' }, kind: 'skill' as const },
+      ]
+      renderPage(fakeProfileRepository({ ...ada, mainStack: chosen }))
+
+      const stack = await screen.findByRole('list', { name: 'Main stack' })
+      expect(within(stack).getAllByRole('listitem').map((chip) => chip.textContent)).toEqual([
+        'Kanban',
+        'Rust',
+      ])
+    })
+
     it('keeps saying it is loading, without the hero yet, while the experiences are loading', async () => {
       renderPage(fakeProfileRepository(), 'en', { list: pending<ProfessionalExperience>() })
       await act(async () => {})
@@ -240,6 +254,19 @@ describe('HomePage', () => {
       expect(await screen.findByRole('alert')).toHaveTextContent(
         'The profile could not be loaded. Please try again later.',
       )
+    })
+
+    it('still shows the chosen main stack when the experiences fail to load', async () => {
+      const chosen = [{ id: 91, name: { en: 'Rust', fr: 'Rust' }, kind: 'skill' as const }]
+      renderPage(fakeProfileRepository({ ...ada, mainStack: chosen }), 'en', {
+        list: failing<ProfessionalExperience>(),
+      })
+
+      const stack = await screen.findByRole('list', { name: 'Main stack' })
+      expect(within(stack).getAllByRole('listitem').map((chip) => chip.textContent)).toEqual(['Rust'])
+      expect(screen.getByRole('heading', { level: 1, name: 'Ada Lovelace' })).toBeInTheDocument()
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+      expect(screen.queryByText('Looking for')).not.toBeInTheDocument()
     })
 
     it('shows the profile and the calls to action without facts or alert when the experiences fail to load', async () => {

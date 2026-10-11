@@ -195,6 +195,14 @@ class Tag(models.Model):
     )
     note_en = models.CharField(max_length=255, blank=True)
     note_fr = models.CharField(max_length=255, blank=True)
+    main_stack_position = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        help_text=(
+            "Lower values are shown first. Leave empty to keep the tag out of "
+            "the main stack. Only the first 5 are shown on the home page."
+        ),
+    )
 
     class Meta:
         ordering = ["kind", "name_en"]

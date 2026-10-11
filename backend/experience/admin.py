@@ -41,6 +41,7 @@ admin.site.register(ScientificCommunication)
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
+    list_display = ["name_en", "kind", "main_stack_position"]
     list_filter = ["kind"]
     filter_horizontal = ["categories"]
 
