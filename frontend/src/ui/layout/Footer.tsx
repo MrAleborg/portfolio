@@ -1,5 +1,6 @@
 import type { ContactRepository } from '@/domain/contact/ContactRepository'
 import { useAsync } from '@/ui/async/useAsync'
+import { contactLinkIcon } from '@/ui/components/contactLinkIcons'
 import { contactLinkLabel } from '@/ui/components/contactLinkLabel'
 import { ExternalLink } from '@/ui/components/ExternalLink'
 import { messages } from '@/ui/i18n/messages'
@@ -26,10 +27,12 @@ export function Footer({ fullName, contactRepository }: FooterProps) {
           {links.value.map((link) =>
             link.kind === 'email' ? (
               <a key={`${link.kind}:${link.url}`} href={link.url}>
+                {contactLinkIcon(link.kind)}
                 {contactLinkLabel(link, text)}
               </a>
             ) : (
               <ExternalLink key={`${link.kind}:${link.url}`} href={link.url}>
+                {contactLinkIcon(link.kind)}
                 {contactLinkLabel(link, text)}
               </ExternalLink>
             ),

@@ -3,6 +3,7 @@ import type { ContactLink } from '@/domain/contact/ContactLink'
 import type { ContactRepository } from '@/domain/contact/ContactRepository'
 import type { Locale } from '@/domain/i18n/Locale'
 import {
+  contactLinks,
   failingContactRepository,
   fakeContactRepository,
   pendingContactRepository,
@@ -107,6 +108,65 @@ describe('Footer', () => {
       expect(
         await screen.findByRole('navigation', { name: 'Liens de contact' }),
       ).toBeInTheDocument()
+    })
+  })
+
+  describe('contact link icons', () => {
+    function iconOf(link: HTMLElement) {
+      return link.querySelector('svg')
+    }
+
+    it('shows an icon, hidden from assistive technology, in the email, LinkedIn, GitHub and website links', async () => {
+      renderFooter({
+        contact: fakeContactRepository([...contactLinks, website]),
+      })
+
+      const links = [
+        await screen.findByRole('link', { name: 'ada@example.com' }),
+        screen.getByRole('link', { name: /^LinkedIn/ }),
+        screen.getByRole('link', { name: /^GitHub/ }),
+        screen.getByRole('link', { name: /^Website/ }),
+      ]
+
+      for (const link of links) {
+        expect(iconOf(link)).toHaveAttribute('aria-hidden', 'true')
+      }
+    })
+
+    it('shows no icon in a link of another kind, only its label', async () => {
+      renderFooter({ contact: fakeContactRepository([other]) })
+
+      const link = await screen.findByRole('link', { name: /^mastodon\.example\/@ada/ })
+
+      expect(iconOf(link)).toBeNull()
+    })
+
+    it('puts each icon before its label', async () => {
+      renderFooter({
+        contact: fakeContactRepository([...contactLinks, website]),
+      })
+
+      const links = [
+        await screen.findByRole('link', { name: 'ada@example.com' }),
+        screen.getByRole('link', { name: /^LinkedIn/ }),
+        screen.getByRole('link', { name: /^GitHub/ }),
+        screen.getByRole('link', { name: /^Website/ }),
+      ]
+
+      for (const link of links) {
+        expect(link.firstChild).toBe(iconOf(link))
+      }
+    })
+
+    it('keeps the links named by their label alone, icons or not', async () => {
+      renderFooter({
+        contact: fakeContactRepository([...contactLinks, website]),
+      })
+
+      expect(await screen.findByRole('link', { name: 'ada@example.com' })).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'LinkedIn (opens in a new tab)' })).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'GitHub (opens in a new tab)' })).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'Website (opens in a new tab)' })).toBeInTheDocument()
     })
   })
 
