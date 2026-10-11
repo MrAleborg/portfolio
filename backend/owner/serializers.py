@@ -2,6 +2,8 @@ from django.core.validators import RegexValidator
 from rest_framework import serializers
 
 from experience.localized import LocalizedField
+from experience.models import Tag
+from experience.serializers import TagWithKindSerializer
 from owner.models import ContactLink, Profile
 
 
@@ -9,10 +11,18 @@ class ProfileSerializer(serializers.ModelSerializer):
     headline = LocalizedField()
     bio = LocalizedField()
     desired_role = LocalizedField()
+    main_stack = serializers.SerializerMethodField()
 
     class Meta:
         model = Profile
-        fields = ["full_name", "headline", "bio", "desired_role"]
+        fields = ["full_name", "headline", "bio", "desired_role", "main_stack"]
+
+    def get_main_stack(self, profile):
+        """The tags the owner chose, of any kind, whether or not a project uses them."""
+        tags = Tag.objects.filter(main_stack_position__isnull=False).order_by(
+            "main_stack_position", "name_en"
+        )
+        return TagWithKindSerializer(tags, many=True).data
 
 
 class ContactLinkSerializer(serializers.ModelSerializer):

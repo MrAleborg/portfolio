@@ -194,7 +194,21 @@ def test_profile_is_serialized_when_it_exists(api_client):
         "headline": {"en": "Analyst", "fr": "Analyste"},
         "bio": {"en": "I write programs.", "fr": "J’écris des programmes."},
         "desired_role": {"en": "Software engineer", "fr": "Ingénieure logiciel"},
+        "main_stack": [],
     }
+
+
+def test_profile_carries_the_main_stack(api_client):
+    Profile.objects.create(full_name="Ada Lovelace", headline_en="A", headline_fr="A")
+    tool = Tool.objects.create(
+        name_en="Docker", name_fr="Docker", main_stack_position=1
+    )
+
+    response = api_client.get(URL)
+
+    assert response.json()["profile"]["main_stack"] == [
+        {"id": tool.id, "name": {"en": "Docker", "fr": "Docker"}, "kind": "tool"}
+    ]
 
 
 @pytest.mark.parametrize(

@@ -357,12 +357,23 @@ so the route has no id, and no list.
   "full_name": "Ada Lovelace",
   "headline": {"en": "Analyst", "fr": "Analyste"},
   "bio": {"en": "I write programs.", "fr": "J’écris des programmes."},
-  "desired_role": {"en": "Software engineer", "fr": "Ingénieure logiciel"}
+  "desired_role": {"en": "Software engineer", "fr": "Ingénieure logiciel"},
+  "main_stack": [
+    {"id": 4, "name": {"en": "Python", "fr": "Python"}, "kind": "skill"},
+    {"id": 9, "name": {"en": "Docker", "fr": "Docker"}, "kind": "tool"}
+  ]
 }
 ```
 
 - `headline`, `bio` and `desired_role` are translated; `full_name` is not.
   `bio` and `desired_role` may be empty in every language.
+- `main_stack` is the tags the owner chose for the home page's "Main stack",
+  of any kind (skills, tools and methodologies), as `id`, translated `name`
+  and `kind`. They are ordered by `main_stack_position` (lower first), then
+  English name. The list is not capped (the home page shows the first 5), is
+  `[]` when no tag has a position, and includes a chosen tag even if no
+  visible project uses it. It is not part of the admin API profile: the
+  position is set on the tags.
 - `404` until the profile is created through the
   [admin API](admin_api.md#profile-apiv1adminprofile). Write methods are
   `405`.
@@ -429,7 +440,7 @@ whole resume at once ([`ResumeView`](../experience/views.py)).
 
 ```json
 {
-  "profile": {"full_name": "Ada Lovelace", "headline": {…}, "bio": {…}, "desired_role": {…}},
+  "profile": {"full_name": "Ada Lovelace", "headline": {…}, "bio": {…}, "desired_role": {…}, "main_stack": […]},
   "education": […],
   "certifications": […],
   "professional_experiences": […],

@@ -9,11 +9,17 @@ from owner.serializers import ProfileSerializer as PublicProfileSerializer
 
 
 class ProfileSerializer(PublicProfileSerializer):
+    # The main stack is chosen on the tags, not on the profile.
+    main_stack = None
     bio = LocalizedField(required=False, allow_blank=True)
     desired_role = LocalizedField(required=False, allow_blank=True)
 
     class Meta(PublicProfileSerializer.Meta):
-        fields = [*PublicProfileSerializer.Meta.fields, "created_at", "updated_at"]
+        fields = [
+            field
+            for field in PublicProfileSerializer.Meta.fields
+            if field != "main_stack"
+        ] + ["created_at", "updated_at"]
 
 
 class ContactLinkSerializer(serializers.ModelSerializer):
