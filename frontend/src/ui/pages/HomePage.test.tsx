@@ -266,15 +266,7 @@ describe('HomePage', () => {
       expect(within(stack).getAllByRole('listitem').map((chip) => chip.textContent)).toEqual(['Rust'])
       expect(screen.getByRole('heading', { level: 1, name: 'Ada Lovelace' })).toBeInTheDocument()
       expect(screen.queryByRole('alert')).not.toBeInTheDocument()
-    })
-
-    it('shows no facts when the experiences fail to load and no main stack is chosen', async () => {
-      renderPage(fakeProfileRepository({ ...ada, mainStack: [] }), 'en', {
-        list: failing<ProfessionalExperience>(),
-      })
-
-      expect(await screen.findByRole('heading', { level: 1, name: 'Ada Lovelace' })).toBeInTheDocument()
-      expect(screen.queryByRole('region', { name: 'Key facts' })).not.toBeInTheDocument()
+      expect(screen.queryByText('Looking for')).not.toBeInTheDocument()
     })
 
     it('shows the profile and the calls to action without facts or alert when the experiences fail to load', async () => {
