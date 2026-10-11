@@ -840,8 +840,16 @@ describe('Tile', () => {
       expect(avoiding).toEqual([])
     })
 
-    it('still keeps a row whole on a page', () => {
-      expect(printRules('.tile--row').some((rule) => /break-inside:\s*avoid/.test(rule))).toBe(true)
+    it('keeps a row without nested tiles whole on a page', () => {
+      const rules = printRules('.tile--row:not(:has(.tile--nested))')
+
+      expect(rules.some((rule) => /break-inside:\s*avoid/.test(rule))).toBe(true)
+    })
+
+    it('lets a row that holds nested tiles run over a page, so its section title is not left alone', () => {
+      const avoiding = printRules('.tile--row').filter((rule) => /break-inside:\s*avoid/.test(rule))
+
+      expect(avoiding).toEqual([])
     })
 
     it.each(['.tile__title', '.tile__subtitle', '.tile__meta', '.tile__label'])(
