@@ -130,8 +130,10 @@ describe('ResumeSection', () => {
 
     /** The part of the placeholders that assistive technology skips. */
     function hiddenSkeleton() {
-      const container = section().getByRole('status').querySelector('[aria-hidden="true"]')
-      if (!container) throw new Error('No aria-hidden placeholders inside the status')
+      const container = screen
+        .getByRole('region', { name: 'Things' })
+        .querySelector('div[aria-hidden="true"]')
+      if (!container) throw new Error('No aria-hidden placeholders in the section')
       return container
     }
 
@@ -206,6 +208,49 @@ describe('ResumeSection', () => {
       expect(hiddenSkeleton().querySelector('.tile-list')).toHaveClass('tile-list--single')
     })
 
+    it('keeps the placeholders out of the status', () => {
+      renderLoading()
+
+      expect(section().getByRole('status').querySelector('[aria-hidden]')).toBeNull()
+      expect(hiddenSkeleton()).toBeInTheDocument()
+    })
+
+    it('adds the loading text to a status already in the page, so it gets announced', () => {
+      const added: string[] = []
+      const observer = new MutationObserver(() => {})
+      observer.observe(document.body, { childList: true, subtree: true, characterData: true })
+
+      renderLoading()
+
+      // A region that holds text from the moment it appears is not announced by many
+      // screen readers; the text has to be added inside it afterwards.
+      for (const record of observer.takeRecords()) {
+        const inStatus = (record.target as Element).closest?.('[role="status"]')
+        if (inStatus) added.push(...[...record.addedNodes].map((node) => node.textContent ?? ''))
+      }
+      observer.disconnect()
+      expect(added.join('')).toContain('Loading…')
+    })
+
+    it('empties the status when the loading ends in an error', () => {
+      const { rerender } = renderLoading()
+
+      rerender(
+        <LocaleProvider initialLocale="en">
+          <ResumeSection
+            title="Things"
+            icon={<svg />}
+            state={{ status: 'error' }}
+            getKey={(item: Item) => item.id}
+            renderTile={(item: Item) => <Tile title={item.name} />}
+          />
+        </LocaleProvider>,
+      )
+
+      expect(section().getByRole('status')).toBeEmptyDOMElement()
+      expect(section().getByRole('alert')).toBeInTheDocument()
+    })
+
     it('is not mistaken for entries', () => {
       renderLoading()
 
@@ -229,7 +274,7 @@ describe('ResumeSection', () => {
         </LocaleProvider>,
       )
 
-      expect(section().queryByRole('status')).not.toBeInTheDocument()
+      expect(section().getByRole('status')).toBeEmptyDOMElement()
       expect(section().getByRole('article')).toHaveTextContent('First')
     })
 
@@ -244,9 +289,9 @@ describe('ResumeSection', () => {
         )
 
         expect(
-          within(screen.getByRole('region', { name: 'Expertise' }))
-            .getByRole('status')
-            .querySelectorAll('[aria-hidden="true"] li'),
+          screen
+            .getByRole('region', { name: 'Expertise' })
+            .querySelectorAll('div[aria-hidden="true"] li'),
         ).toHaveLength(1)
       })
 
@@ -258,9 +303,9 @@ describe('ResumeSection', () => {
         )
 
         expect(
-          within(screen.getByRole('region', { name: 'Hobbies' }))
-            .getByRole('status')
-            .querySelectorAll('[aria-hidden="true"] li'),
+          screen
+            .getByRole('region', { name: 'Hobbies' })
+            .querySelectorAll('div[aria-hidden="true"] li'),
         ).toHaveLength(1)
       })
     })
