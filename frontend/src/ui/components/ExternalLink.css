@@ -1,0 +1,7 @@
+/* On paper there is no link to follow, so the address is printed after its label. */
+@media print {
+  .external-link::after {
+    content: ' (' attr(href) ')';
+    overflow-wrap: anywhere;
+  }
+}

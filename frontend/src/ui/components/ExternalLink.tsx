@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { messages } from '@/ui/i18n/messages'
 import { useLocale } from '@/ui/i18n/useLocale'
+import './ExternalLink.css'
 
 interface ExternalLinkProps {
   href: string
@@ -14,7 +15,7 @@ export function ExternalLink({ href, children, context }: ExternalLinkProps) {
   const text = messages[useLocale().locale]
 
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer">
+    <a href={href} className="external-link" target="_blank" rel="noopener noreferrer">
       {children}
       {context ? (
         <>
