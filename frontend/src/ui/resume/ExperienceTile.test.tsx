@@ -124,7 +124,7 @@ describe('ExperienceTile', () => {
 
       await expand('Software engineer')
 
-      expect(screen.getByText('Built the platform.')).toBeVisible()
+      expect(shown('Built the platform.')).toHaveLength(1)
       const link = screen.getByRole('link', { name: /^Website: Acme/ })
       expect(link).toBeVisible()
       expect(link).toHaveAttribute('href', 'https://example.com/acme')
@@ -265,7 +265,7 @@ describe('ExperienceTile', () => {
       await expand('Software engineer')
 
       expect(screen.queryByRole('list', { name: 'Main keywords' })).toBeNull()
-      expect(screen.getByText('Built the platform.')).toBeVisible()
+      expect(shown('Built the platform.')).toHaveLength(1)
       expect(screen.getByText('Led the migration.')).toBeVisible()
     })
 
