@@ -16,10 +16,13 @@ class ProfileSerializer(PublicProfileSerializer):
 
     class Meta(PublicProfileSerializer.Meta):
         fields = [
-            field
-            for field in PublicProfileSerializer.Meta.fields
-            if field != "main_stack"
-        ] + ["created_at", "updated_at"]
+            "full_name",
+            "headline",
+            "bio",
+            "desired_role",
+            "created_at",
+            "updated_at",
+        ]
 
 
 class ContactLinkSerializer(serializers.ModelSerializer):

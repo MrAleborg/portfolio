@@ -372,6 +372,9 @@ is the same as for the other routes: staff token, else `401` or `403`.
   optional (empty in every language when left out on creation).
 - The [writing rules](#writing-rules) above apply: translated texts in every
   language, per-language errors, read-only timestamps.
+- The public profile's `main_stack` is not part of this one (ignored if sent):
+  the main stack is chosen with `main_stack_position` on
+  [`skills/`, `tools/` and `methodologies/`](#skills-tools-methodologies).
 
 ## Contact links: `/api/v1/admin/profile/contact-links/`
 

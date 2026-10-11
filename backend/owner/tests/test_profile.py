@@ -118,6 +118,22 @@ def test_main_stack_is_ordered_by_position_then_by_english_name(api_client):
     assert ids == [first.id, tie_a.id, tie_b.id, last.id]
 
 
+def test_main_stack_orders_identical_positions_and_names_by_id(api_client):
+    """Two kinds may share a name: the older tag comes first, every time."""
+    make_profile()
+    older = Skill.objects.create(
+        name_en="Python", name_fr="Python", main_stack_position=1
+    )
+    newer = Tool.objects.create(
+        name_en="Python", name_fr="Python", main_stack_position=1
+    )
+
+    response = api_client.get(URL)
+
+    ids = [tag["id"] for tag in response.json()["main_stack"]]
+    assert ids == [older.id, newer.id]
+
+
 def test_main_stack_leaves_out_the_tags_without_a_position(api_client):
     make_profile()
     chosen = Skill.objects.create(
@@ -165,9 +181,7 @@ def test_main_stack_shows_a_tag_that_no_project_carries(api_client):
     assert [entry["id"] for entry in response.json()["main_stack"]] == [tag.id]
 
 
-def test_main_stack_adds_one_query_however_many_tags(
-    api_client, django_assert_num_queries
-):
+def test_main_stack_takes_a_single_query(api_client, django_assert_num_queries):
     """The profile and its tags: two queries."""
     make_profile()
     for position in range(4):

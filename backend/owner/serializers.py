@@ -20,7 +20,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     def get_main_stack(self, profile):
         """The tags the owner chose, of any kind, whether or not a project uses them."""
         tags = Tag.objects.filter(main_stack_position__isnull=False).order_by(
-            "main_stack_position", "name_en"
+            "main_stack_position", "name_en", "id"
         )
         return TagWithKindSerializer(tags, many=True).data
 
