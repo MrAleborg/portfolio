@@ -28,3 +28,18 @@
   padding-top: 0;
   border-top: 0;
 }
+
+/* On paper the certifications of a specialization are entries set in under it, apart by space alone. */
+@media print {
+  .tile--row .specialization-certifications {
+    gap: 0.75rem;
+  }
+
+  .tile--row .specialization-certifications > li > .tile--nested {
+    padding: 0;
+  }
+
+  .tile--row .specialization-certifications > li + li {
+    border-top: 0;
+  }
+}

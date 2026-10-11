@@ -165,18 +165,28 @@
   }
 }
 
-/* On paper every entry is open: the details show, the preview and the means of opening them do not. */
+/*
+ * On paper an entry is not a card but a flat block of text, open, with its details under its
+ * header. A card may run over a page, but its header stays with the start of its details.
+ */
 @media print {
-  /* Smaller than on screen, to match the smaller text; a row has no card to pad. */
-  .tile:not(.tile--row) {
-    padding: 0.75rem 1rem;
-  }
-
   .tile {
-    border-top: 1px solid var(--border);
+    padding: 0;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
   }
 
-  /* A card may run over a page, but its header stays with the start of its details. */
+  .tile-list > li:last-child > .tile--row {
+    border-bottom: 0;
+  }
+
+  /* A project in a job: a smaller heading, set in under the job. */
+  .tile--nested {
+    margin-left: 1rem;
+  }
+
   .tile__title,
   .tile__subtitle,
   .tile__meta,
@@ -187,6 +197,13 @@
   .tile--nested,
   .tile--row {
     break-inside: avoid;
+  }
+
+  .tile__body,
+  .tile--row > .tile__body {
+    margin-top: 0.25rem;
+    padding-top: 0;
+    border-top: 0;
   }
 
   .tile__chevron,

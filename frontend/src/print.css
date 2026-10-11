@@ -9,8 +9,6 @@
   :root[data-theme] {
     color-scheme: light;
     --bg: #fff;
-    --surface: #fff;
-    --shadow: none;
 
     /* Ratio 1.2 from 10.5pt. */
     --step--1: 9pt;
@@ -19,9 +17,5 @@
     --step-2: 15pt;
     --step-3: 18pt;
     --step-4: 21pt;
-
-    /* Keeps the tinted chips and filled dots when the browser leaves backgrounds out. */
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
   }
 }

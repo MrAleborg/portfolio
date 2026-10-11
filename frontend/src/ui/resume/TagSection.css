@@ -26,14 +26,19 @@
   font-size: inherit;
 }
 
-/* The card keeps a thin border like the tiles; a domain stays in one piece. */
 @media print {
+  /* No card: the domains are blocks of text. */
   .tag-summary {
-    padding: 0.75rem 1rem;
-    border-top: 1px solid var(--border);
+    gap: 0.75rem;
+    padding: 0;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
   }
 
   .tag-summary__domain {
+    gap: 0.25rem;
     break-inside: avoid;
   }
 
