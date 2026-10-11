@@ -1,4 +1,4 @@
-import { useId, type Key, type ReactElement, type ReactNode } from 'react'
+import { useEffect, useId, useRef, type Key, type ReactElement, type ReactNode } from 'react'
 import type { AsyncState } from '@/ui/async/useAsync'
 import { TileList } from '@/ui/components/TileList'
 import { messages } from '@/ui/i18n/messages'
@@ -44,6 +44,18 @@ export function ResumeSection<T>(props: ResumeSectionProps<T>) {
   const text = messages[useLocale().locale]
   const titleId = useId()
   const { context, count, allOpen, toggleAll } = useSectionRegistry(variant)
+  const loading = state.status === 'loading'
+  const status = useRef<HTMLDivElement>(null)
+  // The text goes into the status after it is in the page: many screen readers
+  // ignore a live region that already holds text when it appears.
+  useEffect(() => {
+    if (!loading) return
+    const label = document.createElement('span')
+    label.className = 'visually-hidden'
+    label.textContent = text.loading
+    status.current?.append(label)
+    return () => label.remove()
+  }, [loading, text.loading])
 
   return (
     <SectionContext.Provider value={context}>
@@ -73,15 +85,13 @@ export function ResumeSection<T>(props: ResumeSectionProps<T>) {
             </button>
           )}
         </div>
-        {state.status === 'loading' && (
-          <div role="status">
-            <span className="visually-hidden">{text.loading}</span>
-            <SectionSkeleton
-              variant={variant}
-              placeholderCount={props.placeholderCount}
-              singleColumn={props.singleColumn || props.renderItems !== undefined}
-            />
-          </div>
+        <div role="status" ref={status} />
+        {loading && (
+          <SectionSkeleton
+            variant={variant}
+            placeholderCount={props.placeholderCount}
+            singleColumn={props.singleColumn || props.renderItems !== undefined}
+          />
         )}
         {state.status === 'error' && (
           <p role="alert">{text.sectionUnavailable}</p>
