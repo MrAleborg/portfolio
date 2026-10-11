@@ -802,4 +802,81 @@ describe('ResumeIndex', () => {
       expect(screen.getByRole('list').scrollLeft).toBe(0)
     })
   })
+
+  describe('chip bar edge fade', () => {
+    const navigationName = 'Resume sections'
+
+    /** The bar as the browser lays it out: `scrollLeft` of `scrollWidth` shown through `clientWidth`. */
+    function layOutBar(
+      bar: HTMLElement,
+      { scrollLeft = 0, scrollWidth = 800, clientWidth = 300 },
+    ) {
+      Object.defineProperty(bar, 'scrollLeft', { value: scrollLeft, configurable: true })
+      Object.defineProperty(bar, 'scrollWidth', { value: scrollWidth, configurable: true })
+      Object.defineProperty(bar, 'clientWidth', { value: clientWidth, configurable: true })
+    }
+
+    function scrollBar(bar: HTMLElement, layout: Parameters<typeof layOutBar>[1]) {
+      layOutBar(bar, layout)
+      act(() => {
+        fireEvent.scroll(bar)
+      })
+    }
+
+    it('fades the end of the bar as soon as it opens, when chips are already hidden to the right', () => {
+      vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockReturnValue(800)
+      vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(300)
+
+      renderIndex()
+
+      const nav = screen.getByRole('navigation', { name: navigationName })
+      expect(nav).toHaveAttribute('data-overflow-end')
+      expect(nav).not.toHaveAttribute('data-overflow-start')
+    })
+
+    it('fades only the end of the bar at its start, where chips are hidden to the right', () => {
+      renderIndex()
+
+      scrollBar(screen.getByRole('list'), { scrollLeft: 0, scrollWidth: 800, clientWidth: 300 })
+
+      const nav = screen.getByRole('navigation', { name: navigationName })
+      expect(nav).toHaveAttribute('data-overflow-end')
+      expect(nav).not.toHaveAttribute('data-overflow-start')
+    })
+
+    it('fades both ends of the bar in the middle', () => {
+      renderIndex()
+
+      scrollBar(screen.getByRole('list'), { scrollLeft: 200, scrollWidth: 800, clientWidth: 300 })
+
+      const nav = screen.getByRole('navigation', { name: navigationName })
+      expect(nav).toHaveAttribute('data-overflow-start')
+      expect(nav).toHaveAttribute('data-overflow-end')
+    })
+
+    it('fades only the start of the bar at its end, where chips are hidden to the left', () => {
+      renderIndex()
+
+      scrollBar(screen.getByRole('list'), { scrollLeft: 500, scrollWidth: 800, clientWidth: 300 })
+
+      const nav = screen.getByRole('navigation', { name: navigationName })
+      expect(nav).toHaveAttribute('data-overflow-start')
+      expect(nav).not.toHaveAttribute('data-overflow-end')
+    })
+
+    it('fades neither end once the bar is wide enough to show every chip', () => {
+      const resizing = stubResizeObserver()
+      renderIndex()
+      const bar = screen.getByRole('list')
+      scrollBar(bar, { scrollLeft: 0, scrollWidth: 800, clientWidth: 300 })
+      const nav = screen.getByRole('navigation', { name: navigationName })
+      expect(nav).toHaveAttribute('data-overflow-end')
+
+      layOutBar(bar, { scrollLeft: 0, scrollWidth: 300, clientWidth: 300 })
+      resizing.resize()
+
+      expect(nav).not.toHaveAttribute('data-overflow-start')
+      expect(nav).not.toHaveAttribute('data-overflow-end')
+    })
+  })
 })
