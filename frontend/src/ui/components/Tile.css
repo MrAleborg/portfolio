@@ -50,7 +50,7 @@
   border-right: 2px solid currentColor;
   border-bottom: 2px solid currentColor;
   transform: rotate(45deg);
-  transition: transform 0.2s ease, margin-top 0.2s ease;
+  transition: transform 0.2s ease-out, margin-top 0.2s ease-out;
 }
 
 .tile__toggle[aria-expanded='true'] .tile__chevron {
