@@ -11,41 +11,9 @@
   --timeline-offset: 1rem;
 }
 
-/* The rule beside the entries replaces the line above a row. */
-.timeline .tile--row {
-  border-top: 0;
-}
-
 .timeline__item {
   /* The middle of the dot, from the top of the item: level with the middle of the date line. */
   --timeline-dot-centre: calc(0.85rem * 1.5 / 2);
-
-  position: relative;
-  padding: 0 0 1.25rem 1.75rem;
-}
-
-/* The rule runs from the first dot to the last one. */
-.timeline__item::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: calc(0.375rem - 1px);
-  width: 2px;
-  background: var(--border);
-}
-
-.timeline__item:first-child::before {
-  top: var(--timeline-dot-centre);
-}
-
-.timeline__item:last-child::before {
-  bottom: auto;
-  height: var(--timeline-dot-centre);
-}
-
-.timeline__item:only-child::before {
-  display: none;
 }
 
 .timeline__when {
@@ -64,20 +32,56 @@
   color: var(--text);
 }
 
-.timeline__dot {
-  position: absolute;
-  z-index: 1;
-  top: calc(var(--timeline-dot-centre) - 0.375rem);
-  left: 0;
-  width: 0.75rem;
-  height: 0.75rem;
-  background: var(--bg);
-  border: 2px solid var(--accent);
-  border-radius: 50%;
-}
+/* On screen a rule runs down the entries, from the first dot to the last one, with a dot by each. */
+@media screen {
+  /* The rule beside the entries replaces the line above a row. */
+  .timeline .tile--row {
+    border-top: 0;
+  }
 
-.timeline__dot[data-ongoing] {
-  background: var(--accent);
+  .timeline__item {
+    position: relative;
+    padding: 0 0 1.25rem 1.75rem;
+  }
+
+  .timeline__item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(0.375rem - 1px);
+    width: 2px;
+    background: var(--border);
+  }
+
+  .timeline__item:first-child::before {
+    top: var(--timeline-dot-centre);
+  }
+
+  .timeline__item:last-child::before {
+    bottom: auto;
+    height: var(--timeline-dot-centre);
+  }
+
+  .timeline__item:only-child::before {
+    display: none;
+  }
+
+  .timeline__dot {
+    position: absolute;
+    z-index: 1;
+    top: calc(var(--timeline-dot-centre) - 0.375rem);
+    left: 0;
+    width: 0.75rem;
+    height: 0.75rem;
+    background: var(--bg);
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+  }
+
+  .timeline__dot[data-ongoing] {
+    background: var(--accent);
+  }
 }
 
 @media screen and (min-width: 48rem) {
@@ -124,15 +128,10 @@
   }
 }
 
-/* On paper there is no rule, no dots and no date column: the dates are a line above the entry. */
+/* On paper there is no date column: the dates are a line above the entry. */
 @media print {
   .timeline__item {
     padding: 0 0 0.75rem;
-  }
-
-  .timeline__item::before,
-  .timeline__dot {
-    display: none;
   }
 
   .timeline__when {
