@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type Key, type ReactElement, type ReactNode } from 'react'
+import { useDeferredValue, useId, type Key, type ReactElement, type ReactNode } from 'react'
 import type { AsyncState } from '@/ui/async/useAsync'
 import { TileList } from '@/ui/components/TileList'
 import { messages } from '@/ui/i18n/messages'
@@ -45,17 +45,9 @@ export function ResumeSection<T>(props: ResumeSectionProps<T>) {
   const titleId = useId()
   const { context, count, allOpen, toggleAll } = useSectionRegistry(variant)
   const loading = state.status === 'loading'
-  const status = useRef<HTMLDivElement>(null)
   // The text goes into the status after it is in the page: many screen readers
   // ignore a live region that already holds text when it appears.
-  useEffect(() => {
-    if (!loading) return
-    const label = document.createElement('span')
-    label.className = 'visually-hidden'
-    label.textContent = text.loading
-    status.current?.append(label)
-    return () => label.remove()
-  }, [loading, text.loading])
+  const announce = useDeferredValue(loading, false)
 
   return (
     <SectionContext.Provider value={context}>
@@ -85,7 +77,11 @@ export function ResumeSection<T>(props: ResumeSectionProps<T>) {
             </button>
           )}
         </div>
-        <div role="status" ref={status} />
+        <div role="status">
+          {announce && loading && (
+            <span className="visually-hidden">{text.loadingSection(title)}</span>
+          )}
+        </div>
         {loading && (
           <SectionSkeleton
             variant={variant}

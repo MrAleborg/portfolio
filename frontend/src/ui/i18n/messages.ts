@@ -64,6 +64,7 @@ interface Messages {
   employmentTypes: Record<EmploymentType, string>
   tagKinds: Record<TagKind, string>
   loading: string
+  loadingSection: (title: string) => string
   profileUnavailable: string
   sectionUnavailable: string
   sectionEmpty: string
@@ -168,6 +169,7 @@ export const messages: Localized<Messages> = {
     },
     tagKinds: { skill: 'Skills', tool: 'Tools', methodology: 'Methodologies' },
     loading: 'Loading…',
+    loadingSection: (title) => `Loading ${title}…`,
     profileUnavailable:
       'The profile could not be loaded. Please try again later.',
     sectionUnavailable:
@@ -262,6 +264,7 @@ export const messages: Localized<Messages> = {
     },
     tagKinds: { skill: 'Compétences', tool: 'Outils', methodology: 'Méthodologies' },
     loading: 'Chargement…',
+    loadingSection: (title) => `Chargement\u202f: ${title}…`,
     profileUnavailable: 'Le profil n’a pas pu être chargé. Réessayez plus tard.',
     sectionUnavailable:
       'Cette section n’a pas pu être chargée. Réessayez plus tard.',

@@ -10,7 +10,7 @@ interface SectionSkeletonProps {
   placeholderCount?: number
 }
 
-const PLACEHOLDERS: Record<SectionVariant, readonly number[]> = { card: [0, 1], row: [0, 1, 2] }
+const PLACEHOLDERS: Record<SectionVariant, number> = { card: 2, row: 3 }
 
 /**
  * Placeholders shaped like a section's entries, shown while they load so the page barely
@@ -21,10 +21,7 @@ export function SectionSkeleton({
   singleColumn = false,
   placeholderCount,
 }: SectionSkeletonProps) {
-  const placeholders =
-    placeholderCount === undefined
-      ? PLACEHOLDERS[variant]
-      : Array.from({ length: placeholderCount }, (_, index) => index)
+  const placeholders = [...Array(placeholderCount ?? PLACEHOLDERS[variant]).keys()]
 
   return (
     <div aria-hidden="true">

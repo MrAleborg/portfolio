@@ -1,6 +1,12 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { isInaccessible, render, screen, within } from '@testing-library/react'
+import {
+  getDefaultNormalizer,
+  isInaccessible,
+  render,
+  screen,
+  within,
+} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState, type ReactElement } from 'react'
 import type { Locale } from '@/domain/i18n/Locale'
@@ -153,7 +159,11 @@ describe('ResumeSection', () => {
     it('announces the loading in French with visually hidden text', () => {
       renderLoading({ locale: 'fr' })
 
-      expect(section().getByText('Chargement\u202f: Things…')).toHaveClass('visually-hidden')
+      expect(
+        section().getByText('Chargement\u202f: Things…', {
+          normalizer: getDefaultNormalizer({ collapseWhitespace: false }),
+        }),
+      ).toHaveClass('visually-hidden')
     })
 
     it('shows two card placeholders in a card section', () => {
