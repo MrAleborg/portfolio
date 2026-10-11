@@ -7,6 +7,7 @@ import { EducationSection } from '@/ui/resume/EducationSection'
 import { ExperienceSection } from '@/ui/resume/ExperienceSection'
 import { HobbySection } from '@/ui/resume/HobbySection'
 import { ResumeIndex } from '@/ui/resume/ResumeIndex'
+import { ResumePrintHeader } from '@/ui/resume/ResumePrintHeader'
 import { resumeSections, type ResumeSectionId } from '@/ui/resume/resumeSections'
 import { ScientificCommunicationSection } from '@/ui/resume/ScientificCommunicationSection'
 import { SideProjectSection } from '@/ui/resume/SideProjectSection'
@@ -41,6 +42,10 @@ export function ResumePage({ repositories }: ResumePageProps) {
 
   return (
     <div className="resume">
+      <ResumePrintHeader
+        profileRepository={repositories.profile}
+        contactRepository={repositories.contact}
+      />
       <h1 className="resume__title">{text.resumeTitle}</h1>
       <ResumeIndex />
       <div className="resume__sections">

@@ -113,3 +113,9 @@
     height: 100%;
   }
 }
+
+@media print {
+  .resume-index {
+    display: none;
+  }
+}

@@ -52,3 +52,27 @@
     --anchor-offset: calc(var(--header-height) + 1rem);
   }
 }
+
+/* One column of sections, at the full width of the page. The index is hidden. */
+@media print {
+  .resume {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+    max-width: none;
+    margin: 0;
+  }
+
+  /* The name heads the page, in the print header; without it the title stays. */
+  .resume-print-header ~ .resume__title {
+    display: none;
+  }
+
+  .resume__sections {
+    grid-column: 1;
+    gap: 1.25rem;
+  }
+
+  .resume__anchor:last-child {
+    min-height: 0;
+  }
+}

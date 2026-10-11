@@ -25,3 +25,25 @@
 .tag-summary .tag-list__label {
   font-size: inherit;
 }
+
+@media print {
+  /* No card: the domains are blocks of text. */
+  .tag-summary {
+    gap: 0.75rem;
+    padding: 0;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .tag-summary__domain {
+    gap: 0.25rem;
+    break-inside: avoid;
+  }
+
+  /* Every domain is open on paper. */
+  .tag-summary__domain > [hidden] {
+    display: block;
+  }
+}

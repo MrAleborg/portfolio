@@ -137,7 +137,7 @@
   border-top: 0;
 }
 
-@media (min-width: 48rem) {
+@media (min-width: 48rem), print {
   .tile--row {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
@@ -162,5 +162,56 @@
   .tile--row > .tile__preview,
   .tile--row > .tile__body {
     grid-column: 1 / -1;
+  }
+}
+
+/*
+ * On paper an entry is not a card but a flat block of text, open, with its details under its
+ * header. A card may run over a page, but its header stays with the start of its details.
+ */
+@media print {
+  .tile {
+    padding: 0;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .tile-list > li:last-child > .tile--row {
+    border-bottom: 0;
+  }
+
+  /* A project in a job: a smaller heading, set in under the job. */
+  .tile--nested {
+    margin-left: 1rem;
+  }
+
+  .tile__title,
+  .tile__subtitle,
+  .tile__meta,
+  .tile__label {
+    break-after: avoid;
+  }
+
+  .tile--nested,
+  .tile--row {
+    break-inside: avoid;
+  }
+
+  .tile__body,
+  .tile--row > .tile__body {
+    margin-top: 0.25rem;
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .tile__chevron,
+  .tile__preview {
+    display: none;
+  }
+
+  .tile__body[hidden] {
+    display: block;
   }
 }

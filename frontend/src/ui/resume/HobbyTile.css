@@ -25,3 +25,16 @@
 .hobby-tile--row > .hobby-tile__hobby:last-child {
   border-bottom: 1px solid var(--border);
 }
+
+/* On paper the hobbies are plain entries, set apart by space alone. */
+@media print {
+  /* `:nth-child(n)` matches every hobby: it only raises the specificity above the rules of the screen. */
+  :is(.tile, .hobby-tile--row) > .hobby-tile__hobby:nth-child(n) {
+    padding: 0;
+    border: 0;
+  }
+
+  :is(.tile, .hobby-tile--row) > .hobby-tile__hobby + .hobby-tile__hobby {
+    margin-top: 0.75rem;
+  }
+}

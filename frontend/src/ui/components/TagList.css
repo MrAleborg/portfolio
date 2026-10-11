@@ -55,3 +55,57 @@
 .tag:has(.tag__note) {
   border-radius: 0.75rem;
 }
+
+/* On paper a group is one line of text, "Label: a · b · c", not a row of chips. */
+@media print {
+  .tag-list {
+    gap: 0.125rem;
+  }
+
+  .tag-list__label,
+  .tag-list__tags,
+  .tag-list__tags > li {
+    display: inline;
+  }
+
+  .tag-list__label {
+    font-size: inherit;
+  }
+
+  .tag-list > div {
+    break-inside: avoid;
+  }
+
+  .tag-list__label::after {
+    content: ': ';
+  }
+
+  :lang(fr) .tag-list__label::after {
+    content: '\202F: ';
+  }
+
+  .tag-list__tags > li + li::before {
+    content: ' · ';
+  }
+
+  /* A note reads as part of its tag, "Java (10 years)", not as another tag. */
+  .tag__note > [aria-hidden] {
+    display: none;
+  }
+
+  .tag__note::before {
+    content: ' (';
+  }
+
+  .tag__note::after {
+    content: ')';
+  }
+
+  .tag {
+    padding: 0;
+    font-size: inherit;
+    color: var(--text);
+    background: none;
+    border: 0;
+  }
+}

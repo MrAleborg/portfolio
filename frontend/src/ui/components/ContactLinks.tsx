@@ -1,4 +1,5 @@
 import type { ContactLink } from '@/domain/contact/ContactLink'
+import { contactAddress } from '@/ui/components/contactAddress'
 import { ExternalLink } from '@/ui/components/ExternalLink'
 import { messages } from '@/ui/i18n/messages'
 import { useLocale } from '@/ui/i18n/useLocale'
@@ -21,7 +22,7 @@ export function ContactLinks({ links }: ContactLinksProps) {
       case 'website':
         return text.websiteLink
       default:
-        return link.url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')
+        return contactAddress(link)
     }
   }
 
@@ -35,7 +36,7 @@ export function ContactLinks({ links }: ContactLinksProps) {
               href={link.url}
               className="contact-links__link--large"
             >
-              {link.url.replace(/^mailto:/, '')}
+              {contactAddress(link)}
             </a>
           ))}
         </div>
