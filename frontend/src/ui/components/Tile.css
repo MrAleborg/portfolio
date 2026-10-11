@@ -194,7 +194,6 @@
     break-after: avoid;
   }
 
-  .tile--nested,
   .tile--row {
     break-inside: avoid;
   }
@@ -204,6 +203,8 @@
     margin-top: 0.25rem;
     padding-top: 0;
     border-top: 0;
+    orphans: 3;
+    widows: 3;
   }
 
   .tile__chevron,
