@@ -194,7 +194,8 @@
     break-after: avoid;
   }
 
-  .tile--row {
+  /* A short entry stays whole; one that holds nested tiles may run over a page, or it would leave a gap. */
+  .tile--row:not(:has(.tile--nested)) {
     break-inside: avoid;
   }
 
