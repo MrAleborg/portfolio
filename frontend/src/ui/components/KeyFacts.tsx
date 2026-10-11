@@ -4,6 +4,7 @@ import { currentExperience } from '@/domain/professionalExperience/currentExperi
 import { experienceMonths } from '@/domain/professionalExperience/experienceMonths'
 import { mainStack } from '@/domain/professionalExperience/mainStack'
 import type { ProfessionalExperience } from '@/domain/professionalExperience/ProfessionalExperience'
+import type { Tag } from '@/domain/tag/Tag'
 import { TagChips } from '@/ui/components/TagList'
 import { messages } from '@/ui/i18n/messages'
 import { useLocale } from '@/ui/i18n/useLocale'
@@ -15,6 +16,8 @@ interface KeyFactsProps {
   experiences: ProfessionalExperience[]
   /** Empty in every language when unset. */
   desiredRole: Localized<string>
+  /** The tags the owner chose for the main stack, in order. Empty to fall back to the ranking computed from the experiences. */
+  chosenStack: Tag[]
   /** Defaults to now. */
   today?: Date
 }
@@ -27,8 +30,12 @@ interface Fact {
   labelId?: string
 }
 
-/** What stands out about the owner: years of experience, current job or desired role, main stack. Only the facts that apply. */
-export function KeyFacts({ experiences, desiredRole, today = new Date() }: KeyFactsProps) {
+/**
+ * What stands out about the owner: years of experience, current job or desired role, main stack. Only the facts that apply.
+ * The main stack is the first 5 chosen tags in their order (methodologies included), or, when none is chosen,
+ * the 5 skills and tools most used across the experiences.
+ */
+export function KeyFacts({ experiences, desiredRole, chosenStack, today = new Date() }: KeyFactsProps) {
   const { locale } = useLocale()
   const headingId = useId()
   const stackLabelId = useId()
@@ -50,7 +57,10 @@ export function KeyFacts({ experiences, desiredRole, today = new Date() }: KeyFa
     facts.push({ label: text.factLookingFor, value: desiredRole[locale] })
   }
 
-  const stack = mainStack(experiences, MAIN_STACK_SIZE)
+  const stack =
+    chosenStack.length > 0
+      ? chosenStack.slice(0, MAIN_STACK_SIZE)
+      : mainStack(experiences, MAIN_STACK_SIZE)
   if (stack.length > 0) {
     facts.push({
       label: text.factMainStack,

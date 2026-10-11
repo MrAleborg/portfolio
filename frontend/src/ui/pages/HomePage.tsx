@@ -49,7 +49,11 @@ export function HomePage({ profileRepository, experienceRepository }: HomePagePr
           </Link>
         </div>
         {experiences.status === 'loaded' && (
-          <KeyFacts experiences={experiences.value} desiredRole={state.value.desiredRole} />
+          <KeyFacts
+            experiences={experiences.value}
+            desiredRole={state.value.desiredRole}
+            chosenStack={state.value.mainStack}
+          />
         )}
       </div>
       <Avatar

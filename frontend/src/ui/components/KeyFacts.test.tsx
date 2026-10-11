@@ -44,10 +44,16 @@ function renderFacts(
   experiences: ProfessionalExperience[],
   desiredRole = NO_ROLE,
   locale: Locale = 'en',
+  chosenStack: Tag[] = [],
 ) {
   return render(
     <LocaleProvider initialLocale={locale}>
-      <KeyFacts experiences={experiences} desiredRole={desiredRole} today={OCTOBER_2026} />
+      <KeyFacts
+        experiences={experiences}
+        desiredRole={desiredRole}
+        chosenStack={chosenStack}
+        today={OCTOBER_2026}
+      />
     </LocaleProvider>,
   )
 }
@@ -123,6 +129,43 @@ describe('KeyFacts', () => {
       'Tag 4',
       'Tag 5',
     ])
+  })
+
+  describe('with a chosen stack', () => {
+    const chips = () =>
+      within(screen.getByRole('list', { name: 'Main stack' }))
+        .getAllByRole('listitem')
+        .map((chip) => chip.textContent)
+
+    it('shows the chosen tags in the given order instead of the computed ranking', () => {
+      renderFacts(
+        [experience('2020-01-01', '2021-12-31', [tag(1), tag(2), tag(3)])],
+        NO_ROLE,
+        'en',
+        [tag(9), tag(8), tag(7)],
+      )
+
+      expect(chips()).toEqual(['Tag 9', 'Tag 8', 'Tag 7'])
+    })
+
+    it('shows at most the first 5 chosen tags', () => {
+      renderFacts([], NO_ROLE, 'en', [1, 2, 3, 4, 5, 6, 7].map((id) => tag(id)))
+
+      expect(chips()).toEqual(['Tag 1', 'Tag 2', 'Tag 3', 'Tag 4', 'Tag 5'])
+    })
+
+    it('keeps a chosen methodology, unlike the computed ranking', () => {
+      renderFacts([], NO_ROLE, 'en', [tag(1, 'skill'), tag(2, 'methodology')])
+
+      expect(chips()).toEqual(['Tag 1', 'Tag 2'])
+      expect(screen.getByText('Tag 2')).toHaveClass('tag--methodology')
+    })
+
+    it('shows the main stack even when the experiences have no tag', () => {
+      renderFacts([experience('2015-09-01', '2024-12-31')], NO_ROLE, 'en', [tag(1)])
+
+      expect(terms()).toEqual(['Experience', 'Main stack'])
+    })
   })
 
   it('colours the stack chips by kind of tag', () => {

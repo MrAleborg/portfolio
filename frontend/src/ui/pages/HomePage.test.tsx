@@ -226,6 +226,20 @@ describe('HomePage', () => {
       expect(await screen.findByText('Engineer')).toBeInTheDocument()
     })
 
+    it('shows the main stack chosen on the profile', async () => {
+      const chosen = [
+        { id: 90, name: { en: 'Kanban', fr: 'Kanban' }, kind: 'methodology' as const },
+        { id: 91, name: { en: 'Rust', fr: 'Rust' }, kind: 'skill' as const },
+      ]
+      renderPage(fakeProfileRepository({ ...ada, mainStack: chosen }))
+
+      const stack = await screen.findByRole('list', { name: 'Main stack' })
+      expect(within(stack).getAllByRole('listitem').map((chip) => chip.textContent)).toEqual([
+        'Kanban',
+        'Rust',
+      ])
+    })
+
     it('keeps saying it is loading, without the hero yet, while the experiences are loading', async () => {
       renderPage(fakeProfileRepository(), 'en', { list: pending<ProfessionalExperience>() })
       await act(async () => {})
