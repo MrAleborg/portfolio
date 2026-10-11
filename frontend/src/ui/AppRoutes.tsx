@@ -12,7 +12,14 @@ interface AppRoutesProps {
 export function AppRoutes({ repositories }: AppRoutesProps) {
   return (
     <Routes>
-      <Route element={<Layout profileRepository={repositories.profile} />}>
+      <Route
+        element={
+          <Layout
+            profileRepository={repositories.profile}
+            contactRepository={repositories.contact}
+          />
+        }
+      >
         <Route
           index
           element={

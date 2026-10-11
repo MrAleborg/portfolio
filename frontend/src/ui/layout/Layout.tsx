@@ -1,18 +1,21 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigationType } from 'react-router'
+import type { ContactRepository } from '@/domain/contact/ContactRepository'
 import type { ProfileRepository } from '@/domain/profile/ProfileRepository'
 import { useAsync } from '@/ui/async/useAsync'
 import { ErrorBoundary } from '@/ui/components/ErrorBoundary'
 import { SettingsMenu } from '@/ui/components/SettingsMenu'
 import { messages } from '@/ui/i18n/messages'
 import { useLocale } from '@/ui/i18n/useLocale'
+import { Footer } from '@/ui/layout/Footer'
 import './Layout.css'
 
 interface LayoutProps {
   profileRepository: ProfileRepository
+  contactRepository: ContactRepository
 }
 
-export function Layout({ profileRepository }: LayoutProps) {
+export function Layout({ profileRepository, contactRepository }: LayoutProps) {
   const text = messages[useLocale().locale]
   const { pathname, hash, key } = useLocation()
   const navigationType = useNavigationType()
@@ -63,6 +66,10 @@ export function Layout({ profileRepository }: LayoutProps) {
           <Outlet />
         </ErrorBoundary>
       </main>
+      <Footer
+        fullName={profile.status === 'loaded' ? profile.value.fullName : undefined}
+        contactRepository={contactRepository}
+      />
     </div>
   )
 }
