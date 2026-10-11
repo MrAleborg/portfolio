@@ -2,6 +2,7 @@ import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, useNavigate } from 'react-router'
 import type { Locale } from '@/domain/i18n/Locale'
+import { fakeContactRepository } from '@/test/fakeContactRepository'
 import { fakeEducationRepository, masters } from '@/test/fakeEducationRepository'
 import {
   failingProfileRepository,
@@ -115,7 +116,7 @@ describe('AppRoutes', () => {
       'page',
     )
     expect(
-      await within(screen.getByRole('main')).findByRole('link', { name: 'ada@example.com' }),
+      within(screen.getByRole('main')).getByRole('button', { name: 'Send message' }),
     ).toBeInTheDocument()
   })
 
@@ -246,6 +247,22 @@ describe('AppRoutes', () => {
       )
       expect(footer.getByRole('link', { name: /^GitHub/ })).toBeInTheDocument()
       expect(await footer.findByText(/^© \d{4} Ada Lovelace$/)).toBeInTheDocument()
+    })
+
+    it('lists the contact links on /contact in the footer only, not in the page itself', async () => {
+      renderAt('/contact')
+      const footer = within(await screen.findByRole('contentinfo'))
+      await footer.findByRole('link', { name: 'ada@example.com' })
+
+      expect(within(screen.getByRole('main')).queryAllByRole('link')).toHaveLength(0)
+    })
+
+    it('loads the contact links once on /contact, for the footer', async () => {
+      const contact = fakeContactRepository()
+      renderAt('/contact', { repositories: fakeRepositories({ contact }) })
+      await within(await screen.findByRole('contentinfo')).findByRole('link', { name: 'ada@example.com' })
+
+      expect(contact.links).toHaveBeenCalledTimes(1)
     })
 
     it('labels its links in French', async () => {
