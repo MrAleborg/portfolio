@@ -24,8 +24,6 @@ interface Messages {
   /** Accessible name of the in-page navigation between the resume sections. */
   resumeSectionsLabel: string
   contactTitle: string
-  contactIntro: string
-  contactLinksUnavailable: string
   contactName: string
   contactEmail: string
   contactSubject: string
@@ -35,7 +33,8 @@ interface Messages {
   /** Label of the field only bots fill. */
   contactTrap: string
   contactSending: string
-  contactSent: (email: string) => string
+  contactSentTitle: string
+  contactSentReply: (email: string) => string
   contactThrottled: string
   contactUnavailable: string
   expertiseTitle: string
@@ -111,8 +110,6 @@ export const messages: Localized<Messages> = {
     resumeTitle: 'Resume',
     resumeSectionsLabel: 'Resume sections',
     contactTitle: 'Contact',
-    contactIntro: 'Write to me, or find me elsewhere.',
-    contactLinksUnavailable: 'Links couldn’t be loaded.',
     contactName: 'Name',
     contactEmail: 'Email',
     contactSubject: 'Subject',
@@ -126,7 +123,8 @@ export const messages: Localized<Messages> = {
     },
     contactTrap: 'Website',
     contactSending: 'Sending…',
-    contactSent: (email) => `Message sent. I’ll reply to ${email}.`,
+    contactSentTitle: 'Message sent',
+    contactSentReply: (email) => `I’ll reply to ${email}.`,
     contactThrottled: 'Too many messages; try again in an hour.',
     contactUnavailable: 'Messages can’t be sent right now; try again later.',
     expertiseTitle: 'Expertise',
@@ -205,8 +203,6 @@ export const messages: Localized<Messages> = {
     resumeTitle: 'CV',
     resumeSectionsLabel: 'Sections du CV',
     contactTitle: 'Contact',
-    contactIntro: 'Écrivez-moi, ou retrouvez-moi ailleurs.',
-    contactLinksUnavailable: 'Les liens n’ont pas pu être chargés.',
     contactName: 'Nom',
     contactEmail: 'E-mail',
     contactSubject: 'Objet',
@@ -220,7 +216,8 @@ export const messages: Localized<Messages> = {
     },
     contactTrap: 'Site web',
     contactSending: 'Envoi…',
-    contactSent: (email) => `Message envoyé. Je vous répondrai à ${email}.`,
+    contactSentTitle: 'Message envoyé',
+    contactSentReply: (email) => `Je vous répondrai à ${email}.`,
     contactThrottled: 'Trop de messages ; réessayez dans une heure.',
     contactUnavailable:
       'Les messages ne peuvent pas être envoyés pour le moment ; réessayez plus tard.',

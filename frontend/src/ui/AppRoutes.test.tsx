@@ -115,7 +115,7 @@ describe('AppRoutes', () => {
       'page',
     )
     expect(
-      await within(screen.getByRole('main')).findByRole('link', { name: 'ada@example.com' }),
+      within(screen.getByRole('main')).getByRole('button', { name: 'Send message' }),
     ).toBeInTheDocument()
   })
 
@@ -246,6 +246,14 @@ describe('AppRoutes', () => {
       )
       expect(footer.getByRole('link', { name: /^GitHub/ })).toBeInTheDocument()
       expect(await footer.findByText(/^© \d{4} Ada Lovelace$/)).toBeInTheDocument()
+    })
+
+    it('lists the contact links on /contact in the footer only, not in the page itself', async () => {
+      renderAt('/contact')
+      const footer = within(await screen.findByRole('contentinfo'))
+      await footer.findByRole('link', { name: 'ada@example.com' })
+
+      expect(within(screen.getByRole('main')).queryAllByRole('link')).toHaveLength(0)
     })
 
     it('labels its links in French', async () => {

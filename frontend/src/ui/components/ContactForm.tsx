@@ -26,11 +26,11 @@ export function ContactForm({ repository }: ContactFormProps) {
   const [sentTo, setSentTo] = useState<string>()
   const [fieldErrors, setFieldErrors] = useState<ContactFieldErrors>({})
   const [failure, setFailure] = useState<ContactSendFailure>()
-  const confirmation = useRef<HTMLParagraphElement>(null)
+  const confirmationTitle = useRef<HTMLHeadingElement>(null)
 
-  // The form is gone once the message is sent: the confirmation takes over the focus.
+  // The form is gone once the message is sent: the confirmation title takes over the focus.
   useEffect(() => {
-    confirmation.current?.focus()
+    confirmationTitle.current?.focus()
   }, [sentTo])
 
   function submit(event: FormEvent) {
@@ -55,9 +55,32 @@ export function ContactForm({ repository }: ContactFormProps) {
 
   if (sentTo !== undefined) {
     return (
-      <p ref={confirmation} role="status" tabIndex={-1}>
-        {text.contactSent(sentTo)}
-      </p>
+      <div className="contact-sent">
+        <span className="contact-sent__mark" aria-hidden="true">
+          {/* The check of Lucide. */}
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={3}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M20 6 9 17l-5-5" />
+          </svg>
+        </span>
+        <h2
+          ref={confirmationTitle}
+          tabIndex={-1}
+          aria-describedby={`${id}-reply`}
+          className="contact-sent__title"
+        >
+          {text.contactSentTitle}
+        </h2>
+        <p id={`${id}-reply`} className="contact-sent__reply">
+          {text.contactSentReply(sentTo)}
+        </p>
+      </div>
     )
   }
 
