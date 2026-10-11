@@ -97,7 +97,12 @@ describe('usePrintOnceLinks', () => {
     beforePrint()
     expect(repeatedLabels(container)).toEqual(['Link 2'])
 
-    rerender(<Links hrefs={[a, a, a]} />)
+    rerender(
+      <>
+        {null}
+        <Links hrefs={[a, a, a]} />
+      </>,
+    )
     beforePrint()
 
     expect(repeatedLabels(container)).toEqual(['Link 2'])

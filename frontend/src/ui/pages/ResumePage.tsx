@@ -12,6 +12,7 @@ import { resumeSections, type ResumeSectionId } from '@/ui/resume/resumeSections
 import { ScientificCommunicationSection } from '@/ui/resume/ScientificCommunicationSection'
 import { SideProjectSection } from '@/ui/resume/SideProjectSection'
 import { TagSection } from '@/ui/resume/TagSection'
+import { usePrintOnceLinks } from '@/ui/resume/usePrintOnceLinks'
 import type { Repositories } from '@/ui/Repositories'
 import './ResumePage.css'
 
@@ -21,6 +22,7 @@ interface ResumePageProps {
 
 export function ResumePage({ repositories }: ResumePageProps) {
   const text = messages[useLocale().locale]
+  usePrintOnceLinks()
 
   const sectionById: Record<ResumeSectionId, ReactNode> = {
     expertise: <TagSection repository={repositories.tag} />,

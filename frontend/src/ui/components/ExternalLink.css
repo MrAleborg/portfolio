@@ -4,4 +4,9 @@
     content: ' (' attr(href) ')';
     overflow-wrap: anywhere;
   }
+
+  /* Once is enough: see usePrintOnceLinks. */
+  .external-link--repeat::after {
+    content: none;
+  }
 }
