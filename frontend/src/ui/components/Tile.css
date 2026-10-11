@@ -101,10 +101,6 @@
   margin: 0;
 }
 
-.tile--row > .tile__body {
-  margin-top: 0.75rem;
-}
-
 /*
  * On screen an entry is a card, or in a secondary section a ruled row. On paper it is a flat
  * block of text with none of this, so it is set here and not undone in the print rules below.
@@ -182,7 +178,7 @@
 }
 
 /*
- * On paper an entry is a flat block of text, open, with its details under its header. A card
+ * On paper an entry is a flat block of text, open, with its details under its header. An entry
  * may run over a page, but its header stays with the start of its details.
  */
 @media print {
@@ -202,8 +198,7 @@
     break-inside: avoid;
   }
 
-  .tile__body,
-  .tile--row > .tile__body {
+  .tile__body {
     margin-top: 0.25rem;
     orphans: 3;
     widows: 3;

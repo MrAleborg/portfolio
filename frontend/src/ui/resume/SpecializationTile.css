@@ -6,10 +6,7 @@
   list-style: none;
 }
 
-/*
- * In a secondary section the certifications are a plain ruled list on screen, not small cards.
- * On paper they are entries set in under the specialization, apart by space alone.
- */
+/* In a secondary section the certifications are a plain ruled list on screen, not small cards. */
 @media screen {
   .tile--row .specialization-certifications {
     gap: 0;
