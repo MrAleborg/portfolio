@@ -338,15 +338,6 @@ def test_list_runs_a_fixed_number_of_queries(
     assert response.status_code == 200
 
 
-def test_main_stack_position_is_empty_by_default(route):
-    """A new tag is not in the main stack until the owner picks a position."""
-    _, _, model, _ = route
-
-    tag = model.objects.create(name_en="Docker", name_fr="Docker")
-
-    assert tag.main_stack_position is None
-
-
 def test_create_with_a_main_stack_position(staff_api_client, route):
     """The position is written on creation and returned."""
     basename, _, model, _ = route
@@ -413,12 +404,13 @@ def test_other_updates_keep_the_main_stack_position(staff_api_client, route):
         name_en="Docker", name_fr="Docker", main_stack_position=3
     )
 
-    staff_api_client.patch(
+    response = staff_api_client.patch(
         detail_url(basename, tag.id),
         {"note": {"en": "Daily", "fr": "Au quotidien"}},
         format="json",
     )
 
+    assert response.status_code == 200
     tag.refresh_from_db()
     assert tag.main_stack_position == 3
 

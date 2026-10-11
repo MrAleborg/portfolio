@@ -143,18 +143,31 @@ def test_tag_changelist_shows_the_main_stack_position(admin_client):
 
     response = admin_client.get(admin_url(Tag, "changelist"))
 
-    assert "main_stack_position" in response.context["cl"].list_display
     assert 'class="field-main_stack_position">4<' in response.content.decode()
 
 
-def test_tag_change_page_edits_the_main_stack_position(admin_client):
-    """The tag form has the position, so the owner can set or clear it."""
+def test_tag_change_page_sets_and_clears_the_main_stack_position(admin_client):
+    """The owner puts a tag in the main stack from its form, and takes it out."""
     tag = make(Tag)
+    url = admin_url(Tag, "change", tag.pk)
+    form = {
+        "name_en": tag.name_en,
+        "name_fr": tag.name_fr,
+        "kind": tag.kind,
+        "note_en": "",
+        "note_fr": "",
+    }
 
-    response = admin_client.get(admin_url(Tag, "change", tag.pk))
+    set_response = admin_client.post(url, {**form, "main_stack_position": "4"})
+    tag.refresh_from_db()
+    position_after_set = tag.main_stack_position
+    clear_response = admin_client.post(url, {**form, "main_stack_position": ""})
+    tag.refresh_from_db()
 
-    form = response.context["adminform"].form
-    assert "main_stack_position" in form.fields
+    assert set_response.status_code == 302
+    assert position_after_set == 4
+    assert clear_response.status_code == 302
+    assert tag.main_stack_position is None
 
 
 def test_project_page_edits_its_missions_inline(admin_client):
