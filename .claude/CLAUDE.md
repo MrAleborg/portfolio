@@ -15,7 +15,7 @@ Every feature goes through two approval gates in the main session before any cod
    - Open questions.
 2. **Plan** (`agent-protocols:planning-and-task-breakdown`). Vertical slices in dependency order, backend first. Each task lists its acceptance criteria, how to verify it, and the files it touches (5 at most, otherwise split it).
 
-The spec and plan live in the conversation, not in repo files.
+The spec is published as a GitHub issue labelled `ready-for-agent` (see `docs/agents/issue-tracker.md`). The plan lives in the conversation, not in repo files.
 
 # Implementing plans
 After both approvals, delegate each task to `frontend-implementer` for `frontend/` or `backend-implementer` for `backend/` (both Sonnet 5.5, high effort, defined in `.claude/agents/`); don't implement in the main session. Pass the task with its acceptance criteria and the relevant part of the spec. Resume the same agent with SendMessage after each user approval.
