@@ -11,7 +11,7 @@ from owner.models import ContactLink, Profile
 
 LOCALES = {"fr": "fr_FR", "en": "en_US"}
 DESCRIPTION_LENGTH = 155
-# Resume and Contact: (title prefix, description) per Locale, filled with the name and headline.
+# Resume, Contact and not-found: (title prefix, description) per Locale, filled with the name and headline.
 PAGE_TEXTS = {
     "resume": {
         "en": (
@@ -26,6 +26,10 @@ PAGE_TEXTS = {
     "contact": {
         "en": ("Contact", "Get in touch with {name}, {headline}."),
         "fr": ("Contact", "Contacter {name}, {headline}."),
+    },
+    "not-found": {
+        "en": ("Page not found", "This page doesn't exist."),
+        "fr": ("Page introuvable", "Cette page n'existe pas."),
     },
 }
 
@@ -51,7 +55,7 @@ def _json_ld(data):
 
 @require_safe
 def page_summary(request):
-    """`?page=home|resume|contact&locale=fr|en`, or `?page=root` (Home's English text, x-default)."""
+    """`?page=home|resume|contact|not-found&locale=fr|en`, or `?page=root` (Home's English text, x-default)."""
     page = request.GET.get("page")
     locale = "en" if page == "root" else request.GET.get("locale")
     if page not in ("home", "root", *PAGE_TEXTS) or locale not in LOCALES:
@@ -76,8 +80,14 @@ def page_summary(request):
         prefix, template = PAGE_TEXTS[page][locale]
         title = f"{prefix} – {name}"
         description = template.format(name=name, headline=headline)
-        canonical = canonical_url(f"/{locale}/{page}")
-        alternates = [(lang, canonical_url(f"/{lang}/{page}")) for lang in LOCALES]
+        # An address that doesn't exist has no canonical address nor alternates.
+        found = page != "not-found"
+        canonical = canonical_url(f"/{locale}/{page}") if found else None
+        alternates = (
+            [(lang, canonical_url(f"/{lang}/{page}")) for lang in LOCALES]
+            if found
+            else []
+        )
     image = canonical_url("/media/avatar.webp")
     context = {
         "title": title,
@@ -87,7 +97,7 @@ def page_summary(request):
         "og_type": "profile" if home else "website",
         "og_locale": LOCALES[locale],
         "image": image,
-        "noindex": not is_canonical_host(request),
+        "noindex": page == "not-found" or not is_canonical_host(request),
     }
     if home:
         same_as = [
