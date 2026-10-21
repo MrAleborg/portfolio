@@ -494,13 +494,29 @@ describe('AppRoutes', () => {
     })
 
     it("leaves the shell's title alone until the profile loads", async () => {
-      document.title = 'Alexandre Le Borgne'
+      document.title = 'Shell title'
       renderAt('/fr/resume', {
         repositories: fakeRepositories({ profile: pendingProfileRepository() }),
       })
       await screen.findByRole('heading', { level: 1, name: 'CV' })
 
-      expect(document.title).toBe('Alexandre Le Borgne')
+      expect(document.title).toBe('Shell title')
+    })
+
+    it('is the generic title when the profile fails to load', async () => {
+      document.title = 'Shell title'
+      renderAt('/fr/resume', {
+        repositories: fakeRepositories({ profile: failingProfileRepository() }),
+      })
+
+      await waitFor(() => expect(document.title).toBe('Alexandre Le Borgne'))
+    })
+
+    it('is the not-found title for a Locale in capitals, as nginx does not serve it', async () => {
+      renderAt('/EN/resume')
+
+      expect(await screen.findByRole('heading', { level: 1, name: 'Page not found' })).toBeInTheDocument()
+      await waitFor(() => expect(document.title).toBe('Page not found – Ada Lovelace'))
     })
 
     it('follows the visitor from page to page', async () => {

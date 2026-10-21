@@ -1,13 +1,13 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigationType } from 'react-router'
 import type { ContactRepository } from '@/domain/contact/ContactRepository'
-import { withoutLocale } from '@/domain/i18n/Locale'
 import type { ProfileRepository } from '@/domain/profile/ProfileRepository'
 import { useAsync } from '@/ui/async/useAsync'
 import { ErrorBoundary } from '@/ui/components/ErrorBoundary'
 import { SettingsMenu } from '@/ui/components/SettingsMenu'
 import { messages } from '@/ui/i18n/messages'
 import { useLocale } from '@/ui/i18n/useLocale'
+import { withoutLocale } from '@/ui/i18n/withoutLocale'
 import { Footer } from '@/ui/layout/Footer'
 import './Layout.css'
 
@@ -15,6 +15,8 @@ interface LayoutProps {
   profileRepository: ProfileRepository
   contactRepository: ContactRepository
 }
+
+const GENERIC_TITLE = 'Alexandre Le Borgne'
 
 export function Layout({ profileRepository, contactRepository }: LayoutProps) {
   const { locale } = useLocale()
@@ -26,7 +28,7 @@ export function Layout({ profileRepository, contactRepository }: LayoutProps) {
   const header = useRef<HTMLElement>(null)
 
   // The tab title mirrors the Page summary titles of backend/owner/page_summary.py: keep them in step.
-  // Until the Profile loads, the shell's title (set by nginx, or generic) stays.
+  // While the Profile loads, the shell's title (set by nginx, or generic) stays. If it fails, the title is generic.
   const page = withoutLocale(pathname).replace(/^\/|\/$/g, '')
   // A Map, so a page named `constructor` is not found among the object prototype's keys.
   const pageNames = new Map([
@@ -34,12 +36,14 @@ export function Layout({ profileRepository, contactRepository }: LayoutProps) {
     ['contact', text.navContact],
   ])
   const pageName = page ? (pageNames.get(page) ?? text.notFoundTitle) : undefined
+  const loaded = profile.status === 'loaded' ? profile.value : undefined
   const title =
-    profile.status !== 'loaded'
-      ? undefined
-      : pageName
-        ? `${pageName} – ${profile.value.fullName}`
-        : `${profile.value.fullName} – ${profile.value.headline[locale]}`
+    profile.status === 'error'
+      ? GENERIC_TITLE
+      : loaded &&
+        (pageName
+          ? `${pageName} – ${loaded.fullName}`
+          : `${loaded.fullName} – ${loaded.headline[locale]}`)
   useEffect(() => {
     if (title) document.title = title
   }, [title])

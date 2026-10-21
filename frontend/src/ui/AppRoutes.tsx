@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router'
-import { LOCALES, withoutLocale, type Locale } from '@/domain/i18n/Locale'
+import { LOCALES, type Locale } from '@/domain/i18n/Locale'
 import { LocaleProvider } from '@/ui/i18n/LocaleProvider'
 import { preferredLocale } from '@/ui/i18n/preferredLocale'
+import { withoutLocale } from '@/ui/i18n/withoutLocale'
 import { Layout } from '@/ui/layout/Layout'
 import { ContactPage } from '@/ui/pages/ContactPage'
 import { HomePage } from '@/ui/pages/HomePage'
@@ -62,8 +63,9 @@ export function AppRoutes({ repositories }: AppRoutesProps) {
       <Route path="/" element={<RootRedirect />} />
       <Route path="resume" element={<EnglishRedirect page="resume" />} />
       <Route path="contact" element={<EnglishRedirect page="contact" />} />
+      {/* Case-sensitive, as nginx is: `/EN/resume` is a page that does not exist. */}
       {LOCALES.map((locale) => (
-        <Route key={locale} path={locale} element={layout(locale)}>
+        <Route key={locale} path={locale} caseSensitive element={layout(locale)}>
           <Route
             index
             element={
