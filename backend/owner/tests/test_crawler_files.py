@@ -20,14 +20,19 @@ def hosts(settings):
     settings.ALLOWED_HOSTS = [CANONICAL, "dev-box", "testserver"]
 
 
-def test_robots_on_canonical_domain_allows_all_but_api_and_admin(client):
-    response = client.get("/robots.txt", HTTP_HOST=CANONICAL)
+@pytest.mark.parametrize(
+    "host", [CANONICAL, f"{CANONICAL}:443", CANONICAL.upper()], ids=str
+)
+def test_robots_on_canonical_domain_allows_all_but_admin(client, settings, host):
+    settings.ALLOWED_HOSTS = [CANONICAL, host.split(":")[0]]
+
+    response = client.get("/robots.txt", HTTP_HOST=host)
 
     assert response.status_code == 200
     assert response["Content-Type"].startswith("text/plain")
     lines = response.content.decode().splitlines()
     assert "User-agent: *" in lines
-    assert "Disallow: /api/" in lines
+    assert "Disallow: /api/" not in lines
     assert "Disallow: /admin/" in lines
     assert f"Sitemap: https://{CANONICAL}/sitemap.xml" in lines
     assert "Disallow: /" not in lines
@@ -37,7 +42,31 @@ def test_robots_on_canonical_domain_allows_all_but_api_and_admin(client):
 def test_robots_on_any_other_host_disallows_everything(client, host):
     response = client.get("/robots.txt", HTTP_HOST=host)
 
+    assert response.status_code == 200
+    assert response["Content-Type"].startswith("text/plain")
     assert response.content.decode().splitlines() == ["User-agent: *", "Disallow: /"]
+
+
+@pytest.mark.parametrize("path", ["/robots.txt", "/sitemap.xml"])
+def test_head_answers_like_get_without_a_body(client, path):
+    response = client.head(path, HTTP_HOST=CANONICAL)
+
+    assert response.status_code == 200
+    assert response.content == b""
+
+
+@pytest.mark.django_db
+def test_api_responses_are_marked_noindex(client):
+    response = client.get("/api/v1/profile/contact-links/")
+
+    assert response.status_code == 200
+    assert response["X-Robots-Tag"] == "noindex"
+
+
+def test_pages_outside_the_api_are_not_marked_noindex(client):
+    response = client.get("/robots.txt", HTTP_HOST=CANONICAL)
+
+    assert "X-Robots-Tag" not in response
 
 
 def test_canonical_domain_follows_the_setting(client, settings):
@@ -94,10 +123,10 @@ def test_sitemap_pages_carry_fr_en_and_x_default_alternates(client):
     assert by_loc[f"{base}/en/resume"] == {
         "fr": f"{base}/fr/resume",
         "en": f"{base}/en/resume",
-        "x-default": f"{base}/en/resume",
     }
-    assert by_loc[f"{base}/fr/"]["x-default"] == f"{base}/"
-    assert all(set(a) == {"fr", "en", "x-default"} for a in by_loc.values())
+    for home in ["/fr/", "/en/"]:
+        assert by_loc[f"{base}{home}"]["x-default"] == f"{base}/"
+    assert sum("x-default" in a for a in by_loc.values()) == 3
 
 
 def test_sitemap_uses_canonical_domain_whatever_the_host(client):
@@ -105,3 +134,12 @@ def test_sitemap_uses_canonical_domain_whatever_the_host(client):
 
     assert b"dev-box" not in response.content
     assert f"https://{CANONICAL}/fr/".encode() in response.content
+
+
+def test_sitemap_urls_follow_the_canonical_domain_setting(client, settings):
+    settings.CANONICAL_DOMAIN = "dev-box"
+
+    response = client.get("/sitemap.xml", HTTP_HOST="testserver")
+
+    assert b"https://dev-box/fr/resume" in response.content
+    assert CANONICAL.encode() not in response.content

@@ -44,6 +44,9 @@ owner's [profile](#profile-apiv1profile) and
 | Filter with an invalid id: not an integer (`?tag=python`) or outside `1..2**63-1` (`?tag=-1`) | `400`, e.g. `{"tag": ["A valid tag id is required."]}` |
 | List filters on a detail route (`projects/5/?tag=999`) | Ignored |
 
+- **Not indexed.** Every `/api/` response carries `X-Robots-Tag: noindex`.
+  (`/robots.txt` and `/sitemap.xml` are served by the same backend at the root,
+  outside the API.)
 - **Hidden entries never appear.** Entries with `is_visible=False` are left out
   of lists and nested lists. A project whose professional experience is hidden
   is hidden too, wherever projects appear. Tags have no visibility of their

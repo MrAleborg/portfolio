@@ -2,50 +2,47 @@
 
 from django.conf import settings
 from django.http import HttpResponse
-from django.views.decorators.http import require_GET
-
-# The three Pages, as in the frontend router and nginx.
-PAGES = ["", "resume", "contact"]
-LOCALES = ["fr", "en"]
+from django.http.request import split_domain_port
+from django.views.decorators.http import require_safe
 
 
 def _canonical(path):
     return f"https://{settings.CANONICAL_DOMAIN}{path}"
 
 
-@require_GET
+@require_safe
 def robots_txt(request):
-    if request.get_host() == settings.CANONICAL_DOMAIN:
+    domain, _port = split_domain_port(request.get_host())
+    if domain == settings.CANONICAL_DOMAIN.lower():
         body = (
-            "User-agent: *\n"
-            "Disallow: /api/\n"
-            "Disallow: /admin/\n"
-            f"Sitemap: {_canonical('/sitemap.xml')}\n"
+            f"User-agent: *\nDisallow: /admin/\nSitemap: {_canonical('/sitemap.xml')}\n"
         )
     else:
         body = "User-agent: *\nDisallow: /\n"
     return HttpResponse(body, content_type="text/plain")
 
 
-def _url(loc, alternates):
+def _url(path, alternates):
     links = "".join(
-        f'<xhtml:link rel="alternate" hreflang="{lang}" href="{_canonical(path)}"/>'
-        for lang, path in alternates.items()
+        f'<xhtml:link rel="alternate" hreflang="{lang}" href="{_canonical(href)}"/>'
+        for lang, href in alternates.items()
     )
-    return f"<url><loc>{_canonical(loc)}</loc>{links}</url>"
+    return f"<url><loc>{_canonical(path)}</loc>{links}</url>"
 
 
-@require_GET
+@require_safe
 def sitemap_xml(request):
-    # x-default is the root for Home and the English Page for the others.
-    urls = [
-        _url("/", {"fr": "/fr/", "en": "/en/", "x-default": "/"}),
-    ]
-    for page in PAGES:
-        paths = {lang: f"/{lang}/{page}" for lang in LOCALES}
-        for path in paths.values():
+    urls = []
+    # x-default (the visitor-picks-a-Locale root) only makes sense for Home.
+    for path in ["/", "/fr/", "/en/"]:
+        urls.append(_url(path, {"fr": "/fr/", "en": "/en/", "x-default": "/"}))
+    for page in ["resume", "contact"]:
+        for lang in ["fr", "en"]:
             urls.append(
-                _url(path, {**paths, "x-default": "/" if not page else paths["en"]})
+                _url(
+                    f"/{lang}/{page}",
+                    {"fr": f"/fr/{page}", "en": f"/en/{page}"},
+                )
             )
     body = (
         '<?xml version="1.0" encoding="UTF-8"?>'
@@ -53,3 +50,15 @@ def sitemap_xml(request):
         'xmlns:xhtml="http://www.w3.org/1999/xhtml">' + "".join(urls) + "</urlset>"
     )
     return HttpResponse(body, content_type="application/xml")
+
+
+def noindex_api(get_response):
+    """Mark every API response noindex: crawlers may load it, not index it."""
+
+    def middleware(request):
+        response = get_response(request)
+        if request.path.startswith("/api/"):
+            response["X-Robots-Tag"] = "noindex"
+        return response
+
+    return middleware
