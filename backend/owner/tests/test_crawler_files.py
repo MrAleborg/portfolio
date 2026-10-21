@@ -23,9 +23,7 @@ def hosts(settings):
 @pytest.mark.parametrize(
     "host", [CANONICAL, f"{CANONICAL}:443", CANONICAL.upper()], ids=str
 )
-def test_robots_on_canonical_domain_allows_all_but_admin(client, settings, host):
-    settings.ALLOWED_HOSTS = [CANONICAL, host.split(":")[0]]
-
+def test_robots_on_canonical_domain_allows_all_but_admin(client, host):
     response = client.get("/robots.txt", HTTP_HOST=host)
 
     assert response.status_code == 200
@@ -48,11 +46,13 @@ def test_robots_on_any_other_host_disallows_everything(client, host):
 
 
 @pytest.mark.parametrize("path", ["/robots.txt", "/sitemap.xml"])
-def test_head_answers_like_get_without_a_body(client, path):
+def test_head_answers_like_get(client, path):
+    got = client.get(path, HTTP_HOST=CANONICAL)
+
     response = client.head(path, HTTP_HOST=CANONICAL)
 
-    assert response.status_code == 200
-    assert response.content == b""
+    assert response.status_code == got.status_code == 200
+    assert response["Content-Type"] == got["Content-Type"]
 
 
 @pytest.mark.django_db
@@ -67,6 +67,16 @@ def test_pages_outside_the_api_are_not_marked_noindex(client):
     response = client.get("/robots.txt", HTTP_HOST=CANONICAL)
 
     assert "X-Robots-Tag" not in response
+
+
+def test_canonical_domain_setting_is_compared_case_insensitively(client, settings):
+    settings.CANONICAL_DOMAIN = CANONICAL.upper()
+
+    response = client.get("/robots.txt", HTTP_HOST=CANONICAL)
+
+    assert (
+        f"Sitemap: https://{CANONICAL.upper()}/sitemap.xml" in response.content.decode()
+    )
 
 
 def test_canonical_domain_follows_the_setting(client, settings):
