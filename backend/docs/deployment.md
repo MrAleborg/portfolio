@@ -34,7 +34,7 @@ flowchart LR
 | [`backend/Dockerfile`](../Dockerfile) | Backend image: dependencies, collected static files, non-root user |
 | [`backend/docker-entrypoint.sh`](../docker-entrypoint.sh) | Applies migrations, then starts gunicorn |
 | [`frontend/Dockerfile`](../../frontend/Dockerfile) | Frontend image: builds the site, serves it with nginx as a non-root user |
-| [`frontend/nginx.conf`](../../frontend/nginx.conf) | Client-side routes, cache headers, `/robots.txt` and `/sitemap.xml` forwarded to the backend, and Home's Page summary spliced into `/`, `/fr/` and `/en/` (SSI include of the backend, with the visitor's Host) |
+| [`frontend/nginx.conf`](../../frontend/nginx.conf) | Client-side routes, cache headers, `/robots.txt` and `/sitemap.xml` forwarded to the backend, and the Page summary spliced into `/`, `/fr/`, `/en/` and the Resume and Contact addresses (SSI include of the backend, with the visitor's Host) |
 | [`deploy/compose.yml`](../../deploy/compose.yml) | The stack: the `backend` and `frontend` services, published on `127.0.0.1` |
 | [`deploy/Caddyfile.example`](../../deploy/Caddyfile.example) | Site blocks to add to the server's Caddy config |
 | [`deploy/.env.example`](../../deploy/.env.example) | Production settings template |

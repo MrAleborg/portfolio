@@ -10,4 +10,4 @@
 <meta property="og:image" content="{{ image }}">
 <meta name="twitter:card" content="summary">
 {% if noindex %}<meta name="robots" content="noindex">
-{% endif %}<script type="application/ld+json">{{ json_ld|safe }}</script>
+{% endif %}{% if json_ld %}<script type="application/ld+json">{{ json_ld|safe }}</script>{% endif %}

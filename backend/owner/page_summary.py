@@ -11,6 +11,23 @@ from owner.models import ContactLink, Profile
 
 LOCALES = {"fr": "fr_FR", "en": "en_US"}
 DESCRIPTION_LENGTH = 155
+# Resume and Contact: (title prefix, description) per Locale, filled with the name and headline.
+PAGE_TEXTS = {
+    "resume": {
+        "en": (
+            "Resume",
+            "Resume of {name}, {headline}: experience, education, certifications and skills.",
+        ),
+        "fr": (
+            "CV",
+            "CV de {name}, {headline} : expériences, formations, certifications et compétences.",
+        ),
+    },
+    "contact": {
+        "en": ("Contact", "Get in touch with {name}, {headline}."),
+        "fr": ("Contact", "Contacter {name}, {headline}."),
+    },
+}
 
 
 def _description(bio, headline):
@@ -37,8 +54,7 @@ def page_summary(request):
     """`?page=home&locale=fr|en`, or `?page=root` (Home's English text, x-default)."""
     page = request.GET.get("page")
     locale = "en" if page == "root" else request.GET.get("locale")
-    # Only Home's summary exists so far.
-    if page not in ("home", "root") or locale not in LOCALES:
+    if page not in ("home", "root", *PAGE_TEXTS) or locale not in LOCALES:
         return HttpResponseBadRequest()
     profile = Profile.objects.first()
     if profile is None:
@@ -46,41 +62,50 @@ def page_summary(request):
 
     name = profile.full_name
     headline = getattr(profile, f"headline_{locale}")
-    description = _description(getattr(profile, f"bio_{locale}"), headline)
-    canonical = canonical_url("/" if page == "root" else f"/{locale}/")
+    home = page in ("home", "root")
+    if home:
+        title = f"{name} – {headline}"
+        description = _description(getattr(profile, f"bio_{locale}"), headline)
+        canonical = canonical_url("/" if page == "root" else f"/{locale}/")
+        alternates = [
+            ("fr", canonical_url("/fr/")),
+            ("en", canonical_url("/en/")),
+            ("x-default", canonical_url("/")),
+        ]
+    else:
+        prefix, template = PAGE_TEXTS[page][locale]
+        title = f"{prefix} – {name}"
+        description = template.format(name=name, headline=headline)
+        canonical = canonical_url(f"/{locale}/{page}")
+        alternates = [(lang, canonical_url(f"/{lang}/{page}")) for lang in LOCALES]
     image = canonical_url("/media/avatar.webp")
-    same_as = [
-        link.url
-        for link in ContactLink.objects.filter(is_visible=True).exclude(
-            kind=ContactLink.Kind.EMAIL
-        )
-    ]
-    person = {
-        "@context": "https://schema.org",
-        "@type": "Person",
-        "name": name,
-        "jobTitle": headline,
+    context = {
+        "title": title,
         "description": description,
-        "url": canonical,
+        "canonical": canonical,
+        "alternates": alternates,
+        "og_type": "profile" if home else "website",
+        "og_locale": LOCALES[locale],
         "image": image,
-        "sameAs": same_as,
+        "noindex": not is_canonical_host(request),
     }
-    return render(
-        request,
-        "owner/page_summary.html",
-        {
-            "title": f"{name} – {headline}",
-            "description": description,
-            "canonical": canonical,
-            "alternates": [
-                ("fr", canonical_url("/fr/")),
-                ("en", canonical_url("/en/")),
-                ("x-default", canonical_url("/")),
-            ],
-            "og_type": "profile",
-            "og_locale": LOCALES[locale],
-            "image": image,
-            "noindex": not is_canonical_host(request),
-            "json_ld": _json_ld(person),
-        },
-    )
+    if home:
+        same_as = [
+            link.url
+            for link in ContactLink.objects.filter(is_visible=True).exclude(
+                kind=ContactLink.Kind.EMAIL
+            )
+        ]
+        context["json_ld"] = _json_ld(
+            {
+                "@context": "https://schema.org",
+                "@type": "Person",
+                "name": name,
+                "jobTitle": headline,
+                "description": description,
+                "url": canonical,
+                "image": image,
+                "sameAs": same_as,
+            }
+        )
+    return render(request, "owner/page_summary.html", context)
