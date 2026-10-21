@@ -18,5 +18,6 @@ COPY --from=build /build/dist /usr/share/nginx/html
 EXPOSE 8080
 
 # 127.0.0.1, not localhost: localhost resolves to ::1, and nginx listens on IPv4.
+# A static file, not /: the page would call the backend with Host 127.0.0.1.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-    CMD ["wget", "--quiet", "--spider", "http://127.0.0.1:8080/"]
+    CMD ["wget", "--quiet", "--spider", "http://127.0.0.1:8080/theme.js"]

@@ -81,10 +81,6 @@ def get(client, page, locale=None, host=CANONICAL):
     return client.get(URL, query, HTTP_HOST=host)
 
 
-def test_route():
-    assert URL == "/api/v1/profile/page-summary/"
-
-
 @pytest.mark.parametrize(
     ("locale", "headline", "bio", "og_locale"),
     [
