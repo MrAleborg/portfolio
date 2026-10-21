@@ -15,6 +15,8 @@ interface LayoutProps {
   contactRepository: ContactRepository
 }
 
+const GENERIC_TITLE = 'Alexandre Le Borgne'
+
 export function Layout({ profileRepository, contactRepository }: LayoutProps) {
   const { locale } = useLocale()
   const text = messages[locale]
@@ -23,6 +25,26 @@ export function Layout({ profileRepository, contactRepository }: LayoutProps) {
   const profile = useAsync(profileRepository.get)
   const sentinel = useRef<HTMLDivElement>(null)
   const header = useRef<HTMLElement>(null)
+
+  // The tab title follows the server-side Page summary title (#99), and is generic until the Profile loads.
+  const page = pathname.slice(`/${locale}`.length).replace(/^\//, '')
+  const pageName =
+    page === 'resume'
+      ? text.navResume
+      : page === 'contact'
+        ? text.navContact
+        : page
+          ? text.notFoundTitle
+          : undefined
+  const title =
+    profile.status !== 'loaded'
+      ? GENERIC_TITLE
+      : pageName
+        ? `${pageName} – ${profile.value.fullName}`
+        : `${profile.value.fullName} – ${profile.value.headline[locale]}`
+  useEffect(() => {
+    document.title = title
+  }, [title])
 
   // The header gains its bottom border once the top of the page has scrolled out of view.
   useEffect(() => {

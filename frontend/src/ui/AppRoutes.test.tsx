@@ -1,4 +1,4 @@
-import { act, render, screen, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { fakeEducationRepository, masters } from '@/test/fakeEducationRepository'
@@ -466,6 +466,55 @@ describe('AppRoutes', () => {
       'true',
     )
     expect(screen.getByText('Mémoire sur les compilateurs.')).toBeVisible()
+  })
+
+  describe('tab title', () => {
+    afterEach(() => {
+      document.title = ''
+    })
+
+    it.each([
+      ['/en/', 'Ada Lovelace – Analyst'],
+      ['/fr/', 'Ada Lovelace – Analyste'],
+      ['/en/resume', 'Resume – Ada Lovelace'],
+      ['/fr/resume', 'CV – Ada Lovelace'],
+      ['/en/contact', 'Contact – Ada Lovelace'],
+      ['/fr/contact', 'Contact – Ada Lovelace'],
+      ['/en/nowhere', 'Page not found – Ada Lovelace'],
+      ['/fr/nowhere', 'Page introuvable – Ada Lovelace'],
+      ['/nowhere', 'Page not found – Ada Lovelace'],
+    ])('is the page summary title at %s once the profile has loaded', async (path, title) => {
+      renderAt(path)
+
+      await waitFor(() => expect(document.title).toBe(title))
+    })
+
+    it('is the generic title until the profile loads', async () => {
+      renderAt('/fr/resume', {
+        repositories: fakeRepositories({ profile: pendingProfileRepository() }),
+      })
+      await screen.findByRole('heading', { level: 1, name: 'CV' })
+
+      expect(document.title).toBe('Alexandre Le Borgne')
+    })
+
+    it('follows the visitor from page to page', async () => {
+      renderAt('/en/')
+      await waitFor(() => expect(document.title).toBe('Ada Lovelace – Analyst'))
+
+      await userEvent.setup().click(navigation().getByRole('link', { name: 'Contact' }))
+
+      await waitFor(() => expect(document.title).toBe('Contact – Ada Lovelace'))
+    })
+
+    it('follows a language switch', async () => {
+      renderAt('/en/resume')
+      await waitFor(() => expect(document.title).toBe('Resume – Ada Lovelace'))
+
+      await switchLanguage('Français')
+
+      await waitFor(() => expect(document.title).toBe('CV – Ada Lovelace'))
+    })
   })
 
   describe('footer', () => {
