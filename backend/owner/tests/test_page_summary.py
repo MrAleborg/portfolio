@@ -2,7 +2,7 @@
 
 It returns the ``<head>`` tags of a Page as an HTML fragment, which the
 frontend's nginx splices into the built shell. Only Home (``home``, per Locale)
-and ``root`` (``/`` itself, Home's English text) exist so far.
+and ``root`` (``/`` itself, Home's English text), ``resume`` and ``contact`` exist so far.
 """
 
 import json
@@ -134,6 +134,77 @@ def test_root_summary_is_homes_english_text_canonical_at_the_root(client, profil
     assert head.json_ld["url"] == f"https://{CANONICAL}/"
 
 
+@pytest.mark.parametrize(
+    ("page", "locale", "title", "description", "og_locale"),
+    [
+        (
+            "resume",
+            "en",
+            "Resume – Ada Lovelace",
+            "Resume of Ada Lovelace, Analyst: experience, education, certifications and skills.",
+            "en_US",
+        ),
+        (
+            "resume",
+            "fr",
+            "CV – Ada Lovelace",
+            "CV de Ada Lovelace, Analyste : expériences, formations, certifications et compétences.",
+            "fr_FR",
+        ),
+        (
+            "contact",
+            "en",
+            "Contact – Ada Lovelace",
+            "Get in touch with Ada Lovelace, Analyst.",
+            "en_US",
+        ),
+        (
+            "contact",
+            "fr",
+            "Contact – Ada Lovelace",
+            "Contacter Ada Lovelace, Analyste.",
+            "fr_FR",
+        ),
+    ],
+)
+def test_resume_and_contact_summary_in_each_locale(
+    client, profile, page, locale, title, description, og_locale
+):
+    ContactLink.objects.create(
+        kind=ContactLink.Kind.GITHUB, url="https://github.com/ada", is_visible=True
+    )
+
+    response = get(client, page, locale)
+
+    assert response.status_code == 200
+    head = Head(response.content.decode())
+    own = f"https://{CANONICAL}/{locale}/{page}"
+    assert head.title == title
+    assert head.meta("name", "description") == description
+    assert head.link("canonical") == own
+    assert head.link("alternate", "fr") == f"https://{CANONICAL}/fr/{page}"
+    assert head.link("alternate", "en") == f"https://{CANONICAL}/en/{page}"
+    assert head.link("alternate", "x-default") is None
+    assert head.meta("property", "og:title") == title
+    assert head.meta("property", "og:description") == description
+    assert head.meta("property", "og:url") == own
+    assert head.meta("property", "og:type") == "website"
+    assert head.meta("property", "og:locale") == og_locale
+    assert head.meta("property", "og:image") == f"https://{CANONICAL}/media/avatar.webp"
+    assert head.meta("name", "twitter:card") == "summary"
+    assert head.json_ld is None
+    assert "ld+json" not in response.content.decode()
+
+
+def test_resume_text_from_the_profile_is_html_escaped(client, profile):
+    Profile.objects.update(full_name="<b>Ada</b>", headline_en='"><i>x</i>')
+
+    html = get(client, "resume", "en").content.decode()
+
+    assert "<b>" not in html and "<i>" not in html
+    assert Head(html).title == "Resume – <b>Ada</b>"
+
+
 def test_root_ignores_the_locale(client, profile):
     assert get(client, "root", "fr").content == get(client, "root").content
 
@@ -234,7 +305,8 @@ def test_json_ld_cannot_be_broken_out_of(client, profile):
         {"page": "home"},
         {"page": "home", "locale": "de"},
         {"page": "nope", "locale": "en"},
-        {"page": "resume", "locale": "en"},
+        {"page": "resume"},
+        {"page": "contact", "locale": "de"},
         {"locale": "en"},
     ],
 )
@@ -245,7 +317,14 @@ def test_bad_page_or_locale_is_a_400(client, profile, query):
 
 
 @pytest.mark.parametrize(
-    "query", [{"page": "home", "locale": "en"}, {"page": "root"}], ids=str
+    "query",
+    [
+        {"page": "home", "locale": "en"},
+        {"page": "root"},
+        {"page": "resume", "locale": "fr"},
+        {"page": "contact", "locale": "en"},
+    ],
+    ids=str,
 )
 def test_no_profile_is_a_404_with_an_empty_body(client, query):
     response = client.get(URL, query, HTTP_HOST=CANONICAL)
