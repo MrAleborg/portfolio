@@ -51,7 +51,7 @@ def _json_ld(data):
 
 @require_safe
 def page_summary(request):
-    """`?page=home&locale=fr|en`, or `?page=root` (Home's English text, x-default)."""
+    """`?page=home|resume|contact&locale=fr|en`, or `?page=root` (Home's English text, x-default)."""
     page = request.GET.get("page")
     locale = "en" if page == "root" else request.GET.get("locale")
     if page not in ("home", "root", *PAGE_TEXTS) or locale not in LOCALES:
