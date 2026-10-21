@@ -1,4 +1,4 @@
-import { act, render, screen, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { fakeEducationRepository, masters } from '@/test/fakeEducationRepository'
@@ -466,6 +466,81 @@ describe('AppRoutes', () => {
       'true',
     )
     expect(screen.getByText('Mémoire sur les compilateurs.')).toBeVisible()
+  })
+
+  describe('tab title', () => {
+    beforeEach(() => {
+      document.title = ''
+    })
+
+    it.each([
+      ['/en/', 'Ada Lovelace – Analyst'],
+      ['/fr/', 'Ada Lovelace – Analyste'],
+      ['/en/resume', 'Resume – Ada Lovelace'],
+      ['/fr/resume', 'CV – Ada Lovelace'],
+      ['/en/contact', 'Contact – Ada Lovelace'],
+      ['/fr/contact', 'Contact – Ada Lovelace'],
+      ['/en/nowhere', 'Page not found – Ada Lovelace'],
+      ['/fr/nowhere', 'Page introuvable – Ada Lovelace'],
+      ['/nowhere', 'Page not found – Ada Lovelace'],
+      ['/ab', 'Page not found – Ada Lovelace'],
+      ['/abresume', 'Page not found – Ada Lovelace'],
+      ['/en/constructor', 'Page not found – Ada Lovelace'],
+      ['/en/resume/', 'Resume – Ada Lovelace'],
+    ])('is the page summary title at %s once the profile has loaded', async (path, title) => {
+      renderAt(path)
+
+      await waitFor(() => expect(document.title).toBe(title))
+    })
+
+    it("leaves the shell's title alone until the profile loads", async () => {
+      document.title = 'Shell title'
+      renderAt('/fr/resume', {
+        repositories: fakeRepositories({ profile: pendingProfileRepository() }),
+      })
+      await screen.findByRole('heading', { level: 1, name: 'CV' })
+
+      expect(document.title).toBe('Shell title')
+    })
+
+    it('is the generic title when the profile fails to load', async () => {
+      document.title = 'Shell title'
+      renderAt('/fr/resume', {
+        repositories: fakeRepositories({ profile: failingProfileRepository() }),
+      })
+
+      await waitFor(() => expect(document.title).toBe('Alexandre Le Borgne'))
+    })
+
+    it.each(['/EN/resume', '/en/RESUME', '/RESUME', '/CONTACT'])(
+      'is the not-found title at %s, as nginx does not serve it',
+      async (path) => {
+        renderAt(path)
+
+        expect(
+          await screen.findByRole('heading', { level: 1, name: 'Page not found' }),
+        ).toBeInTheDocument()
+        await waitFor(() => expect(document.title).toBe('Page not found – Ada Lovelace'))
+      },
+    )
+
+    it('follows the visitor from page to page', async () => {
+      renderAt('/en/')
+      await waitFor(() => expect(document.title).toBe('Ada Lovelace – Analyst'))
+
+      await userEvent.setup().click(navigation().getByRole('link', { name: 'Contact' }))
+
+      await waitFor(() => expect(document.title).toBe('Contact – Ada Lovelace'))
+    })
+
+    it('follows a language switch', async () => {
+      renderAt('/en/resume')
+      await waitFor(() => expect(document.title).toBe('Resume – Ada Lovelace'))
+
+      await switchLanguage('Français')
+
+      await waitFor(() => expect(document.title).toBe('CV – Ada Lovelace'))
+    })
   })
 
   describe('footer', () => {

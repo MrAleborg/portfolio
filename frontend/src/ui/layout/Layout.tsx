@@ -7,6 +7,7 @@ import { ErrorBoundary } from '@/ui/components/ErrorBoundary'
 import { SettingsMenu } from '@/ui/components/SettingsMenu'
 import { messages } from '@/ui/i18n/messages'
 import { useLocale } from '@/ui/i18n/useLocale'
+import { withoutLocale } from '@/ui/i18n/withoutLocale'
 import { Footer } from '@/ui/layout/Footer'
 import './Layout.css'
 
@@ -14,6 +15,8 @@ interface LayoutProps {
   profileRepository: ProfileRepository
   contactRepository: ContactRepository
 }
+
+const GENERIC_TITLE = 'Alexandre Le Borgne'
 
 export function Layout({ profileRepository, contactRepository }: LayoutProps) {
   const { locale } = useLocale()
@@ -23,6 +26,27 @@ export function Layout({ profileRepository, contactRepository }: LayoutProps) {
   const profile = useAsync(profileRepository.get)
   const sentinel = useRef<HTMLDivElement>(null)
   const header = useRef<HTMLElement>(null)
+
+  // The tab title mirrors the Page summary titles of backend/owner/page_summary.py: keep them in step.
+  // While the Profile loads, the shell's title (set by nginx, or generic) stays. If it fails, the title is generic.
+  const page = withoutLocale(pathname).replace(/^\/|\/$/g, '')
+  // A Map, so a page named `constructor` is not found among the object prototype's keys.
+  const pageNames = new Map([
+    ['resume', text.navResume],
+    ['contact', text.navContact],
+  ])
+  const pageName = page ? (pageNames.get(page) ?? text.notFoundTitle) : undefined
+  const title =
+    profile.status === 'error'
+      ? GENERIC_TITLE
+      : profile.status !== 'loaded'
+        ? undefined
+        : pageName
+          ? `${pageName} – ${profile.value.fullName}`
+          : `${profile.value.fullName} – ${profile.value.headline[locale]}`
+  useEffect(() => {
+    if (title) document.title = title
+  }, [title])
 
   // The header gains its bottom border once the top of the page has scrolled out of view.
   useEffect(() => {
@@ -63,7 +87,7 @@ export function Layout({ profileRepository, contactRepository }: LayoutProps) {
       <main className="layout__main">
         {/* Keyed by path without its Locale, so leaving a failed page shows the next one, while switching language keeps the page. */}
         <ErrorBoundary
-          key={pathname.slice(`/${locale}`.length)}
+          key={withoutLocale(pathname)}
           fallback={<p role="alert">{text.pageError}</p>}
         >
           <Outlet />
