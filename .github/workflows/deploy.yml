@@ -177,5 +177,7 @@ jobs:
           curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-all-errors "https://${{ vars.FRONTEND_DOMAIN }}/" > /dev/null
           curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-all-errors "https://${{ vars.FRONTEND_DOMAIN }}/robots.txt" | grep "Sitemap:" > /dev/null
           curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-all-errors "https://${{ vars.FRONTEND_DOMAIN }}/fr/" | grep -F "<title>Alexandre Le Borgne –" > /dev/null
-          test "$(curl --silent --show-error --retry 5 --retry-delay 3 --retry-all-errors --output /dev/null --write-out '%{http_code}' "https://${{ vars.FRONTEND_DOMAIN }}/no-such-page")" = 404
+          # The 404 must carry the app (not nginx's bare error page).
+          test "$(curl --silent --show-error --retry 5 --retry-delay 3 --retry-all-errors --output /tmp/not-found.html --write-out '%{http_code}' "https://${{ vars.FRONTEND_DOMAIN }}/no-such-page")" = 404
+          grep -F 'id="root"' /tmp/not-found.html > /dev/null
           test "$(curl --silent --show-error --retry 5 --retry-delay 3 --retry-all-errors --output /dev/null --write-out '%{http_code} %{redirect_url}' "https://${{ vars.FRONTEND_DOMAIN }}/resume")" = "301 https://${{ vars.FRONTEND_DOMAIN }}/en/resume"
