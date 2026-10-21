@@ -6,17 +6,20 @@ from django.http.request import split_domain_port
 from django.views.decorators.http import require_safe
 
 
-def _canonical(path):
+def canonical_url(path):
     return f"https://{settings.CANONICAL_DOMAIN}{path}"
+
+
+def is_canonical_host(request):
+    """Whether the request's Host is the Canonical domain (port and case ignored)."""
+    domain, _port = split_domain_port(request.get_host())
+    return domain == settings.CANONICAL_DOMAIN.lower()
 
 
 @require_safe
 def robots_txt(request):
-    domain, _port = split_domain_port(request.get_host())
-    if domain == settings.CANONICAL_DOMAIN.lower():
-        body = (
-            f"User-agent: *\nDisallow: /admin/\nSitemap: {_canonical('/sitemap.xml')}\n"
-        )
+    if is_canonical_host(request):
+        body = f"User-agent: *\nDisallow: /admin/\nSitemap: {canonical_url('/sitemap.xml')}\n"
     else:
         body = "User-agent: *\nDisallow: /\n"
     return HttpResponse(body, content_type="text/plain")
@@ -24,10 +27,10 @@ def robots_txt(request):
 
 def _url(path, alternates):
     links = "".join(
-        f'<xhtml:link rel="alternate" hreflang="{lang}" href="{_canonical(href)}"/>'
+        f'<xhtml:link rel="alternate" hreflang="{lang}" href="{canonical_url(href)}"/>'
         for lang, href in alternates.items()
     )
-    return f"<url><loc>{_canonical(path)}</loc>{links}</url>"
+    return f"<url><loc>{canonical_url(path)}</loc>{links}</url>"
 
 
 @require_safe

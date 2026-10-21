@@ -6,7 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- Blocking and external (CSP): applies the saved theme before first paint. -->
     <script src="/theme.js"></script>
-    <title>Alexandre Le Borgne</title>
+    <!-- nginx replaces this title with the Page summary (ADR 0001), or keeps it
+         when the backend can't answer. Under vite dev the comments are inert. -->
+    <!--# block name="generic-title" --><title>Alexandre Le Borgne</title><!--# endblock -->
+    <!--# include virtual="/_page-summary?$page_summary" stub="generic-title" -->
   </head>
   <body>
     <div id="root"></div>
