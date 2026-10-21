@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigationType } from 'react-router'
 import type { ContactRepository } from '@/domain/contact/ContactRepository'
+import { withoutLocale } from '@/domain/i18n/Locale'
 import type { ProfileRepository } from '@/domain/profile/ProfileRepository'
 import { useAsync } from '@/ui/async/useAsync'
 import { ErrorBoundary } from '@/ui/components/ErrorBoundary'
@@ -15,8 +16,6 @@ interface LayoutProps {
   contactRepository: ContactRepository
 }
 
-const GENERIC_TITLE = 'Alexandre Le Borgne'
-
 export function Layout({ profileRepository, contactRepository }: LayoutProps) {
   const { locale } = useLocale()
   const text = messages[locale]
@@ -26,24 +25,23 @@ export function Layout({ profileRepository, contactRepository }: LayoutProps) {
   const sentinel = useRef<HTMLDivElement>(null)
   const header = useRef<HTMLElement>(null)
 
-  // The tab title follows the server-side Page summary title (#99), and is generic until the Profile loads.
-  const page = pathname.slice(`/${locale}`.length).replace(/^\//, '')
-  const pageName =
-    page === 'resume'
-      ? text.navResume
-      : page === 'contact'
-        ? text.navContact
-        : page
-          ? text.notFoundTitle
-          : undefined
+  // The tab title mirrors the Page summary titles of backend/owner/page_summary.py: keep them in step.
+  // Until the Profile loads, the shell's title (set by nginx, or generic) stays.
+  const page = withoutLocale(pathname).replace(/^\/|\/$/g, '')
+  // A Map, so a page named `constructor` is not found among the object prototype's keys.
+  const pageNames = new Map([
+    ['resume', text.navResume],
+    ['contact', text.navContact],
+  ])
+  const pageName = page ? (pageNames.get(page) ?? text.notFoundTitle) : undefined
   const title =
     profile.status !== 'loaded'
-      ? GENERIC_TITLE
+      ? undefined
       : pageName
         ? `${pageName} – ${profile.value.fullName}`
         : `${profile.value.fullName} – ${profile.value.headline[locale]}`
   useEffect(() => {
-    document.title = title
+    if (title) document.title = title
   }, [title])
 
   // The header gains its bottom border once the top of the page has scrolled out of view.
@@ -85,7 +83,7 @@ export function Layout({ profileRepository, contactRepository }: LayoutProps) {
       <main className="layout__main">
         {/* Keyed by path without its Locale, so leaving a failed page shows the next one, while switching language keeps the page. */}
         <ErrorBoundary
-          key={pathname.slice(`/${locale}`.length)}
+          key={withoutLocale(pathname)}
           fallback={<p role="alert">{text.pageError}</p>}
         >
           <Outlet />

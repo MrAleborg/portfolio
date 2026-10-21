@@ -469,7 +469,7 @@ describe('AppRoutes', () => {
   })
 
   describe('tab title', () => {
-    afterEach(() => {
+    beforeEach(() => {
       document.title = ''
     })
 
@@ -483,13 +483,18 @@ describe('AppRoutes', () => {
       ['/en/nowhere', 'Page not found – Ada Lovelace'],
       ['/fr/nowhere', 'Page introuvable – Ada Lovelace'],
       ['/nowhere', 'Page not found – Ada Lovelace'],
+      ['/ab', 'Page not found – Ada Lovelace'],
+      ['/abresume', 'Page not found – Ada Lovelace'],
+      ['/en/constructor', 'Page not found – Ada Lovelace'],
+      ['/en/resume/', 'Resume – Ada Lovelace'],
     ])('is the page summary title at %s once the profile has loaded', async (path, title) => {
       renderAt(path)
 
       await waitFor(() => expect(document.title).toBe(title))
     })
 
-    it('is the generic title until the profile loads', async () => {
+    it("leaves the shell's title alone until the profile loads", async () => {
+      document.title = 'Alexandre Le Borgne'
       renderAt('/fr/resume', {
         repositories: fakeRepositories({ profile: pendingProfileRepository() }),
       })

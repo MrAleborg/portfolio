@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router'
-import { isLocale, LOCALES, type Locale } from '@/domain/i18n/Locale'
+import { LOCALES, withoutLocale, type Locale } from '@/domain/i18n/Locale'
 import { LocaleProvider } from '@/ui/i18n/LocaleProvider'
 import { preferredLocale } from '@/ui/i18n/preferredLocale'
 import { Layout } from '@/ui/layout/Layout'
@@ -19,9 +19,7 @@ function LocaleRoute({ locale, children }: { locale: Locale; children: ReactNode
   const { pathname, search, hash } = useLocation()
   const navigate = useNavigate()
   // An address with no Locale prefix (the not-found Page) gets one.
-  const unprefixed = isLocale(pathname.split('/')[1] ?? '')
-    ? pathname.replace(/^\/[^/]+/, '')
-    : pathname
+  const unprefixed = withoutLocale(pathname)
   // Keeps the Page and swaps the Locale. The scroll is kept: the visitor stays where they were.
   // Replaces the history entry, so Back does not just undo the switch.
   const onSwitch = (next: Locale) =>
