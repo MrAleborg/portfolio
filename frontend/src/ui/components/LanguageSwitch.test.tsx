@@ -4,7 +4,7 @@ import type { Locale } from '@/domain/i18n/Locale'
 import { LanguageSwitch } from '@/ui/components/LanguageSwitch'
 import { LocaleProvider } from '@/ui/i18n/LocaleProvider'
 
-function renderSwitch(initialLocale?: Locale) {
+function renderSwitch(initialLocale: Locale) {
   return render(
     <LocaleProvider initialLocale={initialLocale}>
       <LanguageSwitch />

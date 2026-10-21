@@ -169,6 +169,15 @@ describe('AppRoutes', () => {
     ).toBeInTheDocument()
   })
 
+  it('sends an unknown page of a locale to the home page', async () => {
+    renderAt('/fr/nowhere')
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Ada Lovelace' }),
+    ).toBeInTheDocument()
+    expect(address()).toBe('/en/')
+  })
+
   it('sends unknown paths to the home page', async () => {
     renderAt('/nowhere')
 
@@ -263,9 +272,9 @@ describe('AppRoutes', () => {
     })
 
     it('keeps the search and hash of an old link', () => {
-      renderAt('/resume#experience')
+      renderAt('/resume?ref=cv#experience')
 
-      expect(address()).toBe('/en/resume#experience')
+      expect(address()).toBe('/en/resume?ref=cv#experience')
     })
 
     it('opens the root in the language switched to since the app loaded', async () => {
@@ -283,11 +292,12 @@ describe('AppRoutes', () => {
       }
       vi.spyOn(Storage.prototype, 'getItem').mockImplementation(denied)
       vi.spyOn(Storage.prototype, 'setItem').mockImplementation(denied)
-      renderAt('/en/resume')
+      renderAt('/')
+      expect(address()).toBe('/en/')
 
       await switchLanguage('Français')
 
-      expect(address()).toBe('/fr/resume')
+      expect(address()).toBe('/fr/')
     })
 
     it('does not add a history entry when switching language', async () => {
@@ -301,6 +311,7 @@ describe('AppRoutes', () => {
 
     it('does not change the saved language when a link is opened', () => {
       localStorage.setItem('locale', 'en')
+      vi.spyOn(navigator, 'languages', 'get').mockReturnValue(['fr-FR'])
 
       renderAt('/fr/').unmount()
 
