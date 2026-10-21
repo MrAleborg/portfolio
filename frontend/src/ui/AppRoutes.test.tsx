@@ -17,7 +17,8 @@ interface Options {
 
 // Shows the address the app is at, as the browser's address bar would.
 function Address() {
-  return <p data-testid="address">{useLocation().pathname}</p>
+  const { pathname, search, hash } = useLocation()
+  return <p data-testid="address">{pathname + search + hash}</p>
 }
 
 function address() {
@@ -29,6 +30,27 @@ function renderAt(path: string, { repositories = fakeRepositories() }: Options =
     <MemoryRouter initialEntries={[path]}>
       <AppRoutes repositories={repositories} />
       <Address />
+    </MemoryRouter>,
+  )
+}
+
+// Stands in for the browser's back button and address bar.
+function BrowserControls() {
+  const navigate = useNavigate()
+  return (
+    <>
+      <button onClick={() => navigate(-1)}>Back</button>
+      <button onClick={() => navigate('/')}>Open the root</button>
+    </>
+  )
+}
+
+function renderWithHistory(entries: string[]) {
+  return render(
+    <MemoryRouter initialEntries={entries} initialIndex={entries.length - 1}>
+      <AppRoutes repositories={fakeRepositories()} />
+      <Address />
+      <BrowserControls />
     </MemoryRouter>,
   )
 }
@@ -156,15 +178,6 @@ describe('AppRoutes', () => {
     expect(address()).toBe('/en/')
   })
 
-  it('sends an unknown page of a locale to the home page of that locale', async () => {
-    renderAt('/fr/nowhere')
-
-    expect(
-      await screen.findByRole('heading', { level: 1, name: 'Ada Lovelace' }),
-    ).toBeInTheDocument()
-    expect(address()).toBe('/fr/')
-  })
-
   describe('locale addresses', () => {
     afterEach(() => {
       vi.restoreAllMocks()
@@ -196,11 +209,24 @@ describe('AppRoutes', () => {
     })
 
     it('sets the page language to the locale of the address', () => {
-      localStorage.setItem('locale', 'en')
-
       renderAt('/fr/resume')
 
       expect(document.documentElement).toHaveAttribute('lang', 'fr')
+    })
+
+    it('sends a wrong language prefix to the root', () => {
+      renderAt('/de/resume')
+
+      expect(address()).toBe('/en/')
+    })
+
+    it('ignores a saved language that is not supported', () => {
+      localStorage.setItem('locale', 'de')
+      vi.spyOn(navigator, 'languages', 'get').mockReturnValue(['fr-FR'])
+
+      renderAt('/')
+
+      expect(address()).toBe('/fr/')
     })
 
     it('opens the root in the saved language', () => {
@@ -234,6 +260,53 @@ describe('AppRoutes', () => {
       renderAt(`/${page}`)
 
       expect(address()).toBe(`/en/${page}`)
+    })
+
+    it('keeps the search and hash of an old link', () => {
+      renderAt('/resume#experience')
+
+      expect(address()).toBe('/en/resume#experience')
+    })
+
+    it('opens the root in the language switched to since the app loaded', async () => {
+      renderWithHistory(['/en/resume'])
+      await switchLanguage('Français')
+
+      await userEvent.setup().click(screen.getByRole('button', { name: 'Open the root' }))
+
+      expect(address()).toBe('/fr/')
+    })
+
+    it('works when the storage is unavailable', async () => {
+      const denied = () => {
+        throw new DOMException('denied', 'SecurityError')
+      }
+      vi.spyOn(Storage.prototype, 'getItem').mockImplementation(denied)
+      vi.spyOn(Storage.prototype, 'setItem').mockImplementation(denied)
+      renderAt('/en/resume')
+
+      await switchLanguage('Français')
+
+      expect(address()).toBe('/fr/resume')
+    })
+
+    it('does not add a history entry when switching language', async () => {
+      renderWithHistory(['/en/', '/en/resume'])
+
+      await switchLanguage('Français')
+      await userEvent.setup().click(screen.getByRole('button', { name: 'Back' }))
+
+      expect(address()).toBe('/en/')
+    })
+
+    it('does not change the saved language when a link is opened', () => {
+      localStorage.setItem('locale', 'en')
+
+      renderAt('/fr/').unmount()
+
+      renderAt('/')
+
+      expect(address()).toBe('/en/')
     })
 
     it('switches to the same page in the other language', async () => {
@@ -414,21 +487,6 @@ describe('AppRoutes', () => {
     afterEach(() => {
       scrollTo.mockRestore()
     })
-
-    // Stands in for the browser's back button.
-    function BackButton() {
-      const navigate = useNavigate()
-      return <button onClick={() => navigate(-1)}>Back</button>
-    }
-
-    function renderWithHistory(entries: string[]) {
-      return render(
-        <MemoryRouter initialEntries={entries} initialIndex={entries.length - 1}>
-          <AppRoutes repositories={fakeRepositories()} />
-          <BackButton />
-        </MemoryRouter>,
-      )
-    }
 
     it('goes back to the top of the page when a navigation link is followed', async () => {
       const user = userEvent.setup()

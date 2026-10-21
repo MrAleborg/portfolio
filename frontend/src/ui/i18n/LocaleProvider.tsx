@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { Locale } from '@/domain/i18n/Locale'
 import { LocaleContext } from '@/ui/i18n/LocaleContext'
-import { preferredLocale, storeLocale } from '@/ui/i18n/preferredLocale'
+import { storeLocale } from '@/ui/i18n/preferredLocale'
 
 interface LocaleProviderProps {
   initialLocale?: Locale
@@ -17,16 +17,16 @@ export function LocaleProvider({
   onSwitch,
   children,
 }: LocaleProviderProps) {
-  const [chosen, setChosen] = useState<Locale>(() => initialLocale ?? preferredLocale())
+  const [chosen, setChosen] = useState<Locale>(initialLocale ?? 'en')
   const locale = addressLocale ?? chosen
 
   const setLocale = useCallback(
     (next: Locale) => {
-      setChosen(next)
+      if (addressLocale === undefined) setChosen(next)
       storeLocale(next)
       onSwitch?.(next)
     },
-    [onSwitch],
+    [addressLocale, onSwitch],
   )
 
   useEffect(() => {

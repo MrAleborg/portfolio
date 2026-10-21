@@ -12,20 +12,7 @@ function renderSwitch(initialLocale?: Locale) {
   )
 }
 
-afterEach(() => {
-  vi.restoreAllMocks()
-})
-
 describe('LanguageSwitch', () => {
-  it('defaults to the browser language', () => {
-    vi.spyOn(navigator, 'languages', 'get').mockReturnValue(['fr-FR'])
-
-    renderSwitch()
-
-    expect(screen.getByRole('button', { name: 'English' })).toBeInTheDocument()
-    expect(document.documentElement).toHaveAttribute('lang', 'fr')
-  })
-
   it('names the other language in that language', () => {
     renderSwitch('en')
 
