@@ -2,7 +2,8 @@
 
 It returns the ``<head>`` tags of a Page as an HTML fragment, which the
 frontend's nginx splices into the built shell. Only Home (``home``, per Locale)
-and ``root`` (``/`` itself, Home's English text), ``resume`` and ``contact`` exist so far.
+and ``root`` (``/`` itself, Home's English text), ``resume``, ``contact`` and
+``not-found`` (an address that doesn't exist).
 """
 
 import json
@@ -196,6 +197,44 @@ def test_resume_and_contact_summary_in_each_locale(
     assert "ld+json" not in response.content.decode()
 
 
+@pytest.mark.parametrize(
+    ("locale", "title", "description", "og_locale"),
+    [
+        (
+            "en",
+            "Page not found – Ada Lovelace",
+            "This page doesn't exist.",
+            "en_US",
+        ),
+        (
+            "fr",
+            "Page introuvable – Ada Lovelace",
+            "Cette page n'existe pas.",
+            "fr_FR",
+        ),
+    ],
+)
+def test_not_found_summary_in_each_locale_is_noindex_with_no_address(
+    client, profile, locale, title, description, og_locale
+):
+    response = get(client, "not-found", locale)
+
+    assert response.status_code == 200
+    head = Head(response.content.decode())
+    assert head.title == title
+    assert head.meta("name", "description") == description
+    assert head.meta("property", "og:title") == title
+    assert head.meta("property", "og:description") == description
+    assert head.meta("property", "og:type") == "website"
+    assert head.meta("property", "og:locale") == og_locale
+    assert head.meta("name", "robots") == "noindex"
+    assert head.link("canonical") is None
+    assert head.link("alternate", "fr") is None
+    assert head.link("alternate", "en") is None
+    assert not any(a.get("property") == "og:url" for _, a in head.tags)
+    assert head.json_ld is None
+
+
 def test_resume_text_from_the_profile_is_html_escaped(client, profile):
     Profile.objects.update(full_name="<b>Ada</b>", headline_en='"><i>x</i>')
 
@@ -307,6 +346,8 @@ def test_json_ld_cannot_be_broken_out_of(client, profile):
         {"page": "nope", "locale": "en"},
         {"page": "resume"},
         {"page": "contact", "locale": "de"},
+        {"page": "not-found"},
+        {"page": "not-found", "locale": "de"},
         {"locale": "en"},
     ],
 )
@@ -323,6 +364,7 @@ def test_bad_page_or_locale_is_a_400(client, profile, query):
         {"page": "root"},
         {"page": "resume", "locale": "fr"},
         {"page": "contact", "locale": "en"},
+        {"page": "not-found", "locale": "en"},
     ],
     ids=str,
 )

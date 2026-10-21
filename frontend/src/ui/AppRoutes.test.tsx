@@ -169,22 +169,66 @@ describe('AppRoutes', () => {
     ).toBeInTheDocument()
   })
 
-  it('sends an unknown page of a locale to the home page', async () => {
-    renderAt('/fr/nowhere')
+  describe('unknown addresses', () => {
+    it.each([
+      ['/nowhere', 'en', 'Page not found', "This page doesn't exist.", 'Back to home'],
+      ['/en/nowhere', 'en', 'Page not found', "This page doesn't exist.", 'Back to home'],
+      ['/fr/nowhere', 'fr', 'Page introuvable', "Cette page n'existe pas.", "Retour à l'accueil"],
+      ['/fr/resume/nowhere', 'fr', 'Page introuvable', "Cette page n'existe pas.", "Retour à l'accueil"],
+      ['/de/resume', 'en', 'Page not found', "This page doesn't exist.", 'Back to home'],
+    ])('shows the not-found page at %s in %s', (path, lang, heading, text, back) => {
+      renderAt(path)
 
-    expect(
-      await screen.findByRole('heading', { level: 1, name: 'Ada Lovelace' }),
-    ).toBeInTheDocument()
-    expect(address()).toBe('/en/')
-  })
+      expect(screen.getByRole('heading', { level: 1, name: heading })).toBeInTheDocument()
+      expect(within(screen.getByRole('main')).getByText(text)).toBeInTheDocument()
+      expect(within(screen.getByRole('main')).getByRole('link', { name: back })).toHaveAttribute(
+        'href',
+        `/${lang}/`,
+      )
+      expect(document.documentElement).toHaveAttribute('lang', lang)
+      expect(address()).toBe(path)
+    })
 
-  it('sends unknown paths to the home page', async () => {
-    renderAt('/nowhere')
+    it('keeps the layout around it', () => {
+      renderAt('/fr/nowhere')
 
-    expect(
-      await screen.findByRole('heading', { level: 1, name: 'Ada Lovelace' }),
-    ).toBeInTheDocument()
-    expect(address()).toBe('/en/')
+      expect(navigation('Principale').getByRole('link', { name: 'CV' })).toHaveAttribute(
+        'href',
+        '/fr/resume',
+      )
+    })
+
+    it('shows it in English whatever the saved preference, as the address names no Locale', () => {
+      localStorage.setItem('locale', 'fr')
+
+      renderAt('/nowhere')
+
+      expect(screen.getByRole('heading', { level: 1, name: 'Page not found' })).toBeInTheDocument()
+    })
+
+    it('goes back to the home page of its Locale', async () => {
+      renderAt('/fr/nowhere')
+
+      await userEvent.setup().click(screen.getByRole('link', { name: "Retour à l'accueil" }))
+
+      expect(address()).toBe('/fr/')
+      expect(
+        await screen.findByRole('heading', { level: 1, name: 'Ada Lovelace' }),
+      ).toBeInTheDocument()
+    })
+
+    it.each([
+      ['/nowhere', 'Français', '/fr/nowhere', 'Page introuvable'],
+      ['/en/nowhere', 'Français', '/fr/nowhere', 'Page introuvable'],
+      ['/fr/nowhere', 'English', '/en/nowhere', 'Page not found'],
+    ])('switches the language of %s', async (path, to, switched, heading) => {
+      renderAt(path)
+
+      await switchLanguage(to as 'Français' | 'English')
+
+      expect(address()).toBe(switched)
+      expect(screen.getByRole('heading', { level: 1, name: heading })).toBeInTheDocument()
+    })
   })
 
   describe('locale addresses', () => {
@@ -221,12 +265,6 @@ describe('AppRoutes', () => {
       renderAt('/fr/resume')
 
       expect(document.documentElement).toHaveAttribute('lang', 'fr')
-    })
-
-    it('sends a wrong language prefix to the root', () => {
-      renderAt('/de/resume')
-
-      expect(address()).toBe('/en/')
     })
 
     it('ignores a saved language that is not supported', () => {
