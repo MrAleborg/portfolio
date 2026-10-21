@@ -12,9 +12,13 @@ export default defineConfig({
     },
   },
   server: {
-    // Like Caddy in production: the API is on the site's own domain.
+    // Like Caddy and nginx in production: the API and the crawler files are on
+    // the site's own domain. The Host header is kept, so the dev box is not
+    // the Canonical domain and robots.txt forbids indexing it.
     proxy: {
       '/api': 'http://localhost:8000',
+      '/robots.txt': 'http://localhost:8000',
+      '/sitemap.xml': 'http://localhost:8000',
     },
   },
   test: {

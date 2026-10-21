@@ -83,7 +83,7 @@ describe('HomePage', () => {
 
       expect(await screen.findByRole('link', { name: 'See my resume' })).toHaveAttribute(
         'href',
-        '/resume',
+        '/en/resume',
       )
     })
 
@@ -92,7 +92,7 @@ describe('HomePage', () => {
 
       expect(await screen.findByRole('link', { name: 'Get in touch' })).toHaveAttribute(
         'href',
-        '/contact',
+        '/en/contact',
       )
     })
 
@@ -141,7 +141,7 @@ describe('HomePage', () => {
 
       expect(await screen.findByRole('link', { name: 'Voir mon CV' })).toHaveAttribute(
         'href',
-        '/resume',
+        '/fr/resume',
       )
     })
 
@@ -150,7 +150,7 @@ describe('HomePage', () => {
 
       expect(await screen.findByRole('link', { name: 'Me contacter' })).toHaveAttribute(
         'href',
-        '/contact',
+        '/fr/contact',
       )
     })
 

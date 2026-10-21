@@ -46,10 +46,10 @@ export function HomePage({ profileRepository, experienceRepository }: HomePagePr
           <p key={index} className="home__bio">{paragraph}</p>
         ))}
         <div className="home__actions">
-          <Link to="/resume" className="home__cta home__cta--primary">
+          <Link to={`/${locale}/resume`} className="home__cta home__cta--primary">
             {text.homeResumeCta}
           </Link>
-          <Link to="/contact" className="home__cta home__cta--secondary">
+          <Link to={`/${locale}/contact`} className="home__cta home__cta--secondary">
             {text.homeContactCta}
           </Link>
         </div>

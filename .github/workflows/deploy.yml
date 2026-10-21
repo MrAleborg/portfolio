@@ -175,3 +175,4 @@ jobs:
         run: |
           curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-all-errors "https://${{ vars.API_DOMAIN }}/api/v1/experience/" > /dev/null
           curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-all-errors "https://${{ vars.FRONTEND_DOMAIN }}/" > /dev/null
+          curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-all-errors "https://${{ vars.FRONTEND_DOMAIN }}/robots.txt" | grep "Sitemap:" > /dev/null

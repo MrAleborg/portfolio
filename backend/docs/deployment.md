@@ -24,7 +24,7 @@ flowchart LR
         Caddy -- "example.com/api/<br>HTTP 127.0.0.1:8000" --> Backend
         subgraph Compose [Docker Compose]
             Backend["backend<br>gunicorn + Django"] --> DB[("db-data volume<br>/data/db.sqlite3")]
-            Frontend["frontend<br>nginx + React build"]
+            Frontend["frontend<br>nginx + React build"] -- "/robots.txt, /sitemap.xml<br>HTTP backend:8000" --> Backend
         end
     end
 ```
@@ -34,7 +34,7 @@ flowchart LR
 | [`backend/Dockerfile`](../Dockerfile) | Backend image: dependencies, collected static files, non-root user |
 | [`backend/docker-entrypoint.sh`](../docker-entrypoint.sh) | Applies migrations, then starts gunicorn |
 | [`frontend/Dockerfile`](../../frontend/Dockerfile) | Frontend image: builds the site, serves it with nginx as a non-root user |
-| [`frontend/nginx.conf`](../../frontend/nginx.conf) | Client-side routes and cache headers |
+| [`frontend/nginx.conf`](../../frontend/nginx.conf) | Client-side routes, cache headers, and `/robots.txt` and `/sitemap.xml` forwarded to the backend |
 | [`deploy/compose.yml`](../../deploy/compose.yml) | The stack: the `backend` and `frontend` services, published on `127.0.0.1` |
 | [`deploy/Caddyfile.example`](../../deploy/Caddyfile.example) | Site blocks to add to the server's Caddy config |
 | [`deploy/.env.example`](../../deploy/.env.example) | Production settings template |
@@ -59,6 +59,7 @@ Django reads its settings from the environment
 | `SECRET_KEY` | long random string | `python3 -c "import secrets; print(secrets.token_urlsafe(50))"` |
 | `DEBUG` | `False` | Also turns on the HTTPS settings below |
 | `ALLOWED_HOSTS` | `api.example.com,example.com,localhost` | `example.com` is for the site's API calls on `/api/`; `localhost` is for the container health check |
+| `CANONICAL_DOMAIN` | `example.com` | The one host search engines may index; any other host gets a `robots.txt` that forbids everything. It builds the addresses in `sitemap.xml`. Default `alexandreleborgne.fr`. Also put it in `ALLOWED_HOSTS` |
 | `CSRF_TRUSTED_ORIGINS` | `https://api.example.com` | Optional: Django already trusts the request's own host and scheme (Caddy forwards them), so `/admin/` login works without it. Only needed if a proxy rewrites the host |
 | `CORS_ALLOWED_ORIGINS` | `https://example.com` | Where the frontend runs |
 | `DATABASE_URL` | `sqlite:////data/db.sqlite3` | Four slashes: absolute path |

@@ -3,6 +3,7 @@ import '@testing-library/jest-dom/vitest'
 // One test's language choice must not leak into the next.
 afterEach(() => {
   localStorage.clear()
+  document.documentElement.removeAttribute('lang')
 })
 
 // jsdom has no matchMedia: by default the OS prefers light.

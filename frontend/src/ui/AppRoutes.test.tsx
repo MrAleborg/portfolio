@@ -1,7 +1,6 @@
 import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, useNavigate } from 'react-router'
-import type { Locale } from '@/domain/i18n/Locale'
+import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { fakeEducationRepository, masters } from '@/test/fakeEducationRepository'
 import {
   failingProfileRepository,
@@ -10,25 +9,54 @@ import {
 } from '@/test/fakeProfileRepository'
 import { fakeRepositories } from '@/test/fakeRepositories'
 import { AppRoutes } from '@/ui/AppRoutes'
-import { LocaleProvider } from '@/ui/i18n/LocaleProvider'
 import type { Repositories } from '@/ui/Repositories'
 
 interface Options {
-  locale?: Locale
   repositories?: Repositories
 }
 
-function renderAt(
-  path: string,
-  { locale = 'en', repositories = fakeRepositories() }: Options = {},
-) {
+// Shows the address the app is at, as the browser's address bar would.
+function Address() {
+  const { pathname, search, hash } = useLocation()
+  return <p data-testid="address">{pathname + search + hash}</p>
+}
+
+function address() {
+  return screen.getByTestId('address').textContent
+}
+
+function renderAt(path: string, { repositories = fakeRepositories() }: Options = {}) {
   return render(
-    <LocaleProvider initialLocale={locale}>
-      <MemoryRouter initialEntries={[path]}>
-        <AppRoutes repositories={repositories} />
-      </MemoryRouter>
-    </LocaleProvider>,
+    <MemoryRouter initialEntries={[path]}>
+      <AppRoutes repositories={repositories} />
+      <Address />
+    </MemoryRouter>,
   )
+}
+
+// Stands in for the browser's back button and address bar.
+function BrowserControls() {
+  const navigate = useNavigate()
+  return (
+    <>
+      <button onClick={() => navigate(-1)}>Back</button>
+      <button onClick={() => navigate('/')}>Open the root</button>
+    </>
+  )
+}
+
+function renderWithHistory(entries: string[]) {
+  return render(
+    <MemoryRouter initialEntries={entries} initialIndex={entries.length - 1}>
+      <AppRoutes repositories={fakeRepositories()} />
+      <Address />
+      <BrowserControls />
+    </MemoryRouter>,
+  )
+}
+
+function switchLanguage(to: 'Français' | 'English') {
+  return userEvent.setup().click(screen.getByRole('button', { name: to, hidden: true }))
 }
 
 function navigation(name = 'Main') {
@@ -41,27 +69,27 @@ function header() {
 
 describe('AppRoutes', () => {
   it('lists Resume then Contact in the navigation, each linking to its page', () => {
-    renderAt('/')
+    renderAt('/en/')
 
     const links = navigation().getAllByRole('link')
     expect(links.map((link) => link.textContent)).toEqual(['Resume', 'Contact'])
     expect(links.map((link) => link.getAttribute('href'))).toEqual([
-      '/resume',
-      '/contact',
+      '/en/resume',
+      '/en/contact',
     ])
   })
 
   it('shows the profile name in the header as a link to the home page', async () => {
-    renderAt('/resume')
+    renderAt('/en/resume')
 
     expect(await header().findByRole('link', { name: 'Ada Lovelace' })).toHaveAttribute(
       'href',
-      '/',
+      '/en/',
     )
   })
 
   it('keeps the navigation and no site mark while the profile loads', () => {
-    renderAt('/resume', {
+    renderAt('/en/resume', {
       repositories: fakeRepositories({ profile: pendingProfileRepository() }),
     })
 
@@ -70,7 +98,7 @@ describe('AppRoutes', () => {
   })
 
   it('shows no site mark but keeps the navigation when the profile fails to load', async () => {
-    renderAt('/resume', {
+    renderAt('/en/resume', {
       repositories: fakeRepositories({ profile: failingProfileRepository() }),
     })
     // Lets the rejected request settle, so the assertions see the error state.
@@ -82,7 +110,7 @@ describe('AppRoutes', () => {
   })
 
   it('shows the home page at the root', async () => {
-    renderAt('/')
+    renderAt('/en/')
 
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Ada Lovelace' }),
@@ -90,7 +118,7 @@ describe('AppRoutes', () => {
   })
 
   it('shows the resume page at /resume', async () => {
-    renderAt('/resume')
+    renderAt('/en/resume')
 
     expect(
       screen.getByRole('heading', { level: 1, name: 'Resume' }),
@@ -105,7 +133,7 @@ describe('AppRoutes', () => {
   })
 
   it('shows the contact page at /contact', async () => {
-    renderAt('/contact')
+    renderAt('/en/contact')
 
     expect(
       screen.getByRole('heading', { level: 1, name: 'Contact' }),
@@ -121,7 +149,7 @@ describe('AppRoutes', () => {
 
   it('goes to the contact page from the navigation', async () => {
     const user = userEvent.setup()
-    renderAt('/')
+    renderAt('/en/')
 
     await user.click(navigation().getByRole('link', { name: 'Contact' }))
 
@@ -132,7 +160,7 @@ describe('AppRoutes', () => {
 
   it('goes to the resume page from the navigation', async () => {
     const user = userEvent.setup()
-    renderAt('/')
+    renderAt('/en/')
 
     await user.click(navigation().getByRole('link', { name: 'Resume' }))
 
@@ -141,16 +169,210 @@ describe('AppRoutes', () => {
     ).toBeInTheDocument()
   })
 
+  it('sends an unknown page of a locale to the home page', async () => {
+    renderAt('/fr/nowhere')
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Ada Lovelace' }),
+    ).toBeInTheDocument()
+    expect(address()).toBe('/en/')
+  })
+
   it('sends unknown paths to the home page', async () => {
     renderAt('/nowhere')
 
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Ada Lovelace' }),
     ).toBeInTheDocument()
+    expect(address()).toBe('/en/')
+  })
+
+  describe('locale addresses', () => {
+    afterEach(() => {
+      vi.restoreAllMocks()
+    })
+
+    it.each([
+      ['/fr/', 'Analyste'],
+      ['/en/', 'Analyst'],
+    ])('shows %s in its own language', async (path, headline) => {
+      renderAt(path)
+
+      expect(await screen.findByText(headline)).toBeInTheDocument()
+    })
+
+    it.each([
+      ['/fr/resume', 'CV', 'fr'],
+      ['/en/resume', 'Resume', 'en'],
+      ['/fr/contact', 'Contact', 'fr'],
+      ['/en/contact', 'Contact', 'en'],
+    ])('shows %s in its own language, whatever the saved preference', (path, heading, lang) => {
+      localStorage.setItem('locale', lang === 'fr' ? 'en' : 'fr')
+
+      renderAt(path)
+
+      expect(screen.getByRole('heading', { level: 1, name: heading })).toBeInTheDocument()
+      expect(
+        screen.getByRole('navigation', { name: lang === 'fr' ? 'Principale' : 'Main' }),
+      ).toBeInTheDocument()
+    })
+
+    it('sets the page language to the locale of the address', () => {
+      renderAt('/fr/resume')
+
+      expect(document.documentElement).toHaveAttribute('lang', 'fr')
+    })
+
+    it('sends a wrong language prefix to the root', () => {
+      renderAt('/de/resume')
+
+      expect(address()).toBe('/en/')
+    })
+
+    it('ignores a saved language that is not supported', () => {
+      localStorage.setItem('locale', 'de')
+      vi.spyOn(navigator, 'languages', 'get').mockReturnValue(['fr-FR'])
+
+      renderAt('/')
+
+      expect(address()).toBe('/fr/')
+    })
+
+    it('opens the root in the saved language', () => {
+      localStorage.setItem('locale', 'fr')
+      vi.spyOn(navigator, 'languages', 'get').mockReturnValue(['en-US'])
+
+      renderAt('/')
+
+      expect(address()).toBe('/fr/')
+    })
+
+    it('opens the root in the browser language when nothing is saved', () => {
+      vi.spyOn(navigator, 'languages', 'get').mockReturnValue(['fr-FR'])
+
+      renderAt('/')
+
+      expect(address()).toBe('/fr/')
+    })
+
+    it('opens the root in English when the browser language is not supported', () => {
+      vi.spyOn(navigator, 'languages', 'get').mockReturnValue(['de-DE'])
+
+      renderAt('/')
+
+      expect(address()).toBe('/en/')
+    })
+
+    it.each(['resume', 'contact'])('sends the old link /%s to the English page', (page) => {
+      localStorage.setItem('locale', 'fr')
+
+      renderAt(`/${page}`)
+
+      expect(address()).toBe(`/en/${page}`)
+    })
+
+    it('keeps the search and hash of an old link', () => {
+      renderAt('/resume?ref=cv#experience')
+
+      expect(address()).toBe('/en/resume?ref=cv#experience')
+    })
+
+    it('opens the root in the language switched to since the app loaded', async () => {
+      renderWithHistory(['/en/resume'])
+      await switchLanguage('Français')
+
+      await userEvent.setup().click(screen.getByRole('button', { name: 'Open the root' }))
+
+      expect(address()).toBe('/fr/')
+    })
+
+    it('works when the storage is unavailable', async () => {
+      const denied = () => {
+        throw new DOMException('denied', 'SecurityError')
+      }
+      vi.spyOn(Storage.prototype, 'getItem').mockImplementation(denied)
+      vi.spyOn(Storage.prototype, 'setItem').mockImplementation(denied)
+      renderAt('/')
+      expect(address()).toBe('/en/')
+
+      await switchLanguage('Français')
+
+      expect(address()).toBe('/fr/')
+    })
+
+    it('does not add a history entry when switching language', async () => {
+      renderWithHistory(['/en/', '/en/resume'])
+
+      await switchLanguage('Français')
+      await userEvent.setup().click(screen.getByRole('button', { name: 'Back' }))
+
+      expect(address()).toBe('/en/')
+    })
+
+    it('does not change the saved language when a link is opened', () => {
+      localStorage.setItem('locale', 'en')
+      vi.spyOn(navigator, 'languages', 'get').mockReturnValue(['fr-FR'])
+
+      renderAt('/fr/').unmount()
+
+      renderAt('/')
+
+      expect(address()).toBe('/en/')
+    })
+
+    it('switches to the same page in the other language', async () => {
+      renderAt('/en/resume')
+
+      await switchLanguage('Français')
+
+      expect(address()).toBe('/fr/resume')
+      expect(document.documentElement).toHaveAttribute('lang', 'fr')
+      expect(navigation('Principale').getByRole('link', { name: 'CV' })).toHaveAttribute(
+        'href',
+        '/fr/resume',
+      )
+    })
+
+    it('switches from the home page to the home page of the other language', async () => {
+      renderAt('/fr/')
+
+      await switchLanguage('English')
+
+      expect(address()).toBe('/en/')
+    })
+
+    it('remembers the language switched to for the next visit to the root', async () => {
+      const first = renderAt('/en/contact')
+      await switchLanguage('Français')
+      first.unmount()
+
+      renderAt('/')
+
+      expect(address()).toBe('/fr/')
+    })
+
+    it('stays where it was scrolled when switching language', async () => {
+      const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+      renderAt('/en/resume')
+      scrollTo.mockClear()
+
+      await switchLanguage('Français')
+
+      expect(scrollTo).not.toHaveBeenCalled()
+    })
+
+    it('links the home page calls to action in the current language', async () => {
+      renderAt('/fr/')
+
+      expect(await screen.findByRole('link', { name: 'Me contacter' })).toHaveAttribute(
+        'href',
+        '/fr/contact',
+      )
+    })
   })
 
   it('labels the navigation in French', () => {
-    renderAt('/', { locale: 'fr' })
+    renderAt('/fr/')
 
     expect(
       navigation('Principale').getByRole('link', { name: 'CV' }),
@@ -181,7 +403,7 @@ describe('AppRoutes', () => {
   it('switches the language of the resume without loading the education again', async () => {
     const user = userEvent.setup()
     const education = fakeEducationRepository()
-    renderAt('/resume', { repositories: fakeRepositories({ education }) })
+    renderAt('/en/resume', { repositories: fakeRepositories({ education }) })
     await screen.findByRole('article', { name: 'Master’s degree, Computer Science' })
 
     await user.click(
@@ -194,7 +416,7 @@ describe('AppRoutes', () => {
 
   it('keeps an expanded tile open when switching the language', async () => {
     const user = userEvent.setup()
-    renderAt('/resume')
+    renderAt('/en/resume')
 
     await user.click(await screen.findByRole('button', { name: 'Master’s degree, Computer Science' }))
     await user.click(
@@ -209,7 +431,7 @@ describe('AppRoutes', () => {
   })
 
   describe('footer', () => {
-    it.each(['/', '/resume', '/contact'])('is the only content information of %s', async (path) => {
+    it.each(['/en/', '/en/resume', '/en/contact'])('is the only content information of %s', async (path) => {
       renderAt(path)
 
       await screen.findByRole('contentinfo')
@@ -218,7 +440,7 @@ describe('AppRoutes', () => {
     })
 
     it('comes after the main content', async () => {
-      renderAt('/')
+      renderAt('/en/')
 
       const footer = await screen.findByRole('contentinfo')
 
@@ -229,14 +451,14 @@ describe('AppRoutes', () => {
 
     it('does not load the profile a second time', async () => {
       const profile = fakeProfileRepository()
-      renderAt('/contact', { repositories: fakeRepositories({ profile }) })
+      renderAt('/en/contact', { repositories: fakeRepositories({ profile }) })
 
       expect(await within(await screen.findByRole('contentinfo')).findByText(/^© \d{4} Ada Lovelace$/)).toBeInTheDocument()
 
       expect(profile.get).toHaveBeenCalledTimes(1)
     })
 
-    it.each(['/', '/resume', '/contact'])('shows the contact links and the copyright on %s', async (path) => {
+    it.each(['/en/', '/en/resume', '/en/contact'])('shows the contact links and the copyright on %s', async (path) => {
       renderAt(path)
       const footer = within(await screen.findByRole('contentinfo'))
 
@@ -249,7 +471,7 @@ describe('AppRoutes', () => {
     })
 
     it('lists the contact links on /contact in the footer only, not in the page itself', async () => {
-      renderAt('/contact')
+      renderAt('/en/contact')
       const footer = within(await screen.findByRole('contentinfo'))
       await footer.findByRole('link', { name: 'ada@example.com' })
 
@@ -257,7 +479,7 @@ describe('AppRoutes', () => {
     })
 
     it('labels its links in French', async () => {
-      renderAt('/', { locale: 'fr' })
+      renderAt('/fr/')
 
       expect(
         await screen.findByRole('navigation', { name: 'Liens de contact' }),
@@ -277,26 +499,9 @@ describe('AppRoutes', () => {
       scrollTo.mockRestore()
     })
 
-    // Stands in for the browser's back button.
-    function BackButton() {
-      const navigate = useNavigate()
-      return <button onClick={() => navigate(-1)}>Back</button>
-    }
-
-    function renderWithHistory(entries: string[]) {
-      return render(
-        <LocaleProvider initialLocale="en">
-          <MemoryRouter initialEntries={entries} initialIndex={entries.length - 1}>
-            <AppRoutes repositories={fakeRepositories()} />
-            <BackButton />
-          </MemoryRouter>
-        </LocaleProvider>,
-      )
-    }
-
     it('goes back to the top of the page when a navigation link is followed', async () => {
       const user = userEvent.setup()
-      renderAt('/resume')
+      renderAt('/en/resume')
 
       await user.click(navigation().getByRole('link', { name: 'Contact' }))
 
@@ -305,7 +510,7 @@ describe('AppRoutes', () => {
 
     it('goes back to the top of the page when the header name is followed', async () => {
       const user = userEvent.setup()
-      renderAt('/resume')
+      renderAt('/en/resume')
 
       await user.click(await header().findByRole('link', { name: 'Ada Lovelace' }))
 
@@ -314,7 +519,7 @@ describe('AppRoutes', () => {
 
     it('goes back to the top of the page when a call to action of the home page is followed', async () => {
       const user = userEvent.setup()
-      renderAt('/')
+      renderAt('/en/')
 
       await user.click(await screen.findByRole('link', { name: 'Get in touch' }))
 
@@ -323,7 +528,7 @@ describe('AppRoutes', () => {
 
     it('goes back to the top of the page each time the link to the current page is followed', async () => {
       const user = userEvent.setup()
-      renderAt('/')
+      renderAt('/en/')
       const mark = await header().findByRole('link', { name: 'Ada Lovelace' })
 
       await user.click(mark)
@@ -335,7 +540,7 @@ describe('AppRoutes', () => {
 
     it('goes back to the top of the page each time the active navigation link is followed', async () => {
       const user = userEvent.setup()
-      renderAt('/contact')
+      renderAt('/en/contact')
 
       await user.click(navigation().getByRole('link', { name: 'Contact' }))
       await user.click(navigation().getByRole('link', { name: 'Contact' }))
@@ -356,7 +561,7 @@ describe('AppRoutes', () => {
 
       it('leaves the scroll to the resume index when a section is chosen', async () => {
         const user = userEvent.setup()
-        renderAt('/')
+        renderAt('/en/')
         await user.click(navigation().getByRole('link', { name: 'Resume' }))
         const scrollsBefore = scrollTo.mock.calls.length
 
@@ -373,7 +578,7 @@ describe('AppRoutes', () => {
 
     it('leaves the scroll to the browser when going back', async () => {
       const user = userEvent.setup()
-      renderWithHistory(['/', '/resume'])
+      renderWithHistory(['/en/', '/en/resume'])
 
       await user.click(screen.getByRole('button', { name: 'Back' }))
 
@@ -413,13 +618,13 @@ describe('AppRoutes', () => {
     })
 
     it('is not marked as scrolled while the top of the page is in view', () => {
-      renderAt('/')
+      renderAt('/en/')
 
       expect(screen.getByRole('banner')).not.toHaveAttribute('data-scrolled')
     })
 
     it('is marked as scrolled once the top of the page scrolls out of view', () => {
-      renderAt('/')
+      renderAt('/en/')
 
       act(() => reportSentinel(false))
 
@@ -427,7 +632,7 @@ describe('AppRoutes', () => {
     })
 
     it('is no longer marked as scrolled once the top of the page is back in view', () => {
-      renderAt('/')
+      renderAt('/en/')
       act(() => reportSentinel(false))
 
       act(() => reportSentinel(true))
@@ -450,7 +655,7 @@ describe('AppRoutes', () => {
     })
 
     it('says so in the page and keeps the navigation', async () => {
-      renderAt('/resume', {
+      renderAt('/en/resume', {
         repositories: fakeRepositories({ education: malformedDate }),
       })
 
@@ -461,8 +666,7 @@ describe('AppRoutes', () => {
     })
 
     it('says so in French', async () => {
-      renderAt('/resume', {
-        locale: 'fr',
+      renderAt('/fr/resume', {
         repositories: fakeRepositories({ education: malformedDate }),
       })
 
@@ -473,7 +677,7 @@ describe('AppRoutes', () => {
 
     it('shows the next page once the user navigates away', async () => {
       const user = userEvent.setup()
-      renderAt('/resume', {
+      renderAt('/en/resume', {
         repositories: fakeRepositories({ education: malformedDate }),
       })
       await screen.findByRole('alert')

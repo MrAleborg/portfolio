@@ -41,6 +41,9 @@ DEBUG = env("DEBUG")
 
 ALLOWED_HOSTS = env("ALLOWED_HOSTS")
 
+# The one host search engines may index; the others are duplicates.
+CANONICAL_DOMAIN = env("CANONICAL_DOMAIN", default="alexandreleborgne.fr")
+
 # Origins allowed to send unsafe requests with a CSRF cookie (the Django admin),
 # e.g. https://api.example.com
 CSRF_TRUSTED_ORIGINS = env("CSRF_TRUSTED_ORIGINS")
@@ -90,6 +93,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "owner.crawler.noindex_api",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
