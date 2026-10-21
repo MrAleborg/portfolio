@@ -512,12 +512,17 @@ describe('AppRoutes', () => {
       await waitFor(() => expect(document.title).toBe('Alexandre Le Borgne'))
     })
 
-    it('is the not-found title for a Locale in capitals, as nginx does not serve it', async () => {
-      renderAt('/EN/resume')
+    it.each(['/EN/resume', '/en/RESUME', '/RESUME', '/CONTACT'])(
+      'is the not-found title at %s, as nginx does not serve it',
+      async (path) => {
+        renderAt(path)
 
-      expect(await screen.findByRole('heading', { level: 1, name: 'Page not found' })).toBeInTheDocument()
-      await waitFor(() => expect(document.title).toBe('Page not found – Ada Lovelace'))
-    })
+        expect(
+          await screen.findByRole('heading', { level: 1, name: 'Page not found' }),
+        ).toBeInTheDocument()
+        await waitFor(() => expect(document.title).toBe('Page not found – Ada Lovelace'))
+      },
+    )
 
     it('follows the visitor from page to page', async () => {
       renderAt('/en/')

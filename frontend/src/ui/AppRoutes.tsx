@@ -61,8 +61,8 @@ export function AppRoutes({ repositories }: AppRoutesProps) {
   return (
     <Routes>
       <Route path="/" element={<RootRedirect />} />
-      <Route path="resume" element={<EnglishRedirect page="resume" />} />
-      <Route path="contact" element={<EnglishRedirect page="contact" />} />
+      <Route path="resume" caseSensitive element={<EnglishRedirect page="resume" />} />
+      <Route path="contact" caseSensitive element={<EnglishRedirect page="contact" />} />
       {/* Case-sensitive, as nginx is: `/EN/resume` is a page that does not exist. */}
       {LOCALES.map((locale) => (
         <Route key={locale} path={locale} caseSensitive element={layout(locale)}>
@@ -77,10 +77,12 @@ export function AppRoutes({ repositories }: AppRoutesProps) {
           />
           <Route
             path="resume"
+            caseSensitive
             element={<ResumePage repositories={repositories} />}
           />
           <Route
             path="contact"
+            caseSensitive
             element={<ContactPage contactRepository={repositories.contact} />}
           />
           {notFound}

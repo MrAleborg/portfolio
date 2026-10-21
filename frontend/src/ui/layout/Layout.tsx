@@ -36,14 +36,14 @@ export function Layout({ profileRepository, contactRepository }: LayoutProps) {
     ['contact', text.navContact],
   ])
   const pageName = page ? (pageNames.get(page) ?? text.notFoundTitle) : undefined
-  const loaded = profile.status === 'loaded' ? profile.value : undefined
   const title =
     profile.status === 'error'
       ? GENERIC_TITLE
-      : loaded &&
-        (pageName
-          ? `${pageName} – ${loaded.fullName}`
-          : `${loaded.fullName} – ${loaded.headline[locale]}`)
+      : profile.status !== 'loaded'
+        ? undefined
+        : pageName
+          ? `${pageName} – ${profile.value.fullName}`
+          : `${profile.value.fullName} – ${profile.value.headline[locale]}`
   useEffect(() => {
     if (title) document.title = title
   }, [title])
