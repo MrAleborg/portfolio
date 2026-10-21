@@ -47,6 +47,13 @@ owner's [profile](#profile-apiv1profile) and
 - **Not indexed.** Every `/api/` response carries `X-Robots-Tag: noindex`.
   (`/robots.txt` and `/sitemap.xml` are served by the same backend at the root,
   outside the API.)
+- **Page summary.** `GET /api/v1/profile/page-summary/?page=home&locale=fr|en`
+  (or `?page=root`, Home's English text for `/`) returns `text/html`: the
+  `<head>` tags of Home (title, description, canonical and alternate links,
+  Open Graph, a JSON-LD `Person`), built from the profile and the visible,
+  non-email contact links. The frontend's nginx splices it into the page (see
+  ADR 0001). A bad `page` or `locale` is a `400`, no profile a `404` with an
+  empty body; a Host other than the Canonical domain adds `noindex`.
 - **Hidden entries never appear.** Entries with `is_visible=False` are left out
   of lists and nested lists. A project whose professional experience is hidden
   is hidden too, wherever projects appear. Tags have no visibility of their
