@@ -4,8 +4,11 @@ from django.urls import include, path
 from accounts.views import throttle_login_posts
 from experience.admin_import import import_resume_view
 from experience.views import ResumeView
+from owner import crawler
 
 urlpatterns = [
+    path("robots.txt", crawler.robots_txt),
+    path("sitemap.xml", crawler.sitemap_xml),
     path("admin/login/", throttle_login_posts(admin.site.login)),
     path(
         "admin/import-resume/",
