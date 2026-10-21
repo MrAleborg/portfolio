@@ -1,44 +1,33 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { isLocale, resolveLocale, type Locale } from '@/domain/i18n/Locale'
+import type { Locale } from '@/domain/i18n/Locale'
 import { LocaleContext } from '@/ui/i18n/LocaleContext'
-
-const STORAGE_KEY = 'locale'
+import { preferredLocale, storeLocale } from '@/ui/i18n/preferredLocale'
 
 interface LocaleProviderProps {
   initialLocale?: Locale
+  /** The Locale of the address. When set it wins, and switching only asks `onSwitch` to change the address. */
+  locale?: Locale
+  onSwitch?: (locale: Locale) => void
   children: ReactNode
 }
 
-// The storage can be missing or refuse access (private mode): the choice is then just not kept.
-function readStoredLocale(): Locale | undefined {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    return stored !== null && isLocale(stored) ? stored : undefined
-  } catch {
-    return undefined
-  }
-}
+export function LocaleProvider({
+  initialLocale,
+  locale: addressLocale,
+  onSwitch,
+  children,
+}: LocaleProviderProps) {
+  const [chosen, setChosen] = useState<Locale>(() => initialLocale ?? preferredLocale())
+  const locale = addressLocale ?? chosen
 
-function storeLocale(locale: Locale) {
-  try {
-    localStorage.setItem(STORAGE_KEY, locale)
-  } catch {
-    // Not kept, see above.
-  }
-}
-
-export function LocaleProvider({ initialLocale, children }: LocaleProviderProps) {
-  const [locale, setLocaleState] = useState<Locale>(
-    () =>
-      initialLocale ??
-      readStoredLocale() ??
-      resolveLocale(navigator.languages),
+  const setLocale = useCallback(
+    (next: Locale) => {
+      setChosen(next)
+      storeLocale(next)
+      onSwitch?.(next)
+    },
+    [onSwitch],
   )
-
-  const setLocale = useCallback((next: Locale) => {
-    setLocaleState(next)
-    storeLocale(next)
-  }, [])
 
   useEffect(() => {
     document.documentElement.lang = locale

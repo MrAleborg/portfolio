@@ -16,8 +16,9 @@ interface LayoutProps {
 }
 
 export function Layout({ profileRepository, contactRepository }: LayoutProps) {
-  const text = messages[useLocale().locale]
-  const { pathname, hash, key } = useLocation()
+  const { locale } = useLocale()
+  const text = messages[locale]
+  const { pathname, hash, key, state } = useLocation()
   const navigationType = useNavigationType()
   const profile = useAsync(profileRepository.get)
   const sentinel = useRef<HTMLDivElement>(null)
@@ -34,33 +35,35 @@ export function Layout({ profileRepository, contactRepository }: LayoutProps) {
   }, [])
 
   // A followed link opens the page at its top, before it is painted. Back and forward are left to
-  // the browser, and a link to a section (`#…`) to the page, which scrolls there itself. The
-  // location's key changes on every navigation, including a second click on the current page.
+  // the browser, and a link to a section (`#…`) to the page, which scrolls there itself. So is a
+  // language switch, which keeps the visitor in place. The location's key changes on every
+  // navigation, including a second click on the current page.
+  const keepScroll = Boolean(state?.keepScroll)
   useLayoutEffect(() => {
-    if (navigationType !== 'POP' && !hash) window.scrollTo(0, 0)
-  }, [key, navigationType, hash])
+    if (navigationType !== 'POP' && !hash && !keepScroll) window.scrollTo(0, 0)
+  }, [key, navigationType, hash, keepScroll])
 
   return (
     <div className="layout">
       <div ref={sentinel} className="layout__sentinel" aria-hidden="true" />
       <header ref={header} className="layout__header">
         {profile.status === 'loaded' && (
-          <Link to="/" className="layout__mark">
+          <Link to={`/${locale}/`} className="layout__mark">
             {profile.value.fullName}
           </Link>
         )}
         <div className="layout__actions">
           <nav aria-label={text.navLabel} className="layout__nav">
-            <NavLink to="/resume">{text.navResume}</NavLink>
-            <NavLink to="/contact">{text.navContact}</NavLink>
+            <NavLink to={`/${locale}/resume`}>{text.navResume}</NavLink>
+            <NavLink to={`/${locale}/contact`}>{text.navContact}</NavLink>
           </nav>
           <SettingsMenu />
         </div>
       </header>
       <main className="layout__main">
-        {/* Keyed by path, so leaving a failed page shows the next one. */}
+        {/* Keyed by path without its Locale, so leaving a failed page shows the next one, while switching language keeps the page. */}
         <ErrorBoundary
-          key={pathname}
+          key={pathname.slice(`/${locale}`.length)}
           fallback={<p role="alert">{text.pageError}</p>}
         >
           <Outlet />
