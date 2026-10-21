@@ -89,7 +89,9 @@ function correctAfterSmoothScroll(target: Element): () => void {
 function useDeepLink(): () => void {
   const stopAligning = useRef(() => {})
   useEffect(() => {
-    const target = document.getElementById(window.location.hash.slice(1))
+    const id = window.location.hash.slice(1)
+    if (!id) return
+    const target = document.getElementById(id)
     if (!target) return
     const align = () => target.scrollIntoView({ behavior: 'auto', block: 'start' })
     align()

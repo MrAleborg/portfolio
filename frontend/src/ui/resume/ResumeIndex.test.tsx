@@ -284,6 +284,14 @@ describe('ResumeIndex', () => {
     expect(scrollIntoView).not.toHaveBeenCalled()
   })
 
+  it('does not look up an element by an empty id when the page opens without a section in the address', () => {
+    const getElementById = vi.spyOn(document, 'getElementById')
+
+    renderIndex()
+
+    expect(getElementById).not.toHaveBeenCalledWith('')
+  })
+
   it('does nothing special for a click that opens the link elsewhere', async () => {
     renderIndex()
 
