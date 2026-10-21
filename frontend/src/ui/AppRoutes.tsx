@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react'
-import { Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router'
-import { isLocale, type Locale } from '@/domain/i18n/Locale'
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router'
+import { isLocale, LOCALES, type Locale } from '@/domain/i18n/Locale'
 import { LocaleProvider } from '@/ui/i18n/LocaleProvider'
 import { preferredLocale } from '@/ui/i18n/preferredLocale'
 import { Layout } from '@/ui/layout/Layout'
 import { ContactPage } from '@/ui/pages/ContactPage'
 import { HomePage } from '@/ui/pages/HomePage'
+import { NotFoundPage } from '@/ui/pages/NotFoundPage'
 import { ResumePage } from '@/ui/pages/ResumePage'
 import type { Repositories } from '@/ui/Repositories'
 
@@ -14,19 +15,21 @@ interface AppRoutesProps {
 }
 
 // The address decides the Locale, so every Page lives under `/fr` or `/en`.
-function LocaleRoute({ children }: { children: ReactNode }) {
-  const { locale } = useParams()
+function LocaleRoute({ locale, children }: { locale: Locale; children: ReactNode }) {
   const { pathname, search, hash } = useLocation()
   const navigate = useNavigate()
+  // An address with no Locale prefix (the not-found Page) gets one.
+  const unprefixed = isLocale(pathname.split('/')[1] ?? '')
+    ? pathname.replace(/^\/[^/]+/, '')
+    : pathname
   // Keeps the Page and swaps the Locale. The scroll is kept: the visitor stays where they were.
   // Replaces the history entry, so Back does not just undo the switch.
   const onSwitch = (next: Locale) =>
     navigate(
-      { pathname: pathname.replace(/^\/[^/]+/, `/${next}`), search, hash },
+      { pathname: `/${next}${unprefixed}`, search, hash },
       { replace: true, state: { keepScroll: true } },
     )
 
-  if (!locale || !isLocale(locale)) return <Navigate to="/" replace />
   return (
     <LocaleProvider locale={locale} onSwitch={onSwitch}>
       {children}
@@ -46,41 +49,45 @@ function EnglishRedirect({ page }: { page: 'resume' | 'contact' }) {
 }
 
 export function AppRoutes({ repositories }: AppRoutesProps) {
+  const layout = (locale: Locale) => (
+    <LocaleRoute locale={locale}>
+      <Layout
+        profileRepository={repositories.profile}
+        contactRepository={repositories.contact}
+      />
+    </LocaleRoute>
+  )
+  const notFound = <Route path="*" element={<NotFoundPage />} />
+
   return (
     <Routes>
       <Route path="/" element={<RootRedirect />} />
       <Route path="resume" element={<EnglishRedirect page="resume" />} />
       <Route path="contact" element={<EnglishRedirect page="contact" />} />
-      <Route
-        path=":locale"
-        element={
-          <LocaleRoute>
-            <Layout
-              profileRepository={repositories.profile}
-              contactRepository={repositories.contact}
-            />
-          </LocaleRoute>
-        }
-      >
-        <Route
-          index
-          element={
-            <HomePage
-              profileRepository={repositories.profile}
-              experienceRepository={repositories.experience}
-            />
-          }
-        />
-        <Route
-          path="resume"
-          element={<ResumePage repositories={repositories} />}
-        />
-        <Route
-          path="contact"
-          element={<ContactPage contactRepository={repositories.contact} />}
-        />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Route>
+      {LOCALES.map((locale) => (
+        <Route key={locale} path={locale} element={layout(locale)}>
+          <Route
+            index
+            element={
+              <HomePage
+                profileRepository={repositories.profile}
+                experienceRepository={repositories.experience}
+              />
+            }
+          />
+          <Route
+            path="resume"
+            element={<ResumePage repositories={repositories} />}
+          />
+          <Route
+            path="contact"
+            element={<ContactPage contactRepository={repositories.contact} />}
+          />
+          {notFound}
+        </Route>
+      ))}
+      {/* No Locale in the address: English, as nginx does. */}
+      <Route element={layout('en')}>{notFound}</Route>
     </Routes>
   )
 }

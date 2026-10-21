@@ -69,6 +69,9 @@ interface Messages {
   sectionUnavailable: string
   sectionEmpty: string
   pageError: string
+  notFoundTitle: string
+  notFoundText: string
+  notFoundHome: string
   /** End of a period that is still going on. */
   ongoing: string
   /** Units of a duration such as "1 yr 10 mos". */
@@ -176,6 +179,9 @@ export const messages: Localized<Messages> = {
       'This section could not be loaded. Please try again later.',
     sectionEmpty: 'Nothing to show yet.',
     pageError: 'This page could not be displayed. Reload to try again.',
+    notFoundTitle: 'Page not found',
+    notFoundText: "This page doesn't exist.",
+    notFoundHome: 'Back to home',
     ongoing: 'Present',
     durationYears: { one: 'yr', other: 'yrs' },
     durationMonths: { one: 'mo', other: 'mos' },
@@ -270,6 +276,9 @@ export const messages: Localized<Messages> = {
       'Cette section n’a pas pu être chargée. Réessayez plus tard.',
     sectionEmpty: 'Rien à afficher pour le moment.',
     pageError: 'Cette page n’a pas pu s’afficher. Rechargez pour réessayer.',
+    notFoundTitle: 'Page introuvable',
+    notFoundText: "Cette page n'existe pas.",
+    notFoundHome: "Retour à l'accueil",
     ongoing: 'aujourd’hui',
     durationYears: { one: 'an', other: 'ans' },
     durationMonths: { one: 'mois', other: 'mois' },
