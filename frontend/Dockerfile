@@ -10,7 +10,7 @@ RUN npm run build
 
 
 # Serve it with nginx, as a non-root user on port 8080.
-FROM nginxinc/nginx-unprivileged:1.31.6-alpine3.24
+FROM nginxinc/nginx-unprivileged:1.31.7-alpine3.24
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /build/dist /usr/share/nginx/html
